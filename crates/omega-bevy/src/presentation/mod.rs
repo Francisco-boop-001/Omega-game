@@ -25,14 +25,24 @@ impl Default for ActiveThemeName {
     }
 }
 
+/// Resource holding the theme we are transitioning towards.
+#[derive(Resource, Debug, Clone)]
+struct TargetTheme(Option<BevyTheme>);
+
+/// Progress of the current theme transition (0.0 to 1.0).
+#[derive(Resource, Debug, Clone)]
+struct ThemeTransitionProgress(f32);
+
 pub mod animation;
 pub mod bevy_theme;
 pub mod color_adapter;
+pub mod editor;
 pub mod hud;
 pub mod input;
 pub mod interaction;
 pub mod overlays;
 pub mod scene;
+pub mod spawner;
 pub mod theme;
 pub mod tilemap;
 pub mod timeline;
@@ -135,7 +145,8 @@ impl Plugin for ArcaneCartographerPlugin {
             .expect("Failed to load classic theme - this should never happen with embedded themes");
         let bevy_theme = BevyTheme::new(color_theme);
 
-        app.insert_resource(bevy_theme)
+        app.add_plugins(bevy_egui::EguiPlugin)
+            .insert_resource(bevy_theme)
             .insert_resource(theme::UiLayoutTokens::default())
             .insert_resource(theme::UiChromeColors::default())
             .insert_resource(UiReadabilityConfig::default())
@@ -143,6 +154,9 @@ impl Plugin for ArcaneCartographerPlugin {
             .insert_resource(UiFocusState::default())
             .insert_resource(UiBootLatch::default())
             .insert_resource(ActiveThemeName::default())
+            .insert_resource(TargetTheme(None))
+            .insert_resource(ThemeTransitionProgress(0.0))
+            .insert_resource(editor::ThemeEditorState::default())
             .add_event::<ThemeChangeEvent>()
             .add_systems(Startup, scene::setup_arcane_scene)
             .add_systems(
@@ -151,10 +165,14 @@ impl Plugin for ArcaneCartographerPlugin {
                     animation::advance_ui_motion,
                     input::keyboard_to_runtime_input,
                     handle_theme_change_events,
+                    process_theme_transition,
+                    monitor_environment_changes,
                     handle_theme_cycle_key,
                     ensure_session_started,
                     update_ui_panels,
                     apply_focus_styles,
+                    update_ui_text_colors,
+                    editor::theme_editor_ui,
                 )
                     .chain(),
             );
@@ -172,61 +190,18 @@ fn ensure_session_started(mut runtime: ResMut<FrontendRuntime>, mut boot: ResMut
 }
 
 fn update_ui_panels(
+    mut commands: Commands,
     status: Res<RuntimeStatus>,
     frame: Res<RuntimeFrame>,
     motion: Res<animation::UiMotionState>,
+    bevy_theme: Res<BevyTheme>,
     mut focus: ResMut<UiFocusState>,
     mut text_queries: ParamSet<(
-        Query<
-            &mut Text,
-            (
-                With<MapPanelText>,
-                Without<CompassPanelText>,
-                Without<HudPanelText>,
-                Without<InteractionPanelText>,
-                Without<TimelinePanelText>,
-            ),
-        >,
-        Query<
-            &mut Text,
-            (
-                With<CompassPanelText>,
-                Without<MapPanelText>,
-                Without<HudPanelText>,
-                Without<InteractionPanelText>,
-                Without<TimelinePanelText>,
-            ),
-        >,
-        Query<
-            &mut Text,
-            (
-                With<HudPanelText>,
-                Without<MapPanelText>,
-                Without<CompassPanelText>,
-                Without<InteractionPanelText>,
-                Without<TimelinePanelText>,
-            ),
-        >,
-        Query<
-            &mut Text,
-            (
-                With<InteractionPanelText>,
-                Without<MapPanelText>,
-                Without<CompassPanelText>,
-                Without<HudPanelText>,
-                Without<TimelinePanelText>,
-            ),
-        >,
-        Query<
-            &mut Text,
-            (
-                With<TimelinePanelText>,
-                Without<MapPanelText>,
-                Without<CompassPanelText>,
-                Without<HudPanelText>,
-                Without<InteractionPanelText>,
-            ),
-        >,
+        Query<Entity, With<MapPanelText>>,
+        Query<&mut Text, With<CompassPanelText>>,
+        Query<&mut Text, With<HudPanelText>>,
+        Query<&mut Text, With<InteractionPanelText>>,
+        Query<&mut Text, With<TimelinePanelText>>,
     )>,
 ) {
     let fallback = RenderFrame {
@@ -240,9 +215,21 @@ fn update_ui_panels(
     };
     let frame_ref = frame.frame.as_ref().unwrap_or(&fallback);
 
-    let map_lines = tilemap::compose_map_lines(frame_ref, motion.frame);
-    if let Ok(mut text) = text_queries.p0().get_single_mut() {
-        *text = Text::new(map_lines.join("\n"));
+    let map_data = tilemap::compose_map_lines(frame_ref, motion.frame);
+    if let Ok(map_entity) = text_queries.p0().get_single_mut() {
+        commands.entity(map_entity).despawn_descendants();
+        commands.entity(map_entity).with_children(|parent| {
+            for row in map_data {
+                for (ch, color_id) in row {
+                    let color = bevy_theme.resolve(&color_id);
+                    parent.spawn((
+                        TextSpan::new(ch.to_string()),
+                        TextColor(color),
+                    ));
+                }
+                parent.spawn(TextSpan::new("\n".to_string()));
+            }
+        });
     }
 
     let compass_lines = overlays::compose_compass_lines(frame_ref, motion.frame);
@@ -392,27 +379,101 @@ fn apply_focus_styles(
     }
 }
 
-/// System that handles `ThemeChangeEvent` and updates the `BevyTheme` resource.
-///
-/// When a theme change event is received, this system:
-/// 1. Loads the requested theme by name (must be "classic" or "accessible")
-/// 2. Creates a new BevyTheme from the loaded ColorTheme
-/// 3. Replaces the BevyTheme resource, which triggers UI updates on next frame
+/// System that updates UI text components with theme-aware colors.
+fn update_ui_text_colors(
+    bevy_theme: Res<BevyTheme>,
+    mut queries: ParamSet<(
+        Query<&mut TextColor, With<MapPanelText>>,
+        Query<&mut TextColor, With<CompassPanelText>>,
+        Query<&mut TextColor, With<HudPanelText>>,
+        Query<&mut TextColor, With<InteractionPanelText>>,
+        Query<&mut TextColor, With<TimelinePanelText>>,
+    )>,
+) {
+    let default_color = TextColor(bevy_theme.get_ui_text_default());
+    let warning_color = TextColor(bevy_theme.get_ui_message_warning());
+    let dim_color = TextColor(bevy_theme.get_ui_text_dim());
+
+    for mut color in queries.p0().iter_mut() {
+        *color = default_color.clone();
+    }
+    for mut color in queries.p1().iter_mut() {
+        *color = default_color.clone();
+    }
+    for mut color in queries.p2().iter_mut() {
+        *color = default_color.clone();
+    }
+    for mut color in queries.p3().iter_mut() {
+        *color = warning_color.clone();
+    }
+    for mut color in queries.p4().iter_mut() {
+        *color = dim_color.clone();
+    }
+}
+
+/// System that handles `ThemeChangeEvent` and starts a transition.
 fn handle_theme_change_events(
     mut events: EventReader<ThemeChangeEvent>,
-    mut bevy_theme: ResMut<BevyTheme>,
+    mut target_theme: ResMut<TargetTheme>,
+    mut progress: ResMut<ThemeTransitionProgress>,
     mut active_theme_name: ResMut<ActiveThemeName>,
 ) {
     for event in events.read() {
         match color_adapter::load_builtin_theme(&event.theme_name) {
             Ok(color_theme) => {
-                *bevy_theme = BevyTheme::new(color_theme);
+                target_theme.0 = Some(BevyTheme::new(color_theme));
+                progress.0 = 0.0;
                 active_theme_name.0 = event.theme_name.clone();
-                info!("Theme changed to: {}", event.theme_name);
+                info!("Starting theme transition to: {}", event.theme_name);
             }
             Err(err) => {
                 error!("Failed to load theme '{}': {}", event.theme_name, err);
             }
+        }
+    }
+}
+
+/// System that monitors the game environment and triggers theme changes.
+fn monitor_environment_changes(
+    runtime: Res<FrontendRuntime>,
+    active_theme: Res<ActiveThemeName>,
+    mut theme_events: EventWriter<ThemeChangeEvent>,
+    mut last_env: Local<Option<omega_core::LegacyEnvironment>>,
+) {
+    if let Some(session) = &runtime.0.session {
+        if last_env.is_none() || last_env.unwrap() != session.state.environment {
+            let recommended = omega_core::color::ColorTheme::name_for_environment(session.state.environment);
+            if active_theme.0 != recommended {
+                info!("Environment change detected: {:?}, recommending theme: {}", session.state.environment, recommended);
+                theme_events.send(ThemeChangeEvent {
+                    theme_name: recommended.to_string(),
+                });
+            }
+            *last_env = Some(session.state.environment);
+        }
+    }
+}
+
+/// System that interpolates colors during a theme transition.
+fn process_theme_transition(
+    time: Res<Time>,
+    mut bevy_theme: ResMut<BevyTheme>,
+    mut target_theme: ResMut<TargetTheme>,
+    mut progress: ResMut<ThemeTransitionProgress>,
+) {
+    if let Some(target) = &target_theme.0 {
+        progress.0 += time.delta_secs() * 2.0; // 0.5s transition
+        info!("Transition progress: {:.2}", progress.0);
+        
+        if progress.0 >= 1.0 {
+            // Transition complete
+            info!("Theme transition complete");
+            *bevy_theme = target.clone();
+            target_theme.0 = None;
+            progress.0 = 0.0;
+        } else {
+            // Interpolate all semantic colors
+            bevy_theme.lerp_towards(target, progress.0);
         }
     }
 }
@@ -427,6 +488,7 @@ fn handle_theme_cycle_key(
     mut theme_events: EventWriter<ThemeChangeEvent>,
 ) {
     if keys.just_pressed(KeyCode::F5) {
+        info!("F5 pressed - cycling theme from: {}", active_theme_name.0);
         let next_theme = match active_theme_name.0.as_str() {
             "classic" => "accessible",
             "accessible" => "classic",
@@ -443,6 +505,8 @@ mod tests {
     #[test]
     fn arcane_cartographer_plugin_inserts_bevy_theme() {
         let mut app = bevy::prelude::App::new();
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<Shader>();
         app.add_plugins(ArcaneCartographerPlugin);
 
         // Verify BevyTheme resource exists
@@ -457,6 +521,8 @@ mod tests {
     #[test]
     fn arcane_cartographer_plugin_inserts_all_resources() {
         let mut app = bevy::prelude::App::new();
+        app.add_plugins(bevy::asset::AssetPlugin::default());
+        app.init_asset::<Shader>();
         app.add_plugins(ArcaneCartographerPlugin);
 
         // Verify all expected resources exist
@@ -508,12 +574,11 @@ mod tests {
         let frame = RenderFrame {
             mode: GameMode::Classic,
             bounds: (10, 10),
-            tiles: vec![crate::RenderTile {
-                x: 5,
-                y: 5,
-                ch: '+',
+            tiles: vec![crate::TileRender {
+                position: omega_core::Position { x: 5, y: 5 },
                 kind: crate::TileKind::TargetCursor,
-                color: crate::RenderTileColor(Color::WHITE),
+                sprite: crate::SpriteRef { atlas: "test".to_string(), index: 0 },
+                glyph: Some('+'),
             }],
             hud_lines: Vec::new(),
             interaction_lines: Vec::new(),
@@ -531,12 +596,11 @@ mod tests {
         let frame = RenderFrame {
             mode: GameMode::Classic,
             bounds: (10, 10),
-            tiles: vec![crate::RenderTile {
-                x: 5,
-                y: 5,
-                ch: 'O',
+            tiles: vec![crate::TileRender {
+                position: omega_core::Position { x: 5, y: 5 },
                 kind: crate::TileKind::ObjectiveMarker,
-                color: crate::RenderTileColor(Color::YELLOW),
+                sprite: crate::SpriteRef { atlas: "test".to_string(), index: 0 },
+                glyph: Some('O'),
             }],
             hud_lines: Vec::new(),
             interaction_lines: Vec::new(),
