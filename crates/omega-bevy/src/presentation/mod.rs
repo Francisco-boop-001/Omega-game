@@ -283,6 +283,7 @@ fn blend_color(left: Color, right: Color, t: f32) -> Color {
 
 fn apply_focus_styles(
     theme: Res<theme::ThemeTokens>,
+    bevy_theme: Res<BevyTheme>,
     focus: Res<UiFocusState>,
     motion: Res<animation::UiMotionState>,
     readability: Res<UiReadabilityConfig>,
@@ -297,6 +298,7 @@ fn apply_focus_styles(
     let pulse = if readability.reduced_motion { 0.0 } else { motion.pulse01 };
     let intensity = (0.45 + focus.urgency * 0.4 + pulse * 0.15).clamp(0.0, 1.0);
     let base_border = if readability.high_contrast { theme.text_focus } else { theme.panel_border };
+    let highlight_color = bevy_theme.get_ui_highlight();
 
     if let Ok((mut background, mut border)) = card_queries.p0().get_single_mut() {
         *background = BackgroundColor(if focus.active_panel == UiPanelFocus::Map {
@@ -305,7 +307,7 @@ fn apply_focus_styles(
             theme.map_frame
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Map {
-            blend_color(base_border, theme.focus_ring, intensity)
+            blend_color(base_border, highlight_color, intensity)
         } else {
             base_border
         });
@@ -318,7 +320,7 @@ fn apply_focus_styles(
             theme.panel_surface_alt
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Compass {
-            blend_color(base_border, theme.objective_glow, intensity)
+            blend_color(base_border, highlight_color, intensity)
         } else {
             base_border
         });
@@ -331,7 +333,7 @@ fn apply_focus_styles(
             theme.panel_surface
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Status {
-            blend_color(base_border, theme.focus_ring, intensity * 0.75)
+            blend_color(base_border, highlight_color, intensity * 0.75)
         } else {
             base_border
         });
@@ -344,7 +346,7 @@ fn apply_focus_styles(
             theme.panel_surface_focus
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Interaction {
-            blend_color(base_border, theme.focus_ring, intensity)
+            blend_color(base_border, highlight_color, intensity)
         } else {
             base_border
         });
@@ -357,7 +359,7 @@ fn apply_focus_styles(
             theme.panel_brass
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Timeline {
-            blend_color(base_border, theme.focus_ring, intensity * 0.7)
+            blend_color(base_border, highlight_color, intensity * 0.7)
         } else {
             base_border
         });
