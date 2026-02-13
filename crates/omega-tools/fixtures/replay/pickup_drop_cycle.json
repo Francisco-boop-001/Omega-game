@@ -1,0 +1,84 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "legacy_handcrafted",
+  "name": "pickup_drop_cycle",
+  "family": "inventory",
+  "tags": [
+    "critical_path",
+    "frontend_shared",
+    "inventory",
+    "perf_smoke",
+    "save_compat"
+  ],
+  "seed": 7,
+  "initial": {
+    "bounds": {
+      "width": 5,
+      "height": 5
+    },
+    "player_position": {
+      "x": 2,
+      "y": 2
+    },
+    "player_stats": null,
+    "inventory_capacity": 1,
+    "monsters": [],
+    "ground_items": [
+      {
+        "name": "potion",
+        "position": {
+          "x": 2,
+          "y": 2
+        }
+      }
+    ],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    "pickup",
+    {
+      "drop": {
+        "slot": 0
+      }
+    }
+  ],
+  "expected": {
+    "turn": 2,
+    "minutes": 15,
+    "player_position": {
+      "x": 2,
+      "y": 2
+    },
+    "player_hp": 20,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 1,
+    "required_event_kinds": [
+      "action_points_spent",
+      "dropped",
+      "picked_up",
+      "progression_updated",
+      "turn_advanced"
+    ],
+    "world_mode": "DungeonCity",
+    "guild_rank": 0,
+    "priest_rank": 0,
+    "alignment": "Neutral",
+    "quest_state": "NotStarted",
+    "total_winner_unlocked": false,
+    "gold": 250,
+    "bank_gold": 0,
+    "food": 3,
+    "known_site_count": 0,
+    "ending": "None",
+    "high_score_eligible": true
+  }
+}

@@ -42,7 +42,7 @@ pub struct StyleCache {
     /// Precomputed map from ColorId to Style.
     cache: HashMap<ColorId, Style>,
     /// Terminal color capability level.
-    capability: ColorCapability,
+    _capability: ColorCapability,
     /// Whether colors are enabled (false if NO_COLOR or capability is None).
     colors_enabled: bool,
 }
@@ -82,7 +82,7 @@ impl StyleCache {
             }
         }
 
-        Self { cache, capability, colors_enabled }
+        Self { cache, _capability: capability, colors_enabled }
     }
 
     /// Returns the cached Style for a ColorId, or Style::default() if not found.
@@ -116,92 +116,81 @@ impl StyleCache {
 /// This function explicitly enumerates every ColorId variant to ensure
 /// complete coverage when building the style cache.
 fn all_color_ids() -> Vec<ColorId> {
-    let mut ids = Vec::new();
-
-    // Entity::Player (1 variant)
-    ids.push(ColorId::Entity(EntityColorId::Player));
-
-    // Entity::Monster (8 variants)
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileUndead)));
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileBeast)));
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid)));
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileMagical)));
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileConstruct)));
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileDragon)));
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::Neutral)));
-    ids.push(ColorId::Entity(EntityColorId::Monster(MonsterColorId::Friendly)));
-
-    // Entity::Item (5 variants)
-    ids.push(ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Common)));
-    ids.push(ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Uncommon)));
-    ids.push(ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Rare)));
-    ids.push(ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Epic)));
-    ids.push(ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Legendary)));
-
-    // Entity::Terrain (13 variants)
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallStone)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallWood)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallMetal)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallBrick)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorStone)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorWood)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorDirt)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorGrass)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Water)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Lava)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Door)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsUp)));
-    ids.push(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsDown)));
-
-    // UI (16 variants)
-    ids.push(ColorId::Ui(UiColorId::HealthHigh));
-    ids.push(ColorId::Ui(UiColorId::HealthMedium));
-    ids.push(ColorId::Ui(UiColorId::HealthLow));
-    ids.push(ColorId::Ui(UiColorId::Mana));
-    ids.push(ColorId::Ui(UiColorId::Stamina));
-    ids.push(ColorId::Ui(UiColorId::Experience));
-    ids.push(ColorId::Ui(UiColorId::Highlight));
-    ids.push(ColorId::Ui(UiColorId::Selection));
-    ids.push(ColorId::Ui(UiColorId::Cursor));
-    ids.push(ColorId::Ui(UiColorId::TextDefault));
-    ids.push(ColorId::Ui(UiColorId::TextDim));
-    ids.push(ColorId::Ui(UiColorId::TextBold));
-    ids.push(ColorId::Ui(UiColorId::MessageInfo));
-    ids.push(ColorId::Ui(UiColorId::MessageWarning));
-    ids.push(ColorId::Ui(UiColorId::MessageDanger));
-    ids.push(ColorId::Ui(UiColorId::MessageSuccess));
-
-    // Effect (11 variants)
-    ids.push(ColorId::Effect(EffectColorId::Fire));
-    ids.push(ColorId::Effect(EffectColorId::Ice));
-    ids.push(ColorId::Effect(EffectColorId::Lightning));
-    ids.push(ColorId::Effect(EffectColorId::Poison));
-    ids.push(ColorId::Effect(EffectColorId::Acid));
-    ids.push(ColorId::Effect(EffectColorId::MagicArcane));
-    ids.push(ColorId::Effect(EffectColorId::MagicHoly));
-    ids.push(ColorId::Effect(EffectColorId::MagicDark));
-    ids.push(ColorId::Effect(EffectColorId::Blood));
-    ids.push(ColorId::Effect(EffectColorId::Impact));
-    ids.push(ColorId::Effect(EffectColorId::Shield));
-
-    // Environment (5 variants)
-    ids.push(ColorId::Environment(EnvironmentColorId::LightTorch));
-    ids.push(ColorId::Environment(EnvironmentColorId::LightLantern));
-    ids.push(ColorId::Environment(EnvironmentColorId::LightMagic));
-    ids.push(ColorId::Environment(EnvironmentColorId::Darkness));
-    ids.push(ColorId::Environment(EnvironmentColorId::Fog));
-
-    // Total: 1 + 8 + 5 + 13 + 16 + 11 + 5 = 59 variants
-    // Note: The plan mentioned 63, but counting all enum variants gives 59.
-    // This is the complete set of all ColorId variants.
-    ids
+    vec![
+        // Entity::Player (1 variant)
+        ColorId::Entity(EntityColorId::Player),
+        // Entity::Monster (8 variants)
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileUndead)),
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileBeast)),
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid)),
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileMagical)),
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileConstruct)),
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileDragon)),
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::Neutral)),
+        ColorId::Entity(EntityColorId::Monster(MonsterColorId::Friendly)),
+        // Entity::Item (5 variants)
+        ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Common)),
+        ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Uncommon)),
+        ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Rare)),
+        ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Epic)),
+        ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Legendary)),
+        // Entity::Terrain (13 variants)
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallStone)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallWood)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallMetal)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallBrick)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorStone)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorWood)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorDirt)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorGrass)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Water)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Lava)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Door)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsUp)),
+        ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsDown)),
+        // UI (16 variants)
+        ColorId::Ui(UiColorId::HealthHigh),
+        ColorId::Ui(UiColorId::HealthMedium),
+        ColorId::Ui(UiColorId::HealthLow),
+        ColorId::Ui(UiColorId::Mana),
+        ColorId::Ui(UiColorId::Stamina),
+        ColorId::Ui(UiColorId::Experience),
+        ColorId::Ui(UiColorId::Highlight),
+        ColorId::Ui(UiColorId::Selection),
+        ColorId::Ui(UiColorId::Cursor),
+        ColorId::Ui(UiColorId::TextDefault),
+        ColorId::Ui(UiColorId::TextDim),
+        ColorId::Ui(UiColorId::TextBold),
+        ColorId::Ui(UiColorId::MessageInfo),
+        ColorId::Ui(UiColorId::MessageWarning),
+        ColorId::Ui(UiColorId::MessageDanger),
+        ColorId::Ui(UiColorId::MessageSuccess),
+        // Effect (11 variants)
+        ColorId::Effect(EffectColorId::Fire),
+        ColorId::Effect(EffectColorId::Ice),
+        ColorId::Effect(EffectColorId::Lightning),
+        ColorId::Effect(EffectColorId::Poison),
+        ColorId::Effect(EffectColorId::Acid),
+        ColorId::Effect(EffectColorId::MagicArcane),
+        ColorId::Effect(EffectColorId::MagicHoly),
+        ColorId::Effect(EffectColorId::MagicDark),
+        ColorId::Effect(EffectColorId::Blood),
+        ColorId::Effect(EffectColorId::Impact),
+        ColorId::Effect(EffectColorId::Shield),
+        // Environment (5 variants)
+        ColorId::Environment(EnvironmentColorId::LightTorch),
+        ColorId::Environment(EnvironmentColorId::LightLantern),
+        ColorId::Environment(EnvironmentColorId::LightMagic),
+        ColorId::Environment(EnvironmentColorId::Darkness),
+        ColorId::Environment(EnvironmentColorId::Fog),
+    ]
 }
 
 /// Converts a ColorSpec to a ratatui Color.
 ///
 /// Maps omega-core's color representations to ratatui's Color enum,
 /// handling RGB, indexed (256-color), and ANSI 16-color formats.
-fn colorspec_to_ratatui(spec: &ColorSpec) -> Color {
+pub fn colorspec_to_ratatui(spec: &ColorSpec) -> Color {
     match spec {
         ColorSpec::Rgb { r, g, b } => Color::Rgb(*r, *g, *b),
         ColorSpec::Indexed(idx) => Color::Indexed(*idx),
@@ -229,7 +218,6 @@ fn colorspec_to_ratatui(spec: &ColorSpec) -> Color {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use omega_core::color::HexColor;
 
     fn create_minimal_theme() -> ColorTheme {
         // Create a minimal theme for testing using from_toml

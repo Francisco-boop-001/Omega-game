@@ -1,0 +1,53 @@
+name: m5-daily
+
+on:
+  schedule:
+    - cron: "30 10 * * *"
+  workflow_dispatch:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Run Milestone 5 gate (strict)
+        shell: pwsh
+        run: |
+          ./scripts/run-m5-gate.ps1 -StrictArtifactMode
+      - name: Upload daily artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: m5-daily-${{ github.run_id }}
+          if-no-files-found: error
+          path: |
+            target/m5-gate-check-summary.md
+            target/m5-artifact-summary.json
+            target/m5-artifact-summary.md
+            target/m5-e2e-journey-report.json
+            target/m5-e2e-journey-report.md
+            target/m5-lifecycle-parity-report.json
+            target/m5-lifecycle-parity-report.md
+            target/m5-boot-reliability.json
+            target/m5-boot-reliability.md
+            target/m5-perf-budget-report.json
+            target/m5-perf-budget-report.md
+            target/m5-frame-time-report.json
+            target/m5-frame-time-report.md
+            target/m5-security-audit.json
+            target/m5-fuzz-weekly-report.md
+            target/m5-release-operations-checklist.md
+            target/m4-gate-check-summary.md
+            target/ws-d-regression-dashboard.json
+            target/ws-d-regression-dashboard.md
+            target/ws-d-determinism-report.json
+            target/ws-d-determinism-report.md
+            target/frontend-command-parity.json
+            target/frontend-command-parity.md
+            target/save-compat-report.json
+            target/save-compat-report.md
+            target/m5-m4-baseline-freeze.json
+            target/m5-m4-baseline-freeze.md

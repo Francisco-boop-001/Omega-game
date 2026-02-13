@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "payload": {
+    "state": {
+      "bounds": { "width": 10, "height": 10 },
+      "clock": { "turn": 1, "minutes": 6, "minutes_per_turn": 6 },
+      "player": {
+        "position": { "x": 5, "y": 5 },
+        "stats": { "hp": 20, "max_hp": 20, "attack_min": 2, "attack_max": 6, "defense": 1 },
+        "inventory": [],
+        "inventory_capacity": 12
+      },
+      "monsters": [],
+      "ground_items": [],
+      "log": [],
+      "next_entity_id": 1,
+      "next_item_id": 1
+    }
+  },
+  "metadata": {
+    "schema": "omega-save",
+    "saved_turn": 1,
+    "saved_minutes": 6
+  }
+}

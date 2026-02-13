@@ -1,0 +1,34 @@
+name: m4-daily
+
+on:
+  schedule:
+    - cron: "0 10 * * *"
+  workflow_dispatch:
+
+jobs:
+  gate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Run Milestone 4 gate
+        shell: pwsh
+        run: |
+          ./scripts/run-m4-gate.ps1
+      - name: Upload daily artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-daily-${{ github.run_id }}
+          path: |
+            target/m4-gate-check-summary.md
+            target/ws-d-regression-dashboard.json
+            target/ws-d-regression-dashboard.md
+            target/ws-d-determinism-report.json
+            target/ws-d-determinism-report.md
+            target/frontend-command-parity.json
+            target/frontend-command-parity.md
+            target/save-compat-report.json
+            target/save-compat-report.md

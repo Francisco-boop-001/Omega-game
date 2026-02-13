@@ -38,12 +38,53 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::fs;
+use std::path::Path;
+use thiserror::Error;
 
 use super::color_id::{
-    ColorId, EffectColorId, EntityColorId, ItemRarityColorId, MonsterColorId, TerrainColorId,
-    UiColorId,
+    ColorId, EntityColorId,
 };
 use super::hex_color::HexColor;
+
+/// Errors that can occur when working with color themes.
+#[derive(Error, Debug)]
+pub enum ThemeError {
+    /// Failed to parse TOML.
+    #[error("Failed to parse TOML: {0}")]
+    TomlParse(#[from] toml::de::Error),
+
+    /// IO error while reading theme file.
+    #[error("IO error: {0}")]
+    Io(#[from] std::io::Error),
+
+    /// Could not resolve a color reference.
+    #[error("Unresolved reference: '{0}'")]
+    UnresolvedReference(String),
+
+    /// Circular reference detected.
+    #[error("Circular reference detected: '{0}'")]
+    CircularReference(String),
+
+    /// Missing required section in theme.
+    #[error("Missing required section: '{0}'")]
+    MissingSection(String),
+
+    /// Invalid color value.
+    #[error("Invalid color value in section '{section}', key '{key}': {reason}")]
+    InvalidColorValue {
+        /// The section where the error occurred.
+        section: String,
+        /// The key with the invalid value.
+        key: String,
+        /// The reason the value is invalid.
+        reason: String,
+    },
+
+    /// Missing required ColorId mapping.
+    #[error("Missing required ColorId mapping: '{0}'")]
+    MissingColorId(String),
+}
 
 /// Metadata for a color theme.
 ///
@@ -151,6 +192,8 @@ pub enum ColorRef {
     },
 }
 
+use super::animation::AnimationKind;
+
 /// A complete color theme definition.
 ///
 /// Combines metadata, base palette, semantic mappings, and
@@ -170,6 +213,9 @@ pub struct ColorTheme {
     pub ui: HashMap<String, ColorRef>,
     /// Effect color assignments (spells, particles).
     pub effect: HashMap<String, ColorRef>,
+    /// Optional animations for specific ColorIds or semantic keys.
+    #[serde(default)]
+    pub animations: HashMap<String, AnimationKind>,
 }
 
 impl ColorTheme {
@@ -199,12 +245,12 @@ impl ColorTheme {
         let key = color_id_to_key(color_id);
 
         // Look up in appropriate usage category
-        let color_ref = if key.starts_with("entity.") {
-            self.entity.get(&key[7..]) // Strip "entity." prefix
-        } else if key.starts_with("ui.") {
-            self.ui.get(&key[3..]) // Strip "ui." prefix
-        } else if key.starts_with("effect.") {
-            self.effect.get(&key[7..]) // Strip "effect." prefix
+        let color_ref = if let Some(stripped) = key.strip_prefix("entity.") {
+            self.entity.get(stripped)
+        } else if let Some(stripped) = key.strip_prefix("ui.") {
+            self.ui.get(stripped)
+        } else if let Some(stripped) = key.strip_prefix("effect.") {
+            self.effect.get(stripped)
         } else {
             None
         };
@@ -219,12 +265,34 @@ impl ColorTheme {
         }
     }
 
+    /// Resolves an animated color for a specific ColorId at a given time.
+    pub fn resolve_animated(&self, color_id: &ColorId, time: f32) -> super::color_spec::ColorSpec {
+        let key = color_id_to_key(color_id);
+        
+        // 1. Check if there's a specific animation for this key
+        if let Some(animation) = self.animations.get(&key) {
+            return animation.resolve_at(time);
+        }
+
+        // 2. Resolve to static colors first
+        if let Some((fg, _bg)) = self.resolve(color_id) {
+            return super::color_spec::ColorSpec::Rgb { 
+                r: fg.to_rgb().0, 
+                g: fg.to_rgb().1, 
+                b: fg.to_rgb().2 
+            };
+        }
+
+        // Fallback to default spec
+        super::color_spec::ColorSpec::default()
+    }
+
     /// Resolves a reference path to concrete colors.
     ///
     /// Supports paths like:
     /// - `"base.red"` - Direct base palette lookup
     /// - `"semantic.danger"` - Semantic mapping lookup (may chain to base)
-    fn resolve_reference(&self, ref_path: &str) -> Option<(HexColor, HexColor)> {
+    pub fn resolve_reference(&self, ref_path: &str) -> Option<(HexColor, HexColor)> {
         // Parse "base.red" or "semantic.danger"
         let parts: Vec<&str> = ref_path.split('.').collect();
         if parts.len() != 2 {
@@ -278,6 +346,208 @@ impl ColorTheme {
 
         color.map(|c| (c, self.base.black)) // Default bg to black
     }
+
+    /// Loads a ColorTheme from a TOML string.
+    ///
+    /// This method parses the TOML string into a ColorTheme and
+    /// validates that all references can be resolved.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use omega_core::color::ColorTheme;
+    ///
+    /// let toml_str = r##"
+    /// [meta]
+    /// name = "Test"
+    /// author = "Test"
+    /// description = "Test"
+    /// version = "1.0.0"
+    /// variant = "dark"
+    /// min_engine_version = "0.1.0"
+    ///
+    /// [base]
+    /// red = "#FF0000"
+    /// green = "#00FF00"
+    /// blue = "#0000FF"
+    /// yellow = "#FFFF00"
+    /// cyan = "#00FFFF"
+    /// magenta = "#FF00FF"
+    /// white = "#FFFFFF"
+    /// black = "#000000"
+    /// gray = "#808080"
+    ///
+    /// [semantic]
+    /// danger = { ref = "base.red" }
+    /// success = { ref = "base.green" }
+    /// info = { ref = "base.blue" }
+    /// warning = { ref = "base.yellow" }
+    /// magic = { ref = "base.magenta" }
+    /// neutral = { ref = "base.gray" }
+    ///
+    /// [entity]
+    /// [ui]
+    /// [effect]
+    /// "##;
+    ///
+    /// let theme = ColorTheme::from_toml(toml_str).unwrap();
+    /// ```
+    pub fn from_toml(toml_str: &str) -> Result<Self, ThemeError> {
+        let theme: ColorTheme = toml::from_str(toml_str)?;
+        theme.validate()?;
+        Ok(theme)
+    }
+
+    /// Loads a ColorTheme from a file.
+    ///
+    /// Reads the file at the given path and parses it as TOML.
+    ///
+    /// # Example
+    ///
+    /// ```no_run
+    /// use std::path::Path;
+    /// use omega_core::color::ColorTheme;
+    ///
+    /// let theme = ColorTheme::load_from_file(Path::new("themes/dark.toml")).unwrap();
+    /// ```
+    pub fn load_from_file(path: &Path) -> Result<Self, ThemeError> {
+        let content = fs::read_to_string(path)?;
+        Self::from_toml(&content)
+    }
+
+    /// Validates the theme's structure and references.
+    ///
+    /// Checks that:
+    /// - Required sections are present
+    /// - All color references can be resolved
+    /// - No circular references exist
+    ///
+    /// Returns Ok(()) if the theme is valid, or a ThemeError otherwise.
+    pub fn validate(&self) -> Result<(), ThemeError> {
+        // Check required sections
+        if self.meta.name.is_empty() {
+            return Err(ThemeError::MissingSection("meta.name".to_string()));
+        }
+
+        // Validate all references can be resolved
+        let mut visited = std::collections::HashSet::new();
+
+        // Check entity references
+        for (key, color_ref) in &self.entity {
+            if let ColorRef::Reference { ref_path } = color_ref {
+                self.resolve_ref_check(ref_path, &mut visited).map_err(|e| {
+                    ThemeError::UnresolvedReference(format!("entity.{}: {}", key, e))
+                })?;
+            }
+        }
+
+        // Check UI references
+        for (key, color_ref) in &self.ui {
+            if let ColorRef::Reference { ref_path } = color_ref {
+                self.resolve_ref_check(ref_path, &mut visited).map_err(|e| {
+                    ThemeError::UnresolvedReference(format!("ui.{}: {}", key, e))
+                })?;
+            }
+        }
+
+        // Check effect references
+        for (key, color_ref) in &self.effect {
+            if let ColorRef::Reference { ref_path } = color_ref {
+                self.resolve_ref_check(ref_path, &mut visited).map_err(|e| {
+                    ThemeError::UnresolvedReference(format!("effect.{}: {}", key, e))
+                })?;
+            }
+        }
+
+        Ok(())
+    }
+
+    /// Checks that a reference can be resolved.
+    ///
+    /// This internal method validates that:
+    /// - The reference path format is valid (category.name)
+    /// - The referenced color exists
+    /// - There are no circular references
+    fn resolve_ref_check(
+        &self,
+        ref_path: &str,
+        visited: &mut std::collections::HashSet<String>,
+    ) -> Result<(), String> {
+        // Check for circular reference
+        if !visited.insert(ref_path.to_string()) {
+            return Err(format!("Circular reference: {}", ref_path));
+        }
+
+        let parts: Vec<&str> = ref_path.split('.').collect();
+        if parts.len() != 2 {
+            return Err(format!("Invalid reference format: {}", ref_path));
+        }
+
+        match parts[0] {
+            "base" => {
+                // Check if base color exists
+                if self.get_base_color(parts[1]).is_none() {
+                    return Err(format!("Base color '{}' not found", parts[1]));
+                }
+            }
+            "semantic" => {
+                // Check semantic color and follow if it's a reference
+                let semantic_ref = match parts[1] {
+                    "danger" => &self.semantic.danger,
+                    "success" => &self.semantic.success,
+                    "info" => &self.semantic.info,
+                    "warning" => &self.semantic.warning,
+                    "magic" => &self.semantic.magic,
+                    "neutral" => &self.semantic.neutral,
+                    _ => return Err(format!("Unknown semantic color: {}", parts[1])),
+                };
+
+                if let ColorRef::Reference { ref_path: next_ref } = semantic_ref {
+                    self.resolve_ref_check(next_ref, visited)?;
+                }
+            }
+            "entity" | "ui" | "effect" => {
+                let map = match parts[0] {
+                    "entity" => &self.entity,
+                    "ui" => &self.ui,
+                    "effect" => &self.effect,
+                    _ => unreachable!(),
+                };
+                
+                if let Some(color_ref) = map.get(parts[1]) {
+                    if let ColorRef::Reference { ref_path: next_ref } = color_ref {
+                        self.resolve_ref_check(next_ref, visited)?;
+                    }
+                } else {
+                    return Err(format!("Unknown {} color: {}", parts[0], parts[1]));
+                }
+            }
+            _ => return Err(format!("Unknown reference category: {}", parts[0])),
+        }
+
+        visited.remove(ref_path);
+        Ok(())
+    }
+
+    /// Resolves a ColorId to concrete colors, returning an error on failure.
+    ///
+    /// This is a convenience method that wraps `resolve` and returns a
+    /// ThemeError instead of Option when the color cannot be resolved.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use omega_core::color::{ColorId, ColorTheme, EntityColorId};
+    ///
+    /// // Assuming theme is loaded
+    /// // let theme: ColorTheme = ...;
+    /// // let color_id = ColorId::Entity(EntityColorId::Player);
+    /// // let (fg, bg) = theme.resolve_color(&color_id)?;
+    /// ```
+    pub fn resolve_color(&self, color_id: &ColorId) -> Result<(HexColor, HexColor), ThemeError> {
+        self.resolve(color_id)
+            .ok_or_else(|| ThemeError::UnresolvedReference(format!("{:?}", color_id)))
+    }
 }
 
 /// Converts a `ColorId` to a dot-notation string key.
@@ -293,7 +563,19 @@ fn color_id_to_key(color_id: &ColorId) -> String {
     }
 }
 
-/// Converts an `EntityColorId` to a hierarchical key string.
+use crate::LegacyEnvironment;
+
+impl ColorTheme {
+    /// Maps a game environment to a recommended theme name.
+    pub fn name_for_environment(env: LegacyEnvironment) -> &'static str {
+        match env {
+            LegacyEnvironment::City | LegacyEnvironment::Village => "classic",
+            LegacyEnvironment::Sewers | LegacyEnvironment::Caves | LegacyEnvironment::Castle => "classic", // Could be a dark theme
+            LegacyEnvironment::Abyss | LegacyEnvironment::Volcano => "classic", // Could be a hell theme
+            _ => "classic",
+        }
+    }
+}
 ///
 /// Creates dot-notation paths like:
 /// - `"player"`
@@ -312,6 +594,9 @@ fn entity_to_key(entity: &EntityColorId) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use super::super::color_id::{
+        MonsterColorId, ItemRarityColorId, UiColorId, TerrainColorId, EffectColorId,
+    };
 
     /// Creates a minimal valid theme for testing.
     fn create_test_theme() -> ColorTheme {
@@ -400,6 +685,7 @@ mod tests {
                 map
             },
             effect: HashMap::new(),
+            animations: HashMap::new(),
         }
     }
 

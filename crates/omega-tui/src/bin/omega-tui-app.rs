@@ -423,7 +423,8 @@ fn main() -> Result<()> {
         println!("=== Omega TUI Launcher ===");
         println!("1. New game (content bootstrap)");
         println!("2. Load game from {}", save_slot.display());
-        println!("3. Quit");
+        println!("3. Wizard Arena (Test Chamber)");
+        println!("4. Quit");
 
         let choice = read_menu_choice()?;
         match choice.as_str() {
@@ -471,7 +472,23 @@ fn main() -> Result<()> {
                     }
                 }
             }
-            "3" => break,
+            "3" => {
+                let (bootstrap, _) = omega_content::bootstrap_wizard_arena()?;
+                let initial = bootstrap.clone();
+                let final_state = run_ratatui_app_themed(
+                    seed,
+                    initial,
+                    bootstrap,
+                    save_slot.clone(),
+                    theme.clone(),
+                )?;
+                println!(
+                    "Arena session ended: HP={}/{}",
+                    final_state.player.stats.hp, final_state.player.stats.max_hp
+                );
+                seed = seed.wrapping_add(1);
+            }
+            "4" => break,
             _ => println!("Unknown option."),
         }
     }

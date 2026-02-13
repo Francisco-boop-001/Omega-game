@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use bevy::ui::RelativeCursorPosition;
 
 use super::bevy_theme::BevyTheme;
 use super::theme::{UiChromeColors, UiLayoutTokens};
@@ -101,6 +102,7 @@ pub fn setup_arcane_scene(
                         ..default()
                     },
                     MapPanelCard,
+                    RelativeCursorPosition::default(),
                     BackgroundColor(chrome.map_frame),
                     BorderColor(chrome.panel_border),
                 ))
@@ -211,7 +213,7 @@ pub fn setup_arcane_scene(
                             },
                             InteractionPanelCard,
                             BackgroundColor(chrome.panel_surface_focus),
-                            BorderColor(chrome.focus_ring),
+                            BorderColor(bevy_theme.get_ui_highlight()),
                         ))
                         .with_children(|interaction_card| {
                             interaction_card.spawn((

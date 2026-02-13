@@ -1,0 +1,13 @@
+{
+  "project_name": "Wizard's Arena",
+  "stack": {
+    "engine": "Bevy 0.15",
+    "ui": "bevy_egui",
+    "inspector": "bevy_inspector_egui"
+  },
+  "conventions": {
+    "state_management": "AppState::TestChamber",
+    "cleanup": "StateScoped",
+    "ui_style": "egui standard"
+  }
+}

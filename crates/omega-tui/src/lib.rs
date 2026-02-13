@@ -18,6 +18,7 @@ use omega_core::{
     active_wizard_interaction_help_hint, active_wizard_interaction_prompt, modal_input_profile,
     objective_map_hints, renderable_timeline_lines, sanitize_legacy_prompt_noise, step,
 };
+use omega_core::color::AnimationKind;
 use omega_save::{decode_state_json_for_mode, encode_json};
 use ratatui::backend::{CrosstermBackend, TestBackend};
 use ratatui::layout::{Constraint, Direction as LayoutDirection, Layout};
@@ -31,7 +32,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 pub mod color_adapter;
-pub use color_adapter::StyleCache;
+pub use color_adapter::{StyleCache, colorspec_to_ratatui};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum UiKey {
@@ -71,6 +72,7 @@ pub struct App {
     pub theme: omega_core::color::ColorTheme,
     pub style_cache: StyleCache,
     pub capability: omega_core::color::ColorCapability,
+    pub animation_time: f32,
     rng: DeterministicRng,
     seed: u64,
     restart_count: u64,
@@ -118,6 +120,28 @@ impl App {
         // Detect terminal capability
         let capability = omega_core::color::ColorCapability::detect();
 
+        // Add default animations
+        let mut theme = theme;
+        let (hp_low_fg, _) = theme.resolve(&omega_core::color::ColorId::Ui(omega_core::color::UiColorId::HealthLow))
+            .unwrap_or((omega_core::color::HexColor::from_hex("#FF0000").unwrap(), omega_core::color::HexColor::from_hex("#000000").unwrap()));
+        
+        theme.animations.insert("ui.healthlow".to_string(), AnimationKind::Flash {
+            colors: (
+                hp_low_fg.into(),
+                omega_core::color::ColorSpec::Rgb { r: 0, g: 0, b: 0 }
+            ),
+            frequency: 2.0,
+        });
+
+        let (highlight_fg, _) = theme.resolve(&omega_core::color::ColorId::Ui(omega_core::color::UiColorId::Highlight))
+            .unwrap_or((omega_core::color::HexColor::from_hex("#FFFF00").unwrap(), omega_core::color::HexColor::from_hex("#000000").unwrap()));
+
+        theme.animations.insert("ui.highlight".to_string(), AnimationKind::Pulse {
+            base: highlight_fg.into(),
+            target: omega_core::color::ColorSpec::Rgb { r: 255, g: 255, b: 255 },
+            frequency: 1.0,
+        });
+
         // Create style cache
         let style_cache = StyleCache::new(&theme, capability);
 
@@ -131,6 +155,7 @@ impl App {
             theme,
             style_cache,
             capability,
+            animation_time: 0.0,
             rng: DeterministicRng::seeded(seed),
             seed,
             restart_count: 0,
@@ -376,7 +401,18 @@ impl App {
             }
             UiAction::Dispatch(command) => {
                 let was_in_progress = self.state.status == SessionStatus::InProgress;
+                let old_env = self.state.environment;
                 let outcome = step(&mut self.state, command, &mut self.rng);
+                
+                // Check for environment change
+                if old_env != self.state.environment {
+                    let next_theme = omega_core::color::ColorTheme::name_for_environment(self.state.environment);
+                    if self.theme.meta.name.to_lowercase() != next_theme
+                        && let Ok(theme) = color_adapter::load_builtin_theme(next_theme) {
+                            self.switch_theme(theme);
+                        }
+                }
+
                 if was_in_progress && self.state.status != SessionStatus::InProgress {
                     let prompt = match self.state.status {
                         SessionStatus::Lost => {
@@ -512,12 +548,14 @@ pub fn run_ratatui_app_with_options(
     while !app.quit {
         terminal.draw(|frame| render_frame(frame, &app))?;
 
-        if event::poll(Duration::from_millis(100))? {
+        let poll_duration = Duration::from_millis(50);
+        if event::poll(poll_duration)? {
             let maybe_key = read_ui_key()?;
             if let Some(key) = maybe_key {
                 app.handle_key(key);
             }
         }
+        app.animation_time += poll_duration.as_secs_f32();
     }
 
     restore_terminal(&mut terminal)?;
@@ -538,12 +576,14 @@ pub fn run_ratatui_app_themed(
     while !app.quit {
         terminal.draw(|frame| render_frame(frame, &app))?;
 
-        if event::poll(Duration::from_millis(100))? {
+        let poll_duration = Duration::from_millis(50);
+        if event::poll(poll_duration)? {
             let maybe_key = read_ui_key()?;
             if let Some(key) = maybe_key {
                 app.handle_key(key);
             }
         }
+        app.animation_time += poll_duration.as_secs_f32();
     }
 
     restore_terminal(&mut terminal)?;
@@ -614,7 +654,7 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         .block(Block::default().title("MAP").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
-    let status = Paragraph::new(render_status_panel(&app.state, &app.style_cache, &app.save_slot, &app.theme.meta.name))
+    let status = Paragraph::new(render_status_panel(&app.state, &app.style_cache, &app.save_slot, &app.theme, app.animation_time))
         .block(Block::default().title("STATUS").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
@@ -627,7 +667,7 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         .constraints([Constraint::Length(6), Constraint::Min(5)])
         .split(bottom[1]);
 
-    let interaction = Paragraph::new(render_interaction_panel(&app.state, &app.style_cache))
+    let interaction = Paragraph::new(render_interaction_panel(&app.state, &app.style_cache, &app.theme, app.animation_time))
         .block(Block::default().title("INTERACTION").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
@@ -910,7 +950,8 @@ fn render_status_panel(
     state: &GameState,
     style_cache: &StyleCache,
     save_slot: &Path,
-    theme_name: &str,
+    theme: &omega_core::color::ColorTheme,
+    time: f32,
 ) -> Vec<Line<'static>> {
     use omega_core::color::{ColorId, UiColorId};
 
@@ -951,7 +992,11 @@ fn render_status_panel(
     } else {
         ColorId::Ui(UiColorId::HealthLow)
     };
-    let hp_style = style_cache.get_fg(&hp_color);
+
+    // Use animated color for health
+    let hp_spec = theme.resolve_animated(&hp_color, time);
+    let hp_style = Style::default().fg(colorspec_to_ratatui(&hp_spec));
+
     let mana_style = style_cache.get_fg(&ColorId::Ui(UiColorId::Mana));
 
     // State color (Lost/Won)
@@ -1012,7 +1057,7 @@ fn render_status_panel(
         ]),
         Line::from(Span::styled(format!("Slot: {}", save_slot.display()), text_default)),
         Line::from(Span::styled(
-            format!("Theme: {} (F10 to switch)", theme_name),
+            format!("Theme: {} (F10 to switch)", theme.meta.name),
             text_default,
         )),
         Line::from(Span::styled(
@@ -1191,7 +1236,12 @@ fn render_inventory_panel(state: &GameState, style_cache: &StyleCache) -> Vec<Li
     lines
 }
 
-fn render_interaction_panel(state: &GameState, style_cache: &StyleCache) -> Vec<Line<'static>> {
+fn render_interaction_panel(
+    state: &GameState,
+    style_cache: &StyleCache,
+    theme: &omega_core::color::ColorTheme,
+    time: f32,
+) -> Vec<Line<'static>> {
     use omega_core::color::{ColorId, UiColorId};
 
     let active_prompt = active_wizard_interaction_prompt(state)
@@ -1213,13 +1263,16 @@ fn render_interaction_panel(state: &GameState, style_cache: &StyleCache) -> Vec<
         .or_else(|| active_item_prompt_help_hint(state))
         .or_else(|| active_site_interaction_help_hint(state));
 
-    let highlight = style_cache.get_fg(&ColorId::Ui(UiColorId::Highlight));
     let text_dim = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDim));
     let text_bold = style_cache.get_fg(&ColorId::Ui(UiColorId::TextBold));
 
+    // Animated highlight for active prompts
+    let highlight_spec = theme.resolve_animated(&ColorId::Ui(UiColorId::Highlight), time);
+    let highlight_style = Style::default().fg(colorspec_to_ratatui(&highlight_spec));
+
     let mut lines = Vec::new();
     if let Some(prompt) = active_prompt {
-        lines.push(Line::from(Span::styled(prompt, highlight)));
+        lines.push(Line::from(Span::styled(prompt, highlight_style)));
     } else {
         lines.push(Line::from(Span::styled("No active interaction.", text_dim)));
     }
@@ -1699,7 +1752,7 @@ mod tests {
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
-        let interaction_lines = render_interaction_panel(&state, &cache);
+        let interaction_lines = render_interaction_panel(&state, &cache, &theme, 0.0);
         let interaction = lines_to_string(interaction_lines);
         let rendered_log_lines = render_log_panel(&state, &cache, None);
         let rendered_log = lines_to_string(rendered_log_lines);
@@ -1722,7 +1775,7 @@ mod tests {
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
-        let rendered_lines = render_status_panel(&state, &cache, &slot, "Test");
+        let rendered_lines = render_status_panel(&state, &cache, &slot, &theme, 0.0);
         let rendered = lines_to_string(rendered_lines);
 
         assert!(rendered.contains("Interaction: merc guild menu"));
@@ -1737,7 +1790,7 @@ mod tests {
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
-        let rendered_lines = render_status_panel(&state, &cache, &slot, "Test");
+        let rendered_lines = render_status_panel(&state, &cache, &slot, &theme, 0.0);
         let rendered = lines_to_string(rendered_lines);
         assert!(rendered.contains("Mana: "));
     }
@@ -1754,12 +1807,12 @@ mod tests {
         let cache = StyleCache::new(&theme, capability);
 
         state.mode = GameMode::Classic;
-        let classic_lines = render_status_panel(&state, &cache, &slot, "Test");
+        let classic_lines = render_status_panel(&state, &cache, &slot, &theme, 0.0);
         let classic = lines_to_string(classic_lines);
         assert!(!classic.contains("Objective:"));
 
         state.mode = GameMode::Modern;
-        let modern_lines = render_status_panel(&state, &cache, &slot, "Test");
+        let modern_lines = render_status_panel(&state, &cache, &slot, &theme, 0.0);
         let modern = lines_to_string(modern_lines);
         assert!(modern.contains("Objective:"));
         assert!(modern.contains("Mercenary Guild"));
@@ -1774,7 +1827,7 @@ mod tests {
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
-        let rendered_lines = render_interaction_panel(&state, &cache);
+        let rendered_lines = render_interaction_panel(&state, &cache, &theme, 0.0);
         let rendered = lines_to_string(rendered_lines);
         assert!(rendered.contains("Activate -- item [i] or artifact [a]"));
     }

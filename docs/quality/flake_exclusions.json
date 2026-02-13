@@ -1,0 +1,9 @@
+{
+  "policy": {
+    "max_ratio": 0.02,
+    "requires_issue": true,
+    "requires_owner": true
+  },
+  "snapshot_date": "2026-02-06",
+  "exclusions": []
+}

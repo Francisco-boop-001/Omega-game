@@ -1,0 +1,82 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "generated_matrix",
+  "name": "matrix_inventory_cycle_038",
+  "family": "inventory",
+  "tags": [
+    "critical_path",
+    "frontend_shared",
+    "inventory"
+  ],
+  "seed": 40038,
+  "initial": {
+    "bounds": {
+      "width": 9,
+      "height": 9
+    },
+    "player_position": {
+      "x": 4,
+      "y": 4
+    },
+    "player_stats": null,
+    "inventory_capacity": 6,
+    "monsters": [],
+    "ground_items": [
+      {
+        "name": "matrix-item-38",
+        "position": {
+          "x": 4,
+          "y": 4
+        }
+      }
+    ],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    "pickup",
+    {
+      "drop": {
+        "slot": 0
+      }
+    }
+  ],
+  "expected": {
+    "turn": 2,
+    "minutes": 15,
+    "player_position": {
+      "x": 4,
+      "y": 4
+    },
+    "player_hp": 20,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 1,
+    "required_event_kinds": [
+      "action_points_spent",
+      "dropped",
+      "picked_up",
+      "progression_updated",
+      "turn_advanced"
+    ],
+    "world_mode": null,
+    "guild_rank": null,
+    "priest_rank": null,
+    "alignment": null,
+    "quest_state": null,
+    "total_winner_unlocked": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null,
+    "known_site_count": null,
+    "ending": null,
+    "high_score_eligible": null
+  }
+}

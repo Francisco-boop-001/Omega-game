@@ -1,0 +1,73 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "generated_matrix",
+  "name": "matrix_legacy_command_002",
+  "family": "legacy_commands",
+  "tags": [
+    "frontend_shared",
+    "legacy_surface",
+    "perf_smoke"
+  ],
+  "seed": 80002,
+  "initial": {
+    "bounds": {
+      "width": 11,
+      "height": 11
+    },
+    "player_position": {
+      "x": 5,
+      "y": 5
+    },
+    "player_stats": null,
+    "inventory_capacity": null,
+    "monsters": [],
+    "ground_items": [],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "legacy": {
+        "token": "@"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 1,
+    "minutes": 5,
+    "player_position": {
+      "x": 5,
+      "y": 5
+    },
+    "player_hp": 20,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 0,
+    "required_event_kinds": [
+      "action_points_spent",
+      "legacy_handled",
+      "progression_updated",
+      "turn_advanced",
+      "waited"
+    ],
+    "world_mode": null,
+    "guild_rank": null,
+    "priest_rank": null,
+    "alignment": null,
+    "quest_state": null,
+    "total_winner_unlocked": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null,
+    "known_site_count": null,
+    "ending": null,
+    "high_score_eligible": null
+  }
+}

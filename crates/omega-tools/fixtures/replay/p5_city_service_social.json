@@ -1,0 +1,144 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "legacy_handcrafted",
+  "name": "p5_city_service_social",
+  "family": "world_social",
+  "tags": [
+    "critical_path",
+    "frontend_shared",
+    "p5",
+    "social"
+  ],
+  "seed": 41001,
+  "initial": {
+    "bounds": {
+      "width": 7,
+      "height": 7
+    },
+    "player_position": {
+      "x": 3,
+      "y": 3
+    },
+    "player_stats": null,
+    "inventory_capacity": null,
+    "monsters": [],
+    "ground_items": [],
+    "world_mode": "DungeonCity",
+    "environment": "City",
+    "map_rows": [
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      ".......",
+      "......."
+    ],
+    "site_aux_grid": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      12,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "legacy": {
+        "token": ">"
+      }
+    },
+    {
+      "legacy": {
+        "token": "t"
+      }
+    },
+    {
+      "legacy": {
+        "token": "G"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 3,
+    "minutes": 25,
+    "player_position": {
+      "x": 3,
+      "y": 3
+    },
+    "player_hp": 20,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 0,
+    "required_event_kinds": [
+      "action_points_spent",
+      "dialogue_advanced",
+      "economy_updated",
+      "legacy_handled",
+      "progression_updated",
+      "quest_advanced",
+      "turn_advanced"
+    ],
+    "world_mode": "DungeonCity",
+    "guild_rank": 1,
+    "priest_rank": 0,
+    "alignment": "Neutral",
+    "quest_state": "Active",
+    "total_winner_unlocked": false,
+    "gold": 200,
+    "bank_gold": 0,
+    "food": 3,
+    "known_site_count": 0,
+    "ending": "None",
+    "high_score_eligible": true
+  }
+}

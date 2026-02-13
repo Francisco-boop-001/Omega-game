@@ -1,0 +1,17 @@
+﻿[package]
+name = "omega-tools"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+omega-core = { path = "../omega-core" }
+omega-content = { path = "../omega-content" }
+omega-save = { path = "../omega-save" }
+omega-tui = { path = "../omega-tui" }
+omega-bevy = { path = "../omega-bevy" }
+serde = { workspace = true }
+serde_json = { workspace = true }
+clap = { version = "4", features = ["derive"] }
+palette = "0.7"
+toml = "0.8"

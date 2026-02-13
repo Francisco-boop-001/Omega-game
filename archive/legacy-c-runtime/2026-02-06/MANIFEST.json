@@ -1,0 +1,332 @@
+﻿[
+    {
+        "Name":  "abyss.c",
+        "Length":  4577,
+        "ArchivedAt":  "2026-02-06T18:28:02.0675775-04:00"
+    },
+    {
+        "Name":  "aux1.c",
+        "Length":  28165,
+        "ArchivedAt":  "2026-02-06T18:28:02.0700776-04:00"
+    },
+    {
+        "Name":  "aux2.c",
+        "Length":  33152,
+        "ArchivedAt":  "2026-02-06T18:28:02.0700776-04:00"
+    },
+    {
+        "Name":  "aux3.c",
+        "Length":  34291,
+        "ArchivedAt":  "2026-02-06T18:28:02.0700776-04:00"
+    },
+    {
+        "Name":  "bank.c",
+        "Length":  30158,
+        "ArchivedAt":  "2026-02-06T18:28:02.0705754-04:00"
+    },
+    {
+        "Name":  "char.c",
+        "Length":  21192,
+        "ArchivedAt":  "2026-02-06T18:28:02.0705754-04:00"
+    },
+    {
+        "Name":  "city.c",
+        "Length":  19632,
+        "ArchivedAt":  "2026-02-06T18:28:02.0705754-04:00"
+    },
+    {
+        "Name":  "command1.c",
+        "Length":  9570,
+        "ArchivedAt":  "2026-02-06T18:28:02.0705754-04:00"
+    },
+    {
+        "Name":  "command2.c",
+        "Length":  31970,
+        "ArchivedAt":  "2026-02-06T18:28:02.0705754-04:00"
+    },
+    {
+        "Name":  "command3.c",
+        "Length":  30334,
+        "ArchivedAt":  "2026-02-06T18:28:02.0710769-04:00"
+    },
+    {
+        "Name":  "compress.c",
+        "Length":  39877,
+        "ArchivedAt":  "2026-02-06T18:28:02.0710769-04:00"
+    },
+    {
+        "Name":  "country.c",
+        "Length":  15990,
+        "ArchivedAt":  "2026-02-06T18:28:02.0710769-04:00"
+    },
+    {
+        "Name":  "date.h",
+        "Length":  145,
+        "ArchivedAt":  "2026-02-06T18:28:02.0710769-04:00"
+    },
+    {
+        "Name":  "defs.h",
+        "Length":  49161,
+        "ArchivedAt":  "2026-02-06T18:28:02.0715777-04:00"
+    },
+    {
+        "Name":  "effect1.c",
+        "Length":  22299,
+        "ArchivedAt":  "2026-02-06T18:28:02.0715777-04:00"
+    },
+    {
+        "Name":  "effect2.c",
+        "Length":  18816,
+        "ArchivedAt":  "2026-02-06T18:28:02.0715777-04:00"
+    },
+    {
+        "Name":  "effect3.c",
+        "Length":  32223,
+        "ArchivedAt":  "2026-02-06T18:28:02.0715777-04:00"
+    },
+    {
+        "Name":  "env.c",
+        "Length":  8449,
+        "ArchivedAt":  "2026-02-06T18:28:02.0715777-04:00"
+    },
+    {
+        "Name":  "etc.c",
+        "Length":  12958,
+        "ArchivedAt":  "2026-02-06T18:28:02.0720786-04:00"
+    },
+    {
+        "Name":  "extern.h",
+        "Length":  30340,
+        "ArchivedAt":  "2026-02-06T18:28:02.0720786-04:00"
+    },
+    {
+        "Name":  "file.c",
+        "Length":  15629,
+        "ArchivedAt":  "2026-02-06T18:28:02.0720786-04:00"
+    },
+    {
+        "Name":  "fixstr.c",
+        "Length":  3427,
+        "ArchivedAt":  "2026-02-06T18:28:02.0720786-04:00"
+    },
+    {
+        "Name":  "gen1.c",
+        "Length":  18944,
+        "ArchivedAt":  "2026-02-06T18:28:02.0725800-04:00"
+    },
+    {
+        "Name":  "gen2.c",
+        "Length":  12494,
+        "ArchivedAt":  "2026-02-06T18:28:02.0725800-04:00"
+    },
+    {
+        "Name":  "genclr.c",
+        "Length":  10109,
+        "ArchivedAt":  "2026-02-06T18:28:02.0725800-04:00"
+    },
+    {
+        "Name":  "glob.h",
+        "Length":  6597,
+        "ArchivedAt":  "2026-02-06T18:28:02.0725800-04:00"
+    },
+    {
+        "Name":  "guild1.c",
+        "Length":  18147,
+        "ArchivedAt":  "2026-02-06T18:28:02.0730455-04:00"
+    },
+    {
+        "Name":  "guild2.c",
+        "Length":  32895,
+        "ArchivedAt":  "2026-02-06T18:28:02.0730455-04:00"
+    },
+    {
+        "Name":  "house.c",
+        "Length":  5800,
+        "ArchivedAt":  "2026-02-06T18:28:02.0730455-04:00"
+    },
+    {
+        "Name":  "iinit.h",
+        "Length":  28645,
+        "ArchivedAt":  "2026-02-06T18:28:02.0730455-04:00"
+    },
+    {
+        "Name":  "init.c",
+        "Length":  207,
+        "ArchivedAt":  "2026-02-06T18:28:02.0730455-04:00"
+    },
+    {
+        "Name":  "inv.c",
+        "Length":  45052,
+        "ArchivedAt":  "2026-02-06T18:28:02.0735455-04:00"
+    },
+    {
+        "Name":  "item.c",
+        "Length":  21311,
+        "ArchivedAt":  "2026-02-06T18:28:02.0735455-04:00"
+    },
+    {
+        "Name":  "itemf1.c",
+        "Length":  20359,
+        "ArchivedAt":  "2026-02-06T18:28:02.0735455-04:00"
+    },
+    {
+        "Name":  "itemf2.c",
+        "Length":  12060,
+        "ArchivedAt":  "2026-02-06T18:28:02.0735455-04:00"
+    },
+    {
+        "Name":  "itemf3.c",
+        "Length":  22568,
+        "ArchivedAt":  "2026-02-06T18:28:02.0740475-04:00"
+    },
+    {
+        "Name":  "lev.c",
+        "Length":  17752,
+        "ArchivedAt":  "2026-02-06T18:28:02.0740475-04:00"
+    },
+    {
+        "Name":  "Makefile",
+        "Length":  3278,
+        "ArchivedAt":  "2026-02-06T18:28:02.0745493-04:00"
+    },
+    {
+        "Name":  "Makefile.ami",
+        "Length":  1620,
+        "ArchivedAt":  "2026-02-06T18:28:02.0745493-04:00"
+    },
+    {
+        "Name":  "Makefile.dj",
+        "Length":  2711,
+        "ArchivedAt":  "2026-02-06T18:28:02.0755566-04:00"
+    },
+    {
+        "Name":  "map.c",
+        "Length":  4857,
+        "ArchivedAt":  "2026-02-06T18:28:02.0755566-04:00"
+    },
+    {
+        "Name":  "minit.h",
+        "Length":  39035,
+        "ArchivedAt":  "2026-02-06T18:28:02.0755566-04:00"
+    },
+    {
+        "Name":  "mmelee.c",
+        "Length":  8040,
+        "ArchivedAt":  "2026-02-06T18:28:02.0755566-04:00"
+    },
+    {
+        "Name":  "mmove.c",
+        "Length":  6266,
+        "ArchivedAt":  "2026-02-06T18:28:02.0760632-04:00"
+    },
+    {
+        "Name":  "mon.c",
+        "Length":  33385,
+        "ArchivedAt":  "2026-02-06T18:28:02.0760632-04:00"
+    },
+    {
+        "Name":  "move.c",
+        "Length":  33965,
+        "ArchivedAt":  "2026-02-06T18:28:02.0760632-04:00"
+    },
+    {
+        "Name":  "movef.c",
+        "Length":  11712,
+        "ArchivedAt":  "2026-02-06T18:28:02.0760632-04:00"
+    },
+    {
+        "Name":  "mspec.c",
+        "Length":  18528,
+        "ArchivedAt":  "2026-02-06T18:28:02.0760632-04:00"
+    },
+    {
+        "Name":  "mstrike.c",
+        "Length":  1418,
+        "ArchivedAt":  "2026-02-06T18:28:02.0765622-04:00"
+    },
+    {
+        "Name":  "mtalk.c",
+        "Length":  21131,
+        "ArchivedAt":  "2026-02-06T18:28:02.0765622-04:00"
+    },
+    {
+        "Name":  "newrand.c",
+        "Length":  3813,
+        "ArchivedAt":  "2026-02-06T18:28:02.0765622-04:00"
+    },
+    {
+        "Name":  "oldsave.h",
+        "Length":  2783,
+        "ArchivedAt":  "2026-02-06T18:28:02.0770629-04:00"
+    },
+    {
+        "Name":  "omega.c",
+        "Length":  15667,
+        "ArchivedAt":  "2026-02-06T18:28:02.0770629-04:00"
+    },
+    {
+        "Name":  "pdump.c",
+        "Length":  28334,
+        "ArchivedAt":  "2026-02-06T18:28:02.0770629-04:00"
+    },
+    {
+        "Name":  "priest.c",
+        "Length":  15366,
+        "ArchivedAt":  "2026-02-06T18:28:02.0770629-04:00"
+    },
+    {
+        "Name":  "save.c",
+        "Length":  42997,
+        "ArchivedAt":  "2026-02-06T18:28:02.0775685-04:00"
+    },
+    {
+        "Name":  "scr.c",
+        "Length":  50728,
+        "ArchivedAt":  "2026-02-06T18:28:02.0775685-04:00"
+    },
+    {
+        "Name":  "site1.c",
+        "Length":  29396,
+        "ArchivedAt":  "2026-02-06T18:28:02.0775685-04:00"
+    },
+    {
+        "Name":  "site2.c",
+        "Length":  32953,
+        "ArchivedAt":  "2026-02-06T18:28:02.0775685-04:00"
+    },
+    {
+        "Name":  "spell.c",
+        "Length":  19569,
+        "ArchivedAt":  "2026-02-06T18:28:02.0780682-04:00"
+    },
+    {
+        "Name":  "stats.c",
+        "Length":  2706,
+        "ArchivedAt":  "2026-02-06T18:28:02.0780682-04:00"
+    },
+    {
+        "Name":  "test.c",
+        "Length":  749,
+        "ArchivedAt":  "2026-02-06T18:28:02.0780682-04:00"
+    },
+    {
+        "Name":  "time.c",
+        "Length":  2722,
+        "ArchivedAt":  "2026-02-06T18:28:02.0780682-04:00"
+    },
+    {
+        "Name":  "trap.c",
+        "Length":  8563,
+        "ArchivedAt":  "2026-02-06T18:28:02.0785684-04:00"
+    },
+    {
+        "Name":  "util.c",
+        "Length":  22431,
+        "ArchivedAt":  "2026-02-06T18:28:02.0785684-04:00"
+    },
+    {
+        "Name":  "village.c",
+        "Length":  7043,
+        "ArchivedAt":  "2026-02-06T18:28:02.0785684-04:00"
+    }
+]

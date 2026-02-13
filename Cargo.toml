@@ -1,0 +1,22 @@
+﻿[workspace]
+members = [
+  "crates/omega-core",
+  "crates/omega-content",
+  "crates/omega-save",
+  "crates/omega-bevy",
+  "crates/omega-tui",
+  "crates/omega-tools",
+]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+license = "LGPL-2.1-or-later"
+authors = ["Omega modernization team"]
+
+[workspace.dependencies]
+anyhow = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+rand = "0.9"
+thiserror = "2"

@@ -1,0 +1,84 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "legacy_handcrafted",
+  "name": "p5_countryside_hunt_travel",
+  "family": "world_social",
+  "tags": [
+    "critical_path",
+    "frontend_shared",
+    "p5",
+    "travel"
+  ],
+  "seed": 41002,
+  "initial": {
+    "bounds": {
+      "width": 9,
+      "height": 9
+    },
+    "player_position": {
+      "x": 4,
+      "y": 4
+    },
+    "player_stats": null,
+    "inventory_capacity": null,
+    "monsters": [],
+    "ground_items": [],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "legacy": {
+        "token": "<"
+      }
+    },
+    {
+      "legacy": {
+        "token": "H"
+      }
+    },
+    {
+      "legacy": {
+        "token": "M"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 3,
+    "minutes": 225,
+    "player_position": {
+      "x": 4,
+      "y": 4
+    },
+    "player_hp": 20,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 1,
+    "required_event_kinds": [
+      "action_points_spent",
+      "economy_updated",
+      "legacy_handled",
+      "progression_updated",
+      "turn_advanced"
+    ],
+    "world_mode": "Countryside",
+    "guild_rank": 0,
+    "priest_rank": 0,
+    "alignment": "Neutral",
+    "quest_state": "NotStarted",
+    "total_winner_unlocked": false,
+    "gold": 245,
+    "bank_gold": 0,
+    "food": 4,
+    "known_site_count": 1,
+    "ending": "None",
+    "high_score_eligible": true
+  }
+}

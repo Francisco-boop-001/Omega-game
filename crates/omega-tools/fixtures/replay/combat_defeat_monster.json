@@ -1,0 +1,95 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "legacy_handcrafted",
+  "name": "combat_defeat_monster",
+  "family": "combat",
+  "tags": [
+    "combat",
+    "critical_path",
+    "frontend_shared",
+    "perf_smoke"
+  ],
+  "seed": 1,
+  "initial": {
+    "bounds": {
+      "width": 5,
+      "height": 5
+    },
+    "player_position": {
+      "x": 2,
+      "y": 2
+    },
+    "player_stats": {
+      "hp": 20,
+      "max_hp": 20,
+      "attack_min": 6,
+      "attack_max": 6,
+      "defense": 1
+    },
+    "inventory_capacity": null,
+    "monsters": [
+      {
+        "name": "rat",
+        "position": {
+          "x": 3,
+          "y": 2
+        },
+        "stats": {
+          "hp": 4,
+          "max_hp": 4,
+          "attack_min": 1,
+          "attack_max": 2,
+          "defense": 1
+        }
+      }
+    ],
+    "ground_items": [],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "attack": {
+        "direction": "east"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 1,
+    "minutes": 10,
+    "player_position": {
+      "x": 2,
+      "y": 2
+    },
+    "player_hp": 20,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 0,
+    "required_event_kinds": [
+      "action_points_spent",
+      "attacked",
+      "monster_defeated",
+      "progression_updated",
+      "turn_advanced"
+    ],
+    "world_mode": "DungeonCity",
+    "guild_rank": 0,
+    "priest_rank": 0,
+    "alignment": "Neutral",
+    "quest_state": "NotStarted",
+    "total_winner_unlocked": false,
+    "gold": 250,
+    "bank_gold": 0,
+    "food": 3,
+    "known_site_count": 0,
+    "ending": "None",
+    "high_score_eligible": true
+  }
+}

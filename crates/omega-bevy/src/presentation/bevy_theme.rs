@@ -33,12 +33,20 @@ use super::color_adapter::{resolve_to_bevy_color, to_bevy_color};
 pub struct BevyTheme {
     /// The underlying ColorTheme from omega-core.
     theme: ColorTheme,
+    /// Optional target theme for interpolation.
+    interpolation: Option<ThemeInterpolation>,
+}
+
+#[derive(Debug, Clone)]
+struct ThemeInterpolation {
+    target: ColorTheme,
+    progress: f32,
 }
 
 impl BevyTheme {
     /// Creates a new BevyTheme from a ColorTheme.
     pub fn new(theme: ColorTheme) -> Self {
-        Self { theme }
+        Self { theme, interpolation: None }
     }
 
     /// Resolves a ColorId to a Bevy Color.
@@ -46,7 +54,14 @@ impl BevyTheme {
     /// Returns the foreground color for the given ColorId.
     /// If the ColorId cannot be resolved, returns white as a fallback.
     pub fn resolve(&self, id: &ColorId) -> Color {
-        resolve_to_bevy_color(&self.theme, id)
+        let base = resolve_to_bevy_color(&self.theme, id);
+        
+        if let Some(interp) = &self.interpolation {
+            let target = resolve_to_bevy_color(&interp.target, id);
+            lerp_color(base, target, interp.progress)
+        } else {
+            base
+        }
     }
 
     /// Gets both foreground and background colors for a ColorId.
@@ -54,9 +69,22 @@ impl BevyTheme {
     /// Returns a tuple of (foreground, background) colors.
     /// If the ColorId cannot be resolved, returns (white, black) as fallback.
     pub fn resolve_both(&self, id: &ColorId) -> (Color, Color) {
-        match self.theme.resolve(id) {
+        let (fg_base, bg_base) = match self.theme.resolve(id) {
             Some((fg, bg)) => (to_bevy_color(&fg), to_bevy_color(&bg)),
             None => (Color::srgb(1.0, 1.0, 1.0), Color::srgb(0.0, 0.0, 0.0)),
+        };
+
+        if let Some(interp) = &self.interpolation {
+            let (fg_target, bg_target) = match interp.target.resolve(id) {
+                Some((fg, bg)) => (to_bevy_color(&fg), to_bevy_color(&bg)),
+                None => (Color::srgb(1.0, 1.0, 1.0), Color::srgb(0.0, 0.0, 0.0)),
+            };
+            (
+                lerp_color(fg_base, fg_target, interp.progress),
+                lerp_color(bg_base, bg_target, interp.progress),
+            )
+        } else {
+            (fg_base, bg_base)
         }
     }
 
@@ -362,6 +390,56 @@ impl BevyTheme {
     pub fn theme(&self) -> &ColorTheme {
         &self.theme
     }
+
+    /// Sets the target theme and progress for interpolation.
+    pub fn lerp_towards(&mut self, target: &BevyTheme, progress: f32) {
+        self.interpolation = Some(ThemeInterpolation {
+            target: target.theme.clone(),
+            progress,
+        });
+    }
+
+    /// Overrides a color in the theme for the current session.
+    pub fn override_color(&mut self, id: ColorId, hex: omega_core::color::HexColor) {
+        use omega_core::color::ColorRef;
+        let key = match id {
+            ColorId::Entity(e) => format!("entity.{}", entity_to_key(&e)),
+            ColorId::Ui(u) => format!("ui.{:?}", u).to_lowercase(),
+            ColorId::Effect(e) => format!("effect.{:?}", e).to_lowercase(),
+            _ => return, // Not supported for overrides yet
+        };
+
+        let color_ref = ColorRef::Direct { fg: hex, bg: omega_core::color::HexColor::from_hex("#000000").unwrap() };
+
+        if let Some(stripped) = key.strip_prefix("entity.") {
+            self.theme.entity.insert(stripped.to_string(), color_ref);
+        } else if let Some(stripped) = key.strip_prefix("ui.") {
+            self.theme.ui.insert(stripped.to_string(), color_ref);
+        } else if let Some(stripped) = key.strip_prefix("effect.") {
+            self.theme.effect.insert(stripped.to_string(), color_ref);
+        }
+    }
+}
+
+/// Helper to convert EntityColorId to key (copied from omega-core theme.rs because it's private there)
+fn entity_to_key(entity: &EntityColorId) -> String {
+    match entity {
+        EntityColorId::Player => "player".to_string(),
+        EntityColorId::Monster(m) => format!("monster.{:?}", m).to_lowercase(),
+        EntityColorId::Item(r) => format!("item.{:?}", r).to_lowercase(),
+        EntityColorId::Terrain(t) => format!("terrain.{:?}", t).to_lowercase(),
+    }
+}
+
+fn lerp_color(a: Color, b: Color, t: f32) -> Color {
+    let a_rgba = a.to_srgba();
+    let b_rgba = b.to_srgba();
+    Color::srgba(
+        a_rgba.red + (b_rgba.red - a_rgba.red) * t,
+        a_rgba.green + (b_rgba.green - a_rgba.green) * t,
+        a_rgba.blue + (b_rgba.blue - a_rgba.blue) * t,
+        a_rgba.alpha + (b_rgba.alpha - a_rgba.alpha) * t,
+    )
 }
 
 #[cfg(test)]

@@ -33,10 +33,12 @@ use super::color_spec::ColorSpec;
 
 /// Represents the color capability level of a terminal.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Default)]
 pub enum ColorCapability {
     /// No color support (monochrome).
     None,
     /// Basic 16 ANSI colors.
+    #[default]
     Ansi16,
     /// 256-color palette support.
     Ansi256,
@@ -87,11 +89,10 @@ impl ColorCapability {
     /// Detect capability from environment variables (fallback method).
     fn detect_from_env() -> Self {
         // Check COLORTERM for TrueColor indication
-        if let Ok(ct) = std::env::var("COLORTERM") {
-            if ct.contains("truecolor") || ct.contains("24bit") {
+        if let Ok(ct) = std::env::var("COLORTERM")
+            && (ct.contains("truecolor") || ct.contains("24bit")) {
                 return ColorCapability::TrueColor;
             }
-        }
         
         // Check TERM for color capability
         if let Ok(term) = std::env::var("TERM") {
@@ -168,11 +169,6 @@ impl ColorCapability {
     }
 }
 
-impl Default for ColorCapability {
-    fn default() -> Self {
-        ColorCapability::Ansi16
-    }
-}
 
 // Cached detection - only runs once
 static CAPABILITY: OnceLock<ColorCapability> = OnceLock::new();
@@ -219,6 +215,7 @@ pub fn reset_capability() {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::color::AnsiColor;
 
     #[test]
     fn test_capability_adapt_truecolor() {
@@ -300,7 +297,7 @@ mod tests {
         let cap2 = cap;
         assert_eq!(cap, cap2); // Copy trait allows this
         
-        let cap3 = cap.clone();
+        let cap3 = cap;
         assert_eq!(cap, cap3);
     }
 

@@ -1,0 +1,99 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "generated_matrix",
+  "name": "matrix_combat_073",
+  "family": "combat",
+  "tags": [
+    "combat",
+    "critical_path",
+    "frontend_shared"
+  ],
+  "seed": 30073,
+  "initial": {
+    "bounds": {
+      "width": 9,
+      "height": 9
+    },
+    "player_position": {
+      "x": 4,
+      "y": 4
+    },
+    "player_stats": {
+      "hp": 20,
+      "max_hp": 20,
+      "attack_min": 6,
+      "attack_max": 6,
+      "defense": 1
+    },
+    "inventory_capacity": null,
+    "monsters": [
+      {
+        "name": "matrix-rat-73",
+        "position": {
+          "x": 5,
+          "y": 4
+        },
+        "stats": {
+          "hp": 12,
+          "max_hp": 12,
+          "attack_min": 1,
+          "attack_max": 2,
+          "defense": 2
+        }
+      }
+    ],
+    "ground_items": [],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "attack": {
+        "direction": "east"
+      }
+    },
+    {
+      "attack": {
+        "direction": "east"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 2,
+    "minutes": 20,
+    "player_position": {
+      "x": 4,
+      "y": 4
+    },
+    "player_hp": 18,
+    "monsters_alive": 1,
+    "inventory_count": 0,
+    "ground_item_count": 0,
+    "required_event_kinds": [
+      "action_points_spent",
+      "attacked",
+      "monster_attacked",
+      "progression_updated",
+      "turn_advanced"
+    ],
+    "world_mode": null,
+    "guild_rank": null,
+    "priest_rank": null,
+    "alignment": null,
+    "quest_state": null,
+    "total_winner_unlocked": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null,
+    "known_site_count": null,
+    "ending": null,
+    "high_score_eligible": null
+  }
+}

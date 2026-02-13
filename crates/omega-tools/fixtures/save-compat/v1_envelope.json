@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "payload": {
+    "state": {
+      "bounds": { "width": 12, "height": 12 },
+      "clock": { "turn": 21, "minutes": 126, "minutes_per_turn": 6 },
+      "player": {
+        "position": { "x": 6, "y": 6 },
+        "stats": { "hp": 20, "max_hp": 20, "attack_min": 2, "attack_max": 6, "defense": 1 },
+        "inventory": [],
+        "inventory_capacity": 12
+      },
+      "monsters": [],
+      "ground_items": [{ "position": { "x": 6, "y": 6 }, "item": { "id": 3, "name": "ring" } }],
+      "log": ["v1 envelope fixture"],
+      "next_entity_id": 1,
+      "next_item_id": 4
+    }
+  },
+  "metadata": {
+    "schema": "omega-save",
+    "saved_turn": 21,
+    "saved_minutes": 126
+  }
+}

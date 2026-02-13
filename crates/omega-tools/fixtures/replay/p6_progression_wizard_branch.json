@@ -1,0 +1,150 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "legacy_handcrafted",
+  "name": "p6_progression_wizard_branch",
+  "family": "progression",
+  "tags": [
+    "critical_path",
+    "frontend_shared",
+    "p6",
+    "progression_branch"
+  ],
+  "seed": 51001,
+  "initial": {
+    "bounds": {
+      "width": 7,
+      "height": 7
+    },
+    "player_position": {
+      "x": 3,
+      "y": 3
+    },
+    "player_stats": {
+      "hp": 20,
+      "max_hp": 20,
+      "attack_min": 6,
+      "attack_max": 6,
+      "defense": 1
+    },
+    "inventory_capacity": null,
+    "monsters": [
+      {
+        "name": "branch-rat",
+        "position": {
+          "x": 4,
+          "y": 3
+        },
+        "stats": {
+          "hp": 3,
+          "max_hp": 3,
+          "attack_min": 1,
+          "attack_max": 1,
+          "defense": 0
+        }
+      }
+    ],
+    "ground_items": [],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "legacy": {
+        "token": "t"
+      }
+    },
+    {
+      "legacy": {
+        "token": "^g"
+      }
+    },
+    {
+      "legacy": {
+        "token": "y"
+      }
+    },
+    {
+      "legacy": {
+        "token": "^x"
+      }
+    },
+    {
+      "legacy": {
+        "token": "wealth"
+      }
+    },
+    {
+      "legacy": {
+        "token": "<enter>"
+      }
+    },
+    {
+      "legacy": {
+        "token": "A"
+      }
+    },
+    {
+      "legacy": {
+        "token": "G"
+      }
+    },
+    {
+      "legacy": {
+        "token": "G"
+      }
+    },
+    {
+      "legacy": {
+        "token": "G"
+      }
+    },
+    {
+      "attack": {
+        "direction": "east"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 7,
+    "minutes": 80,
+    "player_position": {
+      "x": 3,
+      "y": 3
+    },
+    "player_hp": 14,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 0,
+    "required_event_kinds": [
+      "action_points_spent",
+      "attacked",
+      "dialogue_advanced",
+      "economy_updated",
+      "legacy_handled",
+      "monster_attacked",
+      "monster_defeated",
+      "progression_updated",
+      "quest_advanced",
+      "turn_advanced"
+    ],
+    "world_mode": "DungeonCity",
+    "guild_rank": 0,
+    "priest_rank": 1,
+    "alignment": "Lawful",
+    "quest_state": "Active",
+    "total_winner_unlocked": false,
+    "gold": 10220,
+    "bank_gold": 0,
+    "food": 3,
+    "known_site_count": 0,
+    "ending": "None",
+    "high_score_eligible": false
+  }
+}

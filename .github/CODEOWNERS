@@ -1,0 +1,15 @@
+﻿# Global fallback owner
+* foundation-owner@example.com
+
+# Workspace governance
+/.github/ foundation-owner@example.com
+/docs/ docs-owner@example.com
+/swarm/ foundation-owner@example.com
+
+# Per-crate owners
+/crates/omega-core/ core-owner@example.com
+/crates/omega-content/ content-owner@example.com
+/crates/omega-save/ save-owner@example.com
+/crates/omega-bevy/ bevy-owner@example.com
+/crates/omega-tui/ tui-owner@example.com
+/crates/omega-tools/ tools-owner@example.com

@@ -1,0 +1,24 @@
+{
+  "bounds": { "width": 10, "height": 10 },
+  "clock": { "turn": 7, "minutes": 42, "minutes_per_turn": 6 },
+  "player": {
+    "position": { "x": 5, "y": 5 },
+    "stats": { "hp": 18, "max_hp": 20, "attack_min": 2, "attack_max": 5, "defense": 1 },
+    "inventory": [{ "id": 1, "name": "potion" }],
+    "inventory_capacity": 12
+  },
+  "monsters": [
+    {
+      "id": 1,
+      "name": "rat",
+      "position": { "x": 6, "y": 5 },
+      "stats": { "hp": 4, "max_hp": 4, "attack_min": 1, "attack_max": 2, "defense": 0 }
+    }
+  ],
+  "ground_items": [
+    { "position": { "x": 5, "y": 5 }, "item": { "id": 2, "name": "scroll" } }
+  ],
+  "log": ["legacy raw state fixture"],
+  "next_entity_id": 2,
+  "next_item_id": 3
+}

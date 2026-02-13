@@ -33,6 +33,7 @@ pub enum AppState {
     Boot,
     Menu,
     InGame,
+    WizardArena,
     Pause,
     GameOver,
 }
@@ -45,6 +46,7 @@ pub enum BevyKey {
     Down,
     Left,
     Right,
+    F8,
     F12,
     Enter,
     Backspace,
@@ -55,6 +57,7 @@ pub enum BevyKey {
 pub enum InputAction {
     StartGame,
     NewGame,
+    StartWizardArena,
     SaveSlot,
     SaveAndQuit,
     LoadSlot,
@@ -70,6 +73,9 @@ pub enum InputAction {
 pub enum TileKind {
     Floor,
     Wall,
+    Grass,
+    Water,
+    Fire,
     Feature,
     Player,
     Monster,
@@ -95,6 +101,7 @@ impl TileKind {
     /// - **ObjectiveMarker**: `UiColorId::Highlight` - Quest objective halos and markers
     /// - **ProjectileTrail**: `EffectColorId::MagicArcane` - Magic projectile paths
     /// - **ProjectileImpact**: `EffectColorId::Impact` - Hit/explosion effects
+    /// - **Fire**: `EffectColorId::Fire` - Persistent fire hazard
     ///
     /// These colors are resolved via `BevyTheme` in `sync_tile_entities_system`
     /// and applied as `RenderTileColor` components for sprite rendering.
@@ -107,6 +114,9 @@ impl TileKind {
         match self {
             TileKind::Floor => ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorStone)),
             TileKind::Wall => ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallStone)),
+            TileKind::Grass => ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorGrass)),
+            TileKind::Water => ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Water)),
+            TileKind::Fire => ColorId::Effect(EffectColorId::Fire),
             TileKind::Feature => ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Door)),
             TileKind::Player => ColorId::Entity(EntityColorId::Player),
             TileKind::Monster => ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid)),
@@ -186,6 +196,9 @@ pub struct ModernObjectiveUiState {
 pub struct SpriteAtlas {
     pub floor: SpriteRef,
     pub wall: SpriteRef,
+    pub grass: SpriteRef,
+    pub water: SpriteRef,
+    pub fire: SpriteRef,
     pub feature: SpriteRef,
     pub player: SpriteRef,
     pub monster: SpriteRef,
@@ -201,6 +214,9 @@ impl Default for SpriteAtlas {
         Self {
             floor: SpriteRef { atlas: "omega_base".to_string(), index: 0 },
             wall: SpriteRef { atlas: "omega_base".to_string(), index: 4 },
+            grass: SpriteRef { atlas: "omega_base".to_string(), index: 0 },
+            water: SpriteRef { atlas: "omega_base".to_string(), index: 5 },
+            fire: SpriteRef { atlas: "omega_base".to_string(), index: 7 }, // Re-using projectile trail for now or similar
             feature: SpriteRef { atlas: "omega_base".to_string(), index: 5 },
             player: SpriteRef { atlas: "omega_base".to_string(), index: 1 },
             monster: SpriteRef { atlas: "omega_base".to_string(), index: 2 },
@@ -306,7 +322,7 @@ impl BevyFrontend {
     }
 
     fn action_for_key(&self, key: BevyKey) -> InputAction {
-        if self.app_state == AppState::InGame
+        if (self.app_state == AppState::InGame || self.app_state == AppState::WizardArena)
             && let Some(session) = self.session.as_ref()
         {
             let profile = modal_input_profile(&session.state);
@@ -314,7 +330,7 @@ impl BevyFrontend {
                 return map_modal_interaction_key(key, profile);
             }
         }
-        if self.app_state == AppState::InGame
+        if (self.app_state == AppState::InGame || self.app_state == AppState::WizardArena)
             && let BevyKey::Char(ch) = key
             && let Some(command) = self.adaptive_directional_command(ch)
         {
@@ -350,6 +366,14 @@ impl BevyFrontend {
                 let seed = self.session_seed.wrapping_add(self.restart_count);
                 self.session = Some(GameSession::from_state(seed, self.bootstrap_state.clone()));
                 self.app_state = AppState::InGame;
+            }
+            InputAction::StartWizardArena => {
+                let (state, _) = omega_content::bootstrap_wizard_arena()
+                    .expect("Wizard Arena bootstrap failed");
+                self.restart_count = self.restart_count.wrapping_add(1);
+                let seed = self.session_seed.wrapping_add(self.restart_count);
+                self.session = Some(GameSession::from_state(seed, state));
+                self.app_state = AppState::WizardArena;
             }
             InputAction::SaveSlot => {
                 if let Err(err) = self.save_to_slot()
@@ -393,14 +417,13 @@ impl BevyFrontend {
                 AppState::Pause => self.app_state = AppState::InGame,
                 _ => {}
             },
-            InputAction::Dispatch(command) => {
-                if self.app_state != AppState::InGame {
-                    return;
-                }
-                if let Some(session) = self.session.as_mut() {
-                    let was_in_progress = session.state.status == SessionStatus::InProgress;
-                    session.dispatch(command);
-                    if session.state.status != SessionStatus::InProgress {
+                                    InputAction::Dispatch(command) => {
+                                        if self.app_state != AppState::InGame && self.app_state != AppState::WizardArena {
+                                            return;
+                                        }
+                                        if let Some(session) = self.session.as_mut() {
+                                            let was_in_progress = session.state.status == SessionStatus::InProgress;
+                                            session.dispatch(command);                    if session.state.status != SessionStatus::InProgress {
                         if was_in_progress {
                             let prompt = match session.state.status {
                                 SessionStatus::Lost => {
@@ -540,6 +563,7 @@ fn map_modal_interaction_key(key: BevyKey, profile: ModalInputProfile) -> InputA
             }
         }
         BevyKey::F12 => InputAction::Dispatch(Command::Legacy { token: "^g".to_string() }),
+        BevyKey::F8 => InputAction::None,
     }
 }
 
@@ -550,6 +574,7 @@ pub fn map_shared_gameplay_key(key: BevyKey) -> InputAction {
         BevyKey::Down => InputAction::Dispatch(Command::Move(Direction::South)),
         BevyKey::Left => InputAction::Dispatch(Command::Move(Direction::West)),
         BevyKey::Right => InputAction::Dispatch(Command::Move(Direction::East)),
+        BevyKey::F8 => InputAction::None,
         BevyKey::F12 => InputAction::Dispatch(Command::Legacy { token: "^g".to_string() }),
         BevyKey::Enter => InputAction::Dispatch(Command::Legacy { token: "<enter>".to_string() }),
         BevyKey::Backspace => {
@@ -607,12 +632,18 @@ pub fn map_input(state: AppState, key: BevyKey) -> InputAction {
         AppState::Menu => match key {
             BevyKey::Enter => InputAction::StartGame,
             BevyKey::Char('n') | BevyKey::Char('N') => InputAction::NewGame,
+            BevyKey::F8 => InputAction::StartWizardArena,
             BevyKey::Char('L') => InputAction::LoadSlot,
             BevyKey::Esc | BevyKey::Char('q') => InputAction::QuitApp,
             _ => InputAction::None,
         },
         AppState::InGame => match key {
             BevyKey::Esc => InputAction::TogglePause,
+            BevyKey::F8 => InputAction::StartWizardArena,
+            other => map_shared_gameplay_key(other),
+        },
+        AppState::WizardArena => match key {
+            BevyKey::Esc => InputAction::ReturnToMenu,
             other => map_shared_gameplay_key(other),
         },
         AppState::Pause => match key {
@@ -664,6 +695,15 @@ pub fn project_to_frame(
                 sprite: sprite_for_tile_kind(atlas, kind),
                 glyph: Some(glyph),
             });
+            if let Some(cell) = state.tile_site_at(position)
+                && (cell.flags & omega_core::TILE_FLAG_BURNING) != 0 {
+                    tiles.push(TileRender {
+                        position,
+                        kind: TileKind::Fire,
+                        sprite: atlas.fire.clone(),
+                        glyph: Some('*'), // Fire glyph
+                    });
+                }
         }
     }
 
@@ -1007,6 +1047,8 @@ fn tile_kind_from_map_glyph(ch: char) -> TileKind {
     match ch {
         '#' | '=' => TileKind::Wall,
         '.' | ' ' => TileKind::Floor,
+        '\"' | ',' => TileKind::Grass,
+        '~' => TileKind::Water,
         _ => TileKind::Feature,
     }
 }
@@ -1015,6 +1057,9 @@ fn sprite_for_tile_kind(atlas: &SpriteAtlas, kind: TileKind) -> SpriteRef {
     match kind {
         TileKind::Floor => atlas.floor.clone(),
         TileKind::Wall => atlas.wall.clone(),
+        TileKind::Grass => atlas.grass.clone(),
+        TileKind::Water => atlas.water.clone(),
+        TileKind::Fire => atlas.fire.clone(),
         TileKind::Feature => atlas.feature.clone(),
         TileKind::Player => atlas.player.clone(),
         TileKind::Monster => atlas.monster.clone(),
@@ -1085,11 +1130,17 @@ impl Plugin for OmegaBevyRuntimePlugin {
         let bootstrap =
             self.bootstrap_state.clone().unwrap_or_else(|| load_bootstrap_or_default(mode));
         let slot = self.save_slot.clone().unwrap_or_else(|| default_save_slot_path_for_mode(mode));
+        
+        let color_theme = presentation::color_adapter::load_builtin_theme("classic")
+            .expect("Failed to load classic theme");
+        let bevy_theme = presentation::BevyTheme::new(color_theme);
+
         app.insert_resource(FrontendRuntime(BevyFrontend::with_seed_and_bootstrap(
             self.session_seed,
             bootstrap,
             slot,
         )))
+        .insert_resource(bevy_theme)
         .insert_resource(RuntimeSpriteAtlas(SpriteAtlas::default()))
         .insert_resource(PendingInput::default())
         .insert_resource(RuntimeFrame::default())

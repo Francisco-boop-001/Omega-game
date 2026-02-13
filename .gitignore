@@ -1,0 +1,26 @@
+﻿# Rust target artifacts
+/target/
+/target_tui/
+
+# Rust/Cargo lockfile (library-style workspace)
+Cargo.lock
+
+# Tool configurations and agents
+.gemini/
+.claude/
+.opencode/
+.vscode/
+.idea/
+
+# OS specific
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temporary files
+*.log
+*.tmp
+nul
+omega.bug*
+warnings.txt
+

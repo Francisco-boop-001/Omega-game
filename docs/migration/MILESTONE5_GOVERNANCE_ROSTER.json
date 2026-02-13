@@ -1,0 +1,153 @@
+{
+  "status": "ratified",
+  "date": "2026-02-06",
+  "source": ".github/CODEOWNERS",
+  "gates": [
+    {
+      "id": "m5-g01-e2e-flow",
+      "label": "E2E flow reliability (TUI + Bevy)",
+      "primary_owner": "tui-owner@example.com",
+      "backup_owner": "bevy-owner@example.com",
+      "contributors": [
+        "core-owner@example.com",
+        "tools-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g02-crashfree",
+      "label": "Crash-free session rate",
+      "primary_owner": "tools-owner@example.com",
+      "backup_owner": "foundation-owner@example.com",
+      "contributors": [
+        "bevy-owner@example.com",
+        "tui-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g03-boot",
+      "label": "Boot-to-interactive reliability",
+      "primary_owner": "bevy-owner@example.com",
+      "backup_owner": "tui-owner@example.com",
+      "contributors": [
+        "tools-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g04-turn-latency",
+      "label": "Turn-latency regression (<=5%)",
+      "primary_owner": "core-owner@example.com",
+      "backup_owner": "tools-owner@example.com",
+      "contributors": [
+        "bevy-owner@example.com",
+        "tui-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g05-frame-time",
+      "label": "Bevy p99 frame-time budget",
+      "primary_owner": "bevy-owner@example.com",
+      "backup_owner": "tools-owner@example.com",
+      "contributors": [
+        "core-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g06-cold-start",
+      "label": "Cold-start budget",
+      "primary_owner": "bevy-owner@example.com",
+      "backup_owner": "tui-owner@example.com",
+      "contributors": [
+        "tools-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g07-severity",
+      "label": "Severity gate (P0/P1)",
+      "primary_owner": "foundation-owner@example.com",
+      "backup_owner": "core-owner@example.com",
+      "contributors": [
+        "affected-crate-owners"
+      ]
+    },
+    {
+      "id": "m5-g08-flake",
+      "label": "Flake budget (<=1%)",
+      "primary_owner": "tools-owner@example.com",
+      "backup_owner": "foundation-owner@example.com",
+      "contributors": [
+        "affected-crate-owners"
+      ]
+    },
+    {
+      "id": "m5-g09-fuzz",
+      "label": "Security fuzz cadence",
+      "primary_owner": "tools-owner@example.com",
+      "backup_owner": "foundation-owner@example.com",
+      "contributors": [
+        "core-owner@example.com",
+        "save-owner@example.com",
+        "content-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g10-dependency-security",
+      "label": "Dependency security gate",
+      "primary_owner": "foundation-owner@example.com",
+      "backup_owner": "tools-owner@example.com",
+      "contributors": [
+        "core-owner@example.com",
+        "content-owner@example.com",
+        "save-owner@example.com",
+        "bevy-owner@example.com",
+        "tui-owner@example.com",
+        "tools-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g11-rc-artifacts",
+      "label": "Cross-platform RC artifacts",
+      "primary_owner": "foundation-owner@example.com",
+      "backup_owner": "bevy-owner@example.com",
+      "contributors": [
+        "tui-owner@example.com",
+        "tools-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g12-rollback-drill",
+      "label": "Install/update/rollback drill",
+      "primary_owner": "save-owner@example.com",
+      "backup_owner": "foundation-owner@example.com",
+      "contributors": [
+        "tools-owner@example.com",
+        "support-owners"
+      ]
+    },
+    {
+      "id": "m5-g13-content-mod-compat",
+      "label": "Content/mod compatibility matrix",
+      "primary_owner": "content-owner@example.com",
+      "backup_owner": "save-owner@example.com",
+      "contributors": [
+        "docs-owner@example.com",
+        "tools-owner@example.com"
+      ]
+    },
+    {
+      "id": "m5-g14-onboarding",
+      "label": "Onboarding validation",
+      "primary_owner": "docs-owner@example.com",
+      "backup_owner": "foundation-owner@example.com",
+      "contributors": [
+        "core-owner@example.com",
+        "content-owner@example.com"
+      ]
+    }
+  ],
+  "escalation_sla": {
+    "p0_ack_hours": 1,
+    "p0_plan_hours": 4,
+    "p1_ack_business_days": 0,
+    "p1_plan_business_days": 1
+  }
+}

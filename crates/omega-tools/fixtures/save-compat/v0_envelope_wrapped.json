@@ -1,0 +1,25 @@
+{
+  "version": 0,
+  "payload": {
+    "game_state": {
+      "bounds": { "width": 8, "height": 8 },
+      "clock": { "turn": 12, "minutes": 72, "minutes_per_turn": 6 },
+      "player": {
+        "position": { "x": 4, "y": 4 },
+        "stats": { "hp": 15, "max_hp": 20, "attack_min": 3, "attack_max": 6, "defense": 1 },
+        "inventory": [{ "id": 9, "name": "dagger" }],
+        "inventory_capacity": 10
+      },
+      "monsters": [],
+      "ground_items": [],
+      "log": ["legacy wrapped envelope fixture"],
+      "next_entity_id": 1,
+      "next_item_id": 10
+    }
+  },
+  "metadata": {
+    "schema": "omega-save-legacy",
+    "saved_turn": 1,
+    "saved_minutes": 1
+  }
+}

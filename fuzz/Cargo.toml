@@ -1,0 +1,30 @@
+[package]
+name = "omega-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[dependencies]
+libfuzzer-sys = "0.4"
+omega-content = { path = "../crates/omega-content" }
+omega-save = { path = "../crates/omega-save" }
+
+[[bin]]
+name = "fuzz_content_map_parser"
+path = "fuzz_targets/fuzz_content_map_parser.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "fuzz_save_decode"
+path = "fuzz_targets/fuzz_save_decode.rs"
+test = false
+doc = false
+bench = false
+
+[workspace]
+members = []

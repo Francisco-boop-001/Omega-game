@@ -391,17 +391,13 @@ impl Default for CountryCell {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub struct CountryGrid {
     pub width: i32,
     pub height: i32,
     pub cells: Vec<CountryCell>,
 }
 
-impl Default for CountryGrid {
-    fn default() -> Self {
-        Self { width: 0, height: 0, cells: Vec::new() }
-    }
-}
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum Alignment {
@@ -476,6 +472,7 @@ impl Default for CombatStep {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub struct GuildTrackState {
     #[serde(default)]
     pub rank: i16,
@@ -491,13 +488,9 @@ pub struct GuildTrackState {
     pub quest_flags: u64,
 }
 
-impl Default for GuildTrackState {
-    fn default() -> Self {
-        Self { rank: 0, xp: 0, dues_paid: 0, salary_due: 0, promotion_flags: 0, quest_flags: 0 }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub struct QuestProgression {
     #[serde(default)]
     pub merc: GuildTrackState,
@@ -525,24 +518,6 @@ pub struct QuestProgression {
     pub monastery: GuildTrackState,
 }
 
-impl Default for QuestProgression {
-    fn default() -> Self {
-        Self {
-            merc: GuildTrackState::default(),
-            arena: GuildTrackState::default(),
-            thieves: GuildTrackState::default(),
-            college: GuildTrackState::default(),
-            sorcerors: GuildTrackState::default(),
-            order: GuildTrackState::default(),
-            temple: GuildTrackState::default(),
-            castle: GuildTrackState::default(),
-            palace: GuildTrackState::default(),
-            charity: GuildTrackState::default(),
-            bank: GuildTrackState::default(),
-            monastery: GuildTrackState::default(),
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MainQuestState {
@@ -986,6 +961,7 @@ impl Default for PrimaryAttributes {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub struct ResistanceProfile {
     pub fire: i16,
     pub cold: i16,
@@ -994,26 +970,18 @@ pub struct ResistanceProfile {
     pub magic: i16,
 }
 
-impl Default for ResistanceProfile {
-    fn default() -> Self {
-        Self { fire: 0, cold: 0, electricity: 0, poison: 0, magic: 0 }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub struct ImmunityFlags {
     pub poison: bool,
     pub sleep: bool,
     pub fear: bool,
 }
 
-impl Default for ImmunityFlags {
-    fn default() -> Self {
-        Self { poison: false, sleep: false, fear: false }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub struct WorldTopology {
     pub dungeon_level: i16,
     pub city_site_id: u8,
@@ -1023,20 +991,9 @@ pub struct WorldTopology {
     pub country_rampart_position: Option<Position>,
 }
 
-impl Default for WorldTopology {
-    fn default() -> Self {
-        Self {
-            dungeon_level: 0,
-            city_site_id: 0,
-            country_region_id: 0,
-            last_city_position: None,
-            last_country_position: None,
-            country_rampart_position: None,
-        }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Default)]
 pub struct TurnScheduler {
     pub player_phase: u64,
     pub monster_phase: u64,
@@ -1044,11 +1001,6 @@ pub struct TurnScheduler {
     pub timed_effect_phase: u64,
 }
 
-impl Default for TurnScheduler {
-    fn default() -> Self {
-        Self { player_phase: 0, monster_phase: 0, environment_phase: 0, timed_effect_phase: 0 }
-    }
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SpellState {
@@ -2374,8 +2326,8 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
         turn_minutes = wizard_resolution.turn_minutes;
     }
 
-    if !command_consumed {
-        if let Some(quit_resolution) =
+    if !command_consumed
+        && let Some(quit_resolution) =
             resolve_pending_quit_interaction(state, &command, &mut events)
         {
             command_consumed = true;
@@ -2383,10 +2335,9 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             command_for_accounting = quit_resolution.command_for_accounting;
             turn_minutes = quit_resolution.turn_minutes;
         }
-    }
 
-    if !command_consumed {
-        if let Some(talk_resolution) =
+    if !command_consumed
+        && let Some(talk_resolution) =
             resolve_pending_talk_direction_interaction(state, &command, &mut events)
         {
             command_consumed = true;
@@ -2394,10 +2345,9 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             command_for_accounting = talk_resolution.command_for_accounting;
             turn_minutes = talk_resolution.turn_minutes;
         }
-    }
 
-    if !command_consumed {
-        if let Some(spell_resolution) =
+    if !command_consumed
+        && let Some(spell_resolution) =
             resolve_pending_spell_interaction(state, &command, &mut events)
         {
             command_consumed = true;
@@ -2405,10 +2355,9 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             command_for_accounting = spell_resolution.command_for_accounting;
             turn_minutes = spell_resolution.turn_minutes;
         }
-    }
 
-    if !command_consumed {
-        if let Some(activation_resolution) =
+    if !command_consumed
+        && let Some(activation_resolution) =
             resolve_pending_activation_interaction(state, &command, &mut events)
         {
             command_consumed = true;
@@ -2416,10 +2365,9 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             command_for_accounting = activation_resolution.command_for_accounting;
             turn_minutes = activation_resolution.turn_minutes;
         }
-    }
 
-    if !command_consumed {
-        if let Some(inventory_resolution) =
+    if !command_consumed
+        && let Some(inventory_resolution) =
             resolve_pending_inventory_interaction(state, &command, &mut events)
         {
             command_consumed = true;
@@ -2427,10 +2375,9 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             command_for_accounting = inventory_resolution.command_for_accounting;
             turn_minutes = inventory_resolution.turn_minutes;
         }
-    }
 
-    if !command_consumed {
-        if let Some(item_prompt_resolution) = resolve_pending_item_prompt_interaction(
+    if !command_consumed
+        && let Some(item_prompt_resolution) = resolve_pending_item_prompt_interaction(
             state,
             &command,
             &mut events,
@@ -2442,10 +2389,9 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             command_for_accounting = item_prompt_resolution.command_for_accounting;
             turn_minutes = item_prompt_resolution.turn_minutes;
         }
-    }
 
-    if !command_consumed {
-        if let Some(targeting_resolution) =
+    if !command_consumed
+        && let Some(targeting_resolution) =
             resolve_pending_targeting_interaction(state, &command, &mut events, rng)
         {
             command_consumed = true;
@@ -2453,7 +2399,6 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             command_for_accounting = targeting_resolution.command_for_accounting;
             turn_minutes = targeting_resolution.turn_minutes;
         }
-    }
 
     if !command_consumed {
         let interaction_consumed = resolve_pending_site_interaction(state, &command, &mut events);
@@ -3767,9 +3712,7 @@ fn apply_site_service(
             }
         }
         SITE_AUX_SERVICE_ARENA => {
-            if state.progression.arena_rank <= 0 {
-                1
-            } else if !state.progression.arena_match_active {
+            if state.progression.arena_rank <= 0 || !state.progression.arena_match_active {
                 1
             } else {
                 2
@@ -4243,7 +4186,7 @@ fn item_prompt_filter_allows(item: &Item, filter: &ItemPromptFilter) -> bool {
     match filter {
         ItemPromptFilter::Any => true,
         ItemPromptFilter::Families(families) => {
-            families.iter().any(|family| *family == item.family)
+            families.contains(&item.family)
         }
     }
 }
@@ -4876,9 +4819,7 @@ fn resolve_pending_quit_interaction(
     command: &Command,
     events: &mut Vec<Event>,
 ) -> Option<QuitInteractionResolution> {
-    let Some(interaction) = state.pending_quit_interaction.clone() else {
-        return None;
-    };
+    let interaction = state.pending_quit_interaction.clone()?;
 
     let mut resolution = QuitInteractionResolution {
         freeze_world_progression: true,
@@ -4951,9 +4892,7 @@ fn resolve_pending_talk_direction_interaction(
     command: &Command,
     events: &mut Vec<Event>,
 ) -> Option<TalkDirectionInteractionResolution> {
-    let Some(interaction) = state.pending_talk_direction else {
-        return None;
-    };
+    let interaction = state.pending_talk_direction?;
 
     let mut resolution = TalkDirectionInteractionResolution {
         freeze_world_progression: true,
@@ -5090,9 +5029,8 @@ fn resolve_pending_spell_interaction(
     command: &Command,
     events: &mut Vec<Event>,
 ) -> Option<SpellInteractionResolution> {
-    let Some(interaction) = state.pending_spell_interaction.clone() else {
-        return None;
-    };
+    let interaction = state.pending_spell_interaction.clone()?;
+
     let mut resolution = SpellInteractionResolution {
         freeze_world_progression: true,
         command_for_accounting: Command::Legacy { token: "F".to_string() },
@@ -5193,9 +5131,7 @@ fn resolve_pending_wizard_interaction(
     events: &mut Vec<Event>,
     bonus_minutes: &mut u64,
 ) -> Option<WizardInteractionResolution> {
-    let Some(interaction) = state.pending_wizard_interaction.clone() else {
-        return None;
-    };
+    let interaction = state.pending_wizard_interaction.clone()?;
     let _ = bonus_minutes;
     let input = parse_wizard_input_token(command);
     let mut resolution = WizardInteractionResolution {
@@ -5943,12 +5879,7 @@ fn pack_item_id_from_choice(state: &GameState, choice: char) -> Option<u32> {
 
 fn item_prompt_choice_key_index(choice: char) -> Option<usize> {
     let lowered = choice.to_ascii_lowercase();
-    for idx in 0..26 {
-        if item_prompt_choice_key(idx) == Some(lowered) {
-            return Some(idx);
-        }
-    }
-    None
+    (0..26).find(|&idx| item_prompt_choice_key(idx) == Some(lowered))
 }
 
 fn remove_inventory_item_by_id(state: &mut GameState, item_id: u32) -> Option<Item> {
@@ -6067,9 +5998,7 @@ fn resolve_pending_activation_interaction(
     command: &Command,
     events: &mut Vec<Event>,
 ) -> Option<ActivationInteractionResolution> {
-    let Some(interaction) = state.pending_activation_interaction.clone() else {
-        return None;
-    };
+    let interaction = state.pending_activation_interaction.clone()?;
     let resolution = ActivationInteractionResolution {
         freeze_world_progression: true,
         command_for_accounting: Command::Legacy { token: "F".to_string() },
@@ -6134,9 +6063,8 @@ fn resolve_pending_inventory_interaction(
     command: &Command,
     events: &mut Vec<Event>,
 ) -> Option<InventoryInteractionResolution> {
-    let Some(interaction) = state.pending_inventory_interaction.clone() else {
-        return None;
-    };
+    let interaction = state.pending_inventory_interaction.clone()?;
+
     let mut resolution = InventoryInteractionResolution {
         freeze_world_progression: true,
         command_for_accounting: Command::Legacy { token: "F".to_string() },
@@ -6626,9 +6554,7 @@ fn resolve_pending_item_prompt_interaction<R: RandomSource>(
     rng: &mut R,
     bonus_minutes: &mut u64,
 ) -> Option<ItemPromptInteractionResolution> {
-    let Some(interaction) = state.pending_item_prompt.clone() else {
-        return None;
-    };
+    let interaction = state.pending_item_prompt.clone()?;
     let _ = (rng, bonus_minutes);
     let mut resolution = ItemPromptInteractionResolution {
         freeze_world_progression: true,
@@ -6876,9 +6802,8 @@ fn resolve_pending_targeting_interaction<R: RandomSource>(
     events: &mut Vec<Event>,
     rng: &mut R,
 ) -> Option<TargetingInteractionResolution> {
-    let Some(interaction) = state.pending_targeting_interaction.clone() else {
-        return None;
-    };
+    let interaction = state.pending_targeting_interaction.clone()?;
+
     let mut resolution = TargetingInteractionResolution {
         freeze_world_progression: true,
         command_for_accounting: Command::Legacy { token: "F".to_string() },
@@ -7623,7 +7548,7 @@ fn apply_site_interaction_choice(
             2 => {
                 if state.gold >= 10 {
                     state.gold -= 10;
-                    let payout = if state.clock.turn % 2 == 0 { 18 } else { 0 };
+                    let payout = if state.clock.turn.is_multiple_of(2) { 18 } else { 0 };
                     state.gold += payout;
                     events.push(Event::EconomyUpdated {
                         source: "casino".to_string(),
@@ -7924,7 +7849,7 @@ fn apply_site_interaction_choice(
         SiteInteractionKind::Bank => match choice {
             1 => {
                 if state.gold > 0 {
-                    let deposit = state.gold.min(50).max(0);
+                    let deposit = state.gold.clamp(0, 50);
                     state.gold -= deposit;
                     state.bank_gold += deposit;
                     state.progression.quests.bank.rank = state.progression.quests.bank.rank.max(1);
@@ -7947,7 +7872,7 @@ fn apply_site_interaction_choice(
             }
             2 => {
                 if state.bank_gold > 0 {
-                    let withdrawal = state.bank_gold.min(50).max(0);
+                    let withdrawal = state.bank_gold.clamp(0, 50);
                     state.bank_gold -= withdrawal;
                     state.gold += withdrawal;
                     state.progression.quests.bank.quest_flags |= 0x0001;
@@ -10188,7 +10113,7 @@ fn apply_merc_talk_command(state: &mut GameState, events: &mut Vec<Event>) -> St
     if state.progression.quests.order.rank > 0 {
         notes.push("Paladin oaths conflict with legion command service.".to_string());
     }
-    if state.progression.guild_rank <= 0 {
+    if state.progression.guild_rank == 0 {
         if state.attributes.constitution < 12 || state.attributes.strength < 10 {
             notes.push(
                 "The recruiting centurion says your physicals are below legion standards."
@@ -10442,7 +10367,7 @@ fn apply_country_travel_hazards<R: RandomSource>(
     if state.world_mode != WorldMode::Countryside {
         return;
     }
-    let was_seen = state.known_sites.iter().any(|pos| *pos == state.player.position);
+    let was_seen = state.known_sites.contains(&state.player.position);
     if terrain == CountryTerrainKind::ChaosSea {
         apply_chaos_sea_immersion(state, events);
         if state.status != SessionStatus::InProgress {
@@ -10879,7 +10804,7 @@ fn requires_confirmation(token: &str) -> bool {
 }
 
 fn ensure_known_site(state: &mut GameState, pos: Position) {
-    if !state.known_sites.iter().any(|candidate| *candidate == pos) {
+    if !state.known_sites.contains(&pos) {
         state.known_sites.push(pos);
     }
 }
@@ -13415,7 +13340,7 @@ fn enchant_item_with_risk(
 
     if delta < 0 {
         let item = &mut state.player.inventory[idx];
-        if item.blessing < 0 || (is_artifact && (state.clock.turn % 3 != 0)) {
+        if item.blessing < 0 || (is_artifact && !state.clock.turn.is_multiple_of(3)) {
             return format!("{item_name} glows, but the aura flickers out.");
         }
         item.plus = 0;
@@ -13425,7 +13350,7 @@ fn enchant_item_with_risk(
         return format!("{item_name} radiates an aura of mundanity.");
     }
 
-    if is_artifact && state.clock.turn % 2 == 0 {
+    if is_artifact && state.clock.turn.is_multiple_of(2) {
         let backlash = (state.player.stats.max_hp / 4).max(4);
         let applied = state.player.stats.apply_damage(backlash);
         if !state.player.stats.is_alive() {
@@ -14338,8 +14263,8 @@ fn apply_environment_effects<R: RandomSource>(
     for y in 0..height {
         for x in 0..width {
             let pos = Position { x, y };
-            if let Some(cell) = state.tile_site_at(pos) {
-                if (cell.flags & TILE_FLAG_BURNING) != 0 {
+            if let Some(cell) = state.tile_site_at(pos)
+                && (cell.flags & TILE_FLAG_BURNING) != 0 {
                     // Spread logic
                     for dy in -1..=1 {
                         for dx in -1..=1 {
@@ -14364,7 +14289,6 @@ fn apply_environment_effects<R: RandomSource>(
                         to_burnout.push(pos);
                     }
                 }
-            }
         }
     }
 
@@ -14406,6 +14330,57 @@ fn apply_environment_effects<R: RandomSource>(
         });
         if applied > 0 && !state.player.stats.is_alive() {
             mark_player_defeated(state, format!("{trap_effect_id} trap"), events);
+        }
+    }
+
+    // Fire Propagation
+    let mut fire_updates = Vec::new();
+    let width = state.bounds.width as usize;
+    let height = state.bounds.height as usize;
+    let mut rng = DeterministicRng::seeded(state.scheduler.environment_phase);
+
+    for y in 0..height {
+        for x in 0..width {
+            let idx = y * width + x;
+            if let Some(cell) = state.site_grid.get(idx)
+                && (cell.flags & TILE_FLAG_BURNING) != 0 {
+                    // Spread logic
+                    let dx = [-1, 0, 1, -1, 1, -1, 0, 1];
+                    let dy = [-1, -1, -1, 0, 0, 1, 1, 1];
+                    
+                    for i in 0..8 {
+                        let nx = x as i32 + dx[i];
+                        let ny = y as i32 + dy[i];
+                        
+                        if nx >= 0 && nx < width as i32 && ny >= 0 && ny < height as i32 {
+                            let n_idx = (ny as usize) * width + (nx as usize);
+                            if let Some(neighbor) = state.site_grid.get(n_idx)
+                                && neighbor.glyph == '\"' && (neighbor.flags & (TILE_FLAG_BURNING | TILE_FLAG_BURNT)) == 0
+                                    && rng.range_inclusive_i32(0, 100) < 30 {
+                                        fire_updates.push((n_idx, TILE_FLAG_BURNING, true));
+                                    }
+                        }
+                    }
+
+                    // Burnout logic
+                    if rng.range_inclusive_i32(0, 100) < 15 {
+                        fire_updates.push((idx, TILE_FLAG_BURNING, false)); // Extinguish
+                        fire_updates.push((idx, TILE_FLAG_BURNT, true)); // Mark as burnt
+                    }
+                }
+        }
+    }
+
+    for (idx, flag, set) in fire_updates {
+        if let Some(cell) = state.site_grid.get_mut(idx) {
+            if set {
+                cell.flags |= flag;
+                if flag == TILE_FLAG_BURNT {
+                    cell.glyph = '.'; // Ash/Stone
+                }
+            } else {
+                cell.flags &= !flag;
+            }
         }
     }
 }
@@ -14555,7 +14530,7 @@ fn resolve_arena_round(state: &mut GameState, events: &mut Vec<Event>) {
     if state.progression.arena_rank > 0
         && state.progression.arena_rank < 4
         && state.progression.arena_opponent > 5
-        && state.progression.arena_opponent % 3 == 0
+        && state.progression.arena_opponent.is_multiple_of(3)
     {
         state.progression.arena_rank = state.progression.arena_rank.saturating_add(1);
     }
@@ -14864,12 +14839,12 @@ mod tests {
         let width = 64usize;
         let height = 16usize;
         let mut rows = vec!["#".repeat(width); height];
-        for y in 3..13 {
-            let mut chars: Vec<char> = rows[y].chars().collect();
+        for row in rows.iter_mut().take(13).skip(3) {
+            let mut chars: Vec<char> = row.chars().collect();
             for cell in chars.iter_mut().take(62).skip(2) {
                 *cell = '.';
             }
-            rows[y] = chars.into_iter().collect();
+            *row = chars.into_iter().collect();
         }
         for y in [7usize, 8usize] {
             let mut chars: Vec<char> = rows[y].chars().collect();
@@ -16054,7 +16029,7 @@ mod tests {
         let _ = step(&mut state, Command::Legacy { token: "<enter>".to_string() }, &mut rng);
 
         assert_eq!(state.attributes.strength, 20);
-        assert!(state.player.stats.attack_max >= state.player.stats.attack_min + 1);
+        assert!(state.player.stats.attack_max > state.player.stats.attack_min);
     }
 
     #[test]
@@ -16151,7 +16126,7 @@ mod tests {
         assert_eq!(state.progression.alignment, Alignment::Neutral);
         assert_eq!(state.progression.law_chaos_score, 0);
         assert!(state.spellbook.max_mana > 160);
-        assert!(state.player.stats.attack_max >= state.player.stats.attack_min + 1);
+        assert!(state.player.stats.attack_max > state.player.stats.attack_min);
         assert!(state.player.stats.max_hp >= 12);
     }
 
@@ -16857,8 +16832,8 @@ mod tests {
         state.map_binding.semantic = MapSemanticKind::City;
         state.site_grid = vec![TileSiteCell::default(); 12];
         state.city_site_grid = state.site_grid.clone();
-        state.site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
-        state.city_site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.city_site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
         let start_gold = state.gold;
 
         let mut rng = FixedRng::new(vec![]);
@@ -16883,8 +16858,8 @@ mod tests {
         state.map_binding.semantic = MapSemanticKind::City;
         state.site_grid = vec![TileSiteCell::default(); 12];
         state.city_site_grid = state.site_grid.clone();
-        state.site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
-        state.city_site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.city_site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
         let start_gold = state.gold;
 
         let mut rng = FixedRng::new(vec![]);
@@ -16909,8 +16884,8 @@ mod tests {
         state.map_binding.semantic = MapSemanticKind::City;
         state.site_grid = vec![TileSiteCell::default(); 12];
         state.city_site_grid = state.site_grid.clone();
-        state.site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
-        state.city_site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.city_site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
         let mut rng = FixedRng::new(vec![]);
 
         let _ = step(&mut state, Command::Move(Direction::East), &mut rng);
@@ -16955,8 +16930,8 @@ mod tests {
         state.map_binding.semantic = MapSemanticKind::City;
         state.site_grid = vec![TileSiteCell::default(); 12];
         state.city_site_grid = state.site_grid.clone();
-        state.site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
-        state.city_site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.city_site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
         let mut rng = FixedRng::new(vec![]);
 
         let _ = step(&mut state, Command::Move(Direction::East), &mut rng);
@@ -16998,8 +16973,8 @@ mod tests {
         state.map_binding.semantic = MapSemanticKind::City;
         state.site_grid = vec![TileSiteCell::default(); 12];
         state.city_site_grid = state.site_grid.clone();
-        state.site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
-        state.city_site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.city_site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
         let mut rng = FixedRng::new(vec![]);
 
         let _ = step(&mut state, Command::Move(Direction::East), &mut rng);
@@ -17027,8 +17002,8 @@ mod tests {
         state.map_binding.semantic = MapSemanticKind::City;
         state.site_grid = vec![TileSiteCell::default(); 12];
         state.city_site_grid = state.site_grid.clone();
-        state.site_grid[1 * 4 + 1].aux = SITE_AUX_SERVICE_TEMPLE;
-        state.city_site_grid[1 * 4 + 1].aux = SITE_AUX_SERVICE_TEMPLE;
+        state.site_grid[4 + 1].aux = SITE_AUX_SERVICE_TEMPLE;
+        state.city_site_grid[4 + 1].aux = SITE_AUX_SERVICE_TEMPLE;
         let mut rng = FixedRng::new(vec![]);
 
         let _ = step(&mut state, Command::Legacy { token: ">".to_string() }, &mut rng);
@@ -17078,8 +17053,8 @@ mod tests {
         state.map_binding.semantic = MapSemanticKind::City;
         state.site_grid = vec![TileSiteCell::default(); 12];
         state.city_site_grid = state.site_grid.clone();
-        state.site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
-        state.city_site_grid[1 * 4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
+        state.city_site_grid[4 + 2].aux = SITE_AUX_SERVICE_SHOP;
         let mut rng = FixedRng::new(vec![]);
 
         let _ = step(&mut state, Command::Move(Direction::East), &mut rng);

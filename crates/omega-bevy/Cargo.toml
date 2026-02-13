@@ -1,0 +1,14 @@
+﻿[package]
+name = "omega-bevy"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+omega-core = { path = "../omega-core" }
+omega-content = { path = "../omega-content" }
+omega-save = { path = "../omega-save" }
+bevy = "0.15"
+bevy_app = "0.15"
+bevy_ecs = "0.15"
+bevy_egui = "0.31"

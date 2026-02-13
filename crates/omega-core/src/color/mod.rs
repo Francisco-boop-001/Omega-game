@@ -25,13 +25,23 @@
 //! // let color_spec = theme.resolve(color_id);
 //! ```
 
+pub mod animation;
 pub mod capability;
 pub mod color_id;
 pub mod color_spec;
 pub mod hex_color;
 pub mod theme;
+pub mod validation;
+pub mod loader;
+pub mod registry;
+pub mod watcher;
+pub mod procedural;
 
-// Re-export the main types for convenient access
+#[cfg(test)]
+mod tests;
+
+// Re-export main types for convenient access
+pub use animation::{AnimationKind, lerp_color_spec};
 pub use capability::{ColorCapability, get_capability, reset_capability};
 pub use color_id::{
     ColorId, EffectColorId, EntityColorId, EnvironmentColorId, ItemRarityColorId,
@@ -39,4 +49,8 @@ pub use color_id::{
 };
 pub use color_spec::{AnsiColor, ColorSpec};
 pub use hex_color::{HexColor, HexColorError};
-pub use theme::{ColorPalette, ColorRef, ColorTheme, SemanticColors, ThemeMetadata};
+pub use theme::{ColorPalette, ColorRef, ColorTheme, SemanticColors, ThemeError, ThemeMetadata};
+pub use validation::ValidationReport;
+pub use loader::ThemeLoader;
+pub use registry::{ThemeRegistry, RegisteredTheme};
+pub use watcher::{ThemeWatcher, ThemeEvent};

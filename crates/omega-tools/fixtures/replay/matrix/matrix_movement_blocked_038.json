@@ -1,0 +1,72 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "generated_matrix",
+  "name": "matrix_movement_blocked_038",
+  "family": "movement",
+  "tags": [
+    "critical_path",
+    "frontend_shared",
+    "movement"
+  ],
+  "seed": 10038,
+  "initial": {
+    "bounds": {
+      "width": 7,
+      "height": 6
+    },
+    "player_position": {
+      "x": 1,
+      "y": 0
+    },
+    "player_stats": null,
+    "inventory_capacity": null,
+    "monsters": [],
+    "ground_items": [],
+    "world_mode": null,
+    "environment": null,
+    "map_rows": null,
+    "site_aux_grid": null,
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "move": {
+        "direction": "north"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 1,
+    "minutes": 5,
+    "player_position": {
+      "x": 1,
+      "y": 0
+    },
+    "player_hp": 20,
+    "monsters_alive": 0,
+    "inventory_count": 0,
+    "ground_item_count": 0,
+    "required_event_kinds": [
+      "action_points_spent",
+      "move_blocked",
+      "progression_updated",
+      "turn_advanced"
+    ],
+    "world_mode": null,
+    "guild_rank": null,
+    "priest_rank": null,
+    "alignment": null,
+    "quest_state": null,
+    "total_winner_unlocked": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null,
+    "known_site_count": null,
+    "ending": null,
+    "high_score_eligible": null
+  }
+}

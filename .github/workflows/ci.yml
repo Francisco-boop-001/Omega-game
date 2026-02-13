@@ -1,0 +1,107 @@
+﻿name: ci
+
+on:
+  push:
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lock_guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Validate lock ownership
+        shell: pwsh
+        run: |
+          ./scripts/check-lock-ownership.ps1 -Actor "${{ github.actor }}"
+
+  quality:
+    needs: lock_guard
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        check: [fmt, clippy, test, nextest, replay_dashboard, determinism, frontend_parity, save_compat, fuzz_smoke, perf_budget, doc]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - name: Install nextest
+        if: matrix.check == 'nextest'
+        uses: taiki-e/install-action@nextest
+      - uses: Swatinem/rust-cache@v2
+      - name: Run ${{ matrix.check }}
+        run: |
+          case "${{ matrix.check }}" in
+            fmt)
+              cargo fmt --all -- --check
+              ;;
+            clippy)
+              cargo clippy --workspace --all-targets -- -D warnings
+              ;;
+            test)
+              cargo test --workspace
+              ;;
+            nextest)
+              cargo nextest run --workspace --profile ci
+              ;;
+            replay_dashboard)
+              cargo run -p omega-tools --bin replay_tool -- --min-scenarios 500 --summary-only
+              ;;
+            determinism)
+              cargo run -p omega-tools --bin determinism_check -- --runs-per-fixture 20
+              ;;
+            frontend_parity)
+              cargo run -p omega-tools --bin frontend_parity
+              ;;
+            save_compat)
+              cargo run -p omega-tools --bin save_compat_report
+              ;;
+            fuzz_smoke)
+              cargo run -p omega-tools --bin fuzz_smoke
+              ;;
+            perf_budget)
+              cargo run -p omega-tools --bin perf_baseline -- --check
+              ;;
+            doc)
+              cargo doc --workspace --no-deps
+              ;;
+            *)
+              echo "Unknown check: ${{ matrix.check }}"
+              exit 1
+              ;;
+          esac
+
+  m4_gate:
+    needs: quality
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Run Milestone 4 gate summary
+        shell: pwsh
+        run: |
+          ./scripts/run-m4-gate.ps1
+      - name: Upload M4 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-gate-artifacts
+          path: |
+            target/m4-gate-check-summary.md
+            target/ws-d-regression-dashboard.json
+            target/ws-d-regression-dashboard.md
+            target/ws-d-determinism-report.json
+            target/ws-d-determinism-report.md
+            target/frontend-command-parity.json
+            target/frontend-command-parity.md
+            target/save-compat-report.json
+            target/save-compat-report.md

@@ -1,0 +1,87 @@
+{
+  "contract_version": 1,
+  "active": true,
+  "source": "legacy_handcrafted",
+  "name": "r3_site_arena",
+  "family": "site_service",
+  "tags": [
+    "arena",
+    "r3",
+    "site"
+  ],
+  "seed": 61008,
+  "initial": {
+    "bounds": {
+      "width": 3,
+      "height": 3
+    },
+    "player_position": {
+      "x": 1,
+      "y": 1
+    },
+    "player_stats": null,
+    "inventory_capacity": null,
+    "monsters": [],
+    "ground_items": [],
+    "world_mode": "DungeonCity",
+    "environment": "City",
+    "map_rows": [
+      "...",
+      "...",
+      "..."
+    ],
+    "site_aux_grid": [
+      0,
+      0,
+      0,
+      0,
+      19,
+      0,
+      0,
+      0,
+      0
+    ],
+    "site_flags_grid": null,
+    "gold": null,
+    "bank_gold": null,
+    "food": null
+  },
+  "commands": [
+    {
+      "legacy": {
+        "token": ">"
+      }
+    }
+  ],
+  "expected": {
+    "turn": 1,
+    "minutes": 0,
+    "player_position": {
+      "x": 1,
+      "y": 1
+    },
+    "player_hp": 20,
+    "monsters_alive": 1,
+    "inventory_count": 0,
+    "ground_item_count": 0,
+    "required_event_kinds": [
+      "action_points_spent",
+      "legacy_handled",
+      "monster_moved",
+      "progression_updated",
+      "turn_advanced"
+    ],
+    "world_mode": "DungeonCity",
+    "guild_rank": 0,
+    "priest_rank": 0,
+    "alignment": "Neutral",
+    "quest_state": "NotStarted",
+    "total_winner_unlocked": false,
+    "gold": 250,
+    "bank_gold": 0,
+    "food": 3,
+    "known_site_count": 0,
+    "ending": "None",
+    "high_score_eligible": true
+  }
+}

@@ -39,6 +39,7 @@ pub mod color_adapter;
 pub mod editor;
 pub mod hud;
 pub mod input;
+pub mod inspector;
 pub mod interaction;
 pub mod overlays;
 pub mod scene;
@@ -157,6 +158,8 @@ impl Plugin for ArcaneCartographerPlugin {
             .insert_resource(TargetTheme(None))
             .insert_resource(ThemeTransitionProgress(0.0))
             .insert_resource(editor::ThemeEditorState::default())
+            .insert_resource(spawner::SpawnerState::default())
+            .insert_resource(inspector::InspectorState::default())
             .add_event::<ThemeChangeEvent>()
             .add_systems(Startup, scene::setup_arcane_scene)
             .add_systems(
@@ -173,6 +176,10 @@ impl Plugin for ArcaneCartographerPlugin {
                     apply_focus_styles,
                     update_ui_text_colors,
                     editor::theme_editor_ui,
+                    spawner::spawner_ui_system,
+                    spawner::mouse_spawning_system,
+                    inspector::mouse_inspector_system,
+                    inspector::inspector_ui_system,
                 )
                     .chain(),
             );
@@ -189,6 +196,7 @@ fn ensure_session_started(mut runtime: ResMut<FrontendRuntime>, mut boot: ResMut
     }
 }
 
+#[allow(clippy::type_complexity)]
 fn update_ui_panels(
     mut commands: Commands,
     status: Res<RuntimeStatus>,
@@ -197,12 +205,13 @@ fn update_ui_panels(
     bevy_theme: Res<BevyTheme>,
     mut focus: ResMut<UiFocusState>,
     mut text_queries: ParamSet<(
-        Query<Entity, With<MapPanelText>>,
+        Query<(Entity, &mut Text, Option<&Children>), With<MapPanelText>>,
         Query<&mut Text, With<CompassPanelText>>,
         Query<&mut Text, With<HudPanelText>>,
         Query<&mut Text, With<InteractionPanelText>>,
         Query<&mut Text, With<TimelinePanelText>>,
     )>,
+    mut span_query: Query<(&mut TextSpan, &mut TextColor)>,
 ) {
     let fallback = RenderFrame {
         mode: GameMode::Classic,
@@ -216,20 +225,47 @@ fn update_ui_panels(
     let frame_ref = frame.frame.as_ref().unwrap_or(&fallback);
 
     let map_data = tilemap::compose_map_lines(frame_ref, motion.frame);
-    if let Ok(map_entity) = text_queries.p0().get_single_mut() {
-        commands.entity(map_entity).despawn_descendants();
-        commands.entity(map_entity).with_children(|parent| {
-            for row in map_data {
-                for (ch, color_id) in row {
-                    let color = bevy_theme.resolve(&color_id);
+    if let Ok((map_entity, mut text, children)) = text_queries.p0().get_single_mut() {
+        if !text.0.is_empty() {
+            text.0.clear();
+        }
+
+        let mut expected_spans = Vec::new();
+        for row in map_data {
+            for (ch, color_id) in row {
+                expected_spans.push((ch.to_string(), bevy_theme.resolve(&color_id)));
+            }
+            expected_spans.push(("\n".to_string(), bevy_theme.get_ui_text_default()));
+        }
+
+        let mut needs_rebuild = true;
+        if let Some(children) = children {
+            if children.len() == expected_spans.len() {
+                needs_rebuild = false;
+                for (child, (text, color)) in children.iter().zip(expected_spans.iter()) {
+                    if let Ok((mut span, mut text_color)) = span_query.get_mut(*child) {
+                        if &span.0 != text {
+                            *span = TextSpan::new(text.clone());
+                        }
+                        if text_color.0 != *color {
+                            text_color.0 = *color;
+                        }
+                    }
+                }
+            }
+        }
+
+        if needs_rebuild {
+            commands.entity(map_entity).despawn_descendants();
+            commands.entity(map_entity).with_children(|parent| {
+                for (text, color) in expected_spans {
                     parent.spawn((
-                        TextSpan::new(ch.to_string()),
+                        TextSpan::new(text),
                         TextColor(color),
                     ));
                 }
-                parent.spawn(TextSpan::new("\n".to_string()));
-            }
-        });
+            });
+        }
     }
 
     let compass_lines = overlays::compose_compass_lines(frame_ref, motion.frame);
@@ -294,6 +330,7 @@ fn blend_color(left: Color, right: Color, t: f32) -> Color {
     )
 }
 
+#[allow(clippy::type_complexity)]
 fn apply_focus_styles(
     chrome: Res<theme::UiChromeColors>,
     bevy_theme: Res<BevyTheme>,
@@ -379,7 +416,7 @@ fn apply_focus_styles(
     }
 }
 
-/// System that updates UI text components with theme-aware colors.
+#[allow(clippy::type_complexity)]
 fn update_ui_text_colors(
     bevy_theme: Res<BevyTheme>,
     mut queries: ParamSet<(
@@ -395,19 +432,19 @@ fn update_ui_text_colors(
     let dim_color = TextColor(bevy_theme.get_ui_text_dim());
 
     for mut color in queries.p0().iter_mut() {
-        *color = default_color.clone();
+        *color = default_color;
     }
     for mut color in queries.p1().iter_mut() {
-        *color = default_color.clone();
+        *color = default_color;
     }
     for mut color in queries.p2().iter_mut() {
-        *color = default_color.clone();
+        *color = default_color;
     }
     for mut color in queries.p3().iter_mut() {
-        *color = warning_color.clone();
+        *color = warning_color;
     }
     for mut color in queries.p4().iter_mut() {
-        *color = dim_color.clone();
+        *color = dim_color;
     }
 }
 
@@ -440,8 +477,8 @@ fn monitor_environment_changes(
     mut theme_events: EventWriter<ThemeChangeEvent>,
     mut last_env: Local<Option<omega_core::LegacyEnvironment>>,
 ) {
-    if let Some(session) = &runtime.0.session {
-        if last_env.is_none() || last_env.unwrap() != session.state.environment {
+    if let Some(session) = &runtime.0.session
+        && (last_env.is_none() || last_env.unwrap() != session.state.environment) {
             let recommended = omega_core::color::ColorTheme::name_for_environment(session.state.environment);
             if active_theme.0 != recommended {
                 info!("Environment change detected: {:?}, recommending theme: {}", session.state.environment, recommended);
@@ -451,7 +488,6 @@ fn monitor_environment_changes(
             }
             *last_env = Some(session.state.environment);
         }
-    }
 }
 
 /// System that interpolates colors during a theme transition.

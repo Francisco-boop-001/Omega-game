@@ -1,0 +1,28 @@
+name: m4-finalize
+
+on:
+  workflow_dispatch:
+
+jobs:
+  finalize_remaining_criteria:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Finalize remaining M4 criteria
+        shell: pwsh
+        run: |
+          ./scripts/finalize-m4-remaining.ps1 -Runs 14
+      - name: Upload finalization artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: m4-finalization-${{ github.run_id }}
+          path: |
+            target/m4-burnin-window.json
+            target/m4-burnin-window.md
+            target/m4-crashfree-window.json
+            target/m4-crashfree-window.md
+            target/m4-gate-check-summary.md
