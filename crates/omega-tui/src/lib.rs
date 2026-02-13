@@ -526,7 +526,7 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
             SessionStatus::Won => "VICTORY",
             SessionStatus::InProgress => "SESSION",
         };
-        let terminal_panel = Paragraph::new(render_terminal_panel(&app.state, &app.save_slot))
+        let terminal_panel = Paragraph::new(render_terminal_panel(&app.state, &app.style_cache, &app.save_slot))
             .block(Block::default().title(title).borders(Borders::ALL))
             .wrap(Wrap { trim: false });
         frame.render_widget(terminal_panel, frame.area());
@@ -554,11 +554,11 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         .block(Block::default().title("MAP").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
-    let status = Paragraph::new(render_status_panel(&app.state, &app.save_slot))
+    let status = Paragraph::new(render_status_panel(&app.state, &app.style_cache, &app.save_slot))
         .block(Block::default().title("STATUS").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
-    let inventory = Paragraph::new(render_inventory_panel(&app.state))
+    let inventory = Paragraph::new(render_inventory_panel(&app.state, &app.style_cache))
         .block(Block::default().title("INVENTORY").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
@@ -567,16 +567,16 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         .constraints([Constraint::Length(6), Constraint::Min(5)])
         .split(bottom[1]);
 
-    let interaction = Paragraph::new(render_interaction_panel(&app.state))
+    let interaction = Paragraph::new(render_interaction_panel(&app.state, &app.style_cache))
         .block(Block::default().title("INTERACTION").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
-    let log_text = render_log_panel(&app.state, app.last_outcome.as_ref());
-    let log_line_count = log_text.lines().count() as u16;
+    let log_lines = render_log_panel(&app.state, &app.style_cache, app.last_outcome.as_ref());
+    let log_line_count = log_lines.len() as u16;
     let log_inner_height = interaction_rows[1].height.saturating_sub(2);
     let log_scroll = log_line_count.saturating_sub(log_inner_height);
 
-    let log = Paragraph::new(log_text)
+    let log = Paragraph::new(log_lines)
         .block(Block::default().title("LOG").borders(Borders::ALL))
         .scroll((log_scroll, 0))
         .wrap(Wrap { trim: false });
@@ -588,35 +588,72 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
     frame.render_widget(log, interaction_rows[1]);
 }
 
-fn render_terminal_panel(state: &GameState, save_slot: &Path) -> String {
-    let headline = match state.status {
-        SessionStatus::Lost => "You died!",
-        SessionStatus::Won => "You are victorious!",
-        SessionStatus::InProgress => "Session in progress.",
+fn render_terminal_panel(
+    state: &GameState,
+    style_cache: &StyleCache,
+    save_slot: &Path,
+) -> Vec<Line<'static>> {
+    use omega_core::color::{ColorId, UiColorId};
+
+    let text_default = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDefault));
+    let highlight = style_cache.get_fg(&ColorId::Ui(UiColorId::Highlight));
+
+    let (headline, headline_color) = match state.status {
+        SessionStatus::Lost => ("You died!", ColorId::Ui(UiColorId::MessageDanger)),
+        SessionStatus::Won => (
+            "You are victorious!",
+            ColorId::Ui(UiColorId::MessageSuccess),
+        ),
+        SessionStatus::InProgress => ("Session in progress.", ColorId::Ui(UiColorId::TextDefault)),
     };
-    let mut lines = vec![headline.to_string()];
+    let headline_style = style_cache.get_fg(&headline_color);
+
+    let mut lines = vec![Line::from(Span::styled(headline, headline_style))];
+
     if state.status == SessionStatus::Lost
         && let Some(source) = state.death_source.as_deref()
     {
-        lines.push(format!("Killed by {source}."));
+        lines.push(Line::from(Span::styled(
+            format!("Killed by {source}."),
+            text_default,
+        )));
     }
-    lines.extend([
+
+    lines.push(Line::from(Span::styled(
         format!("Name: {}", state.player_name),
+        text_default,
+    )));
+    lines.push(Line::from(Span::styled(
         format!("Mode: {}", state.mode.as_str()),
+        text_default,
+    )));
+    lines.push(Line::from(Span::styled(
         format!(
             "Turn {}  Time {}m  HP {}/{}",
             state.clock.turn, state.clock.minutes, state.player.stats.hp, state.player.stats.max_hp
         ),
+        text_default,
+    )));
+    lines.push(Line::from(Span::styled(
         format!("Score: {}", state.progression.score),
+        text_default,
+    )));
+    lines.push(Line::from(Span::styled(
         format!("Save slot: {}", save_slot.display()),
-        "Press c/q/esc to continue, r/n to restart, or l to load.".to_string(),
-        String::new(),
-        "Recent log:".to_string(),
-    ]);
+        text_default,
+    )));
+    lines.push(Line::from(Span::styled(
+        "Press c/q/esc to continue, r/n to restart, or l to load.",
+        highlight,
+    )));
+    lines.push(Line::from(Span::styled("", text_default)));
+    lines.push(Line::from(Span::styled("Recent log:", text_default)));
+
     for message in state.log.iter().rev().take(6).rev() {
-        lines.push(format!("- {message}"));
+        lines.push(Line::from(Span::styled(format!("- {message}"), text_default)));
     }
-    lines.join("\n")
+
+    lines
 }
 
 fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
@@ -808,7 +845,13 @@ fn line_path(mut from: Position, to: Position) -> Vec<Position> {
     path
 }
 
-fn render_status_panel(state: &GameState, save_slot: &Path) -> String {
+fn render_status_panel(
+    state: &GameState,
+    style_cache: &StyleCache,
+    save_slot: &Path,
+) -> Vec<Line<'static>> {
+    use omega_core::color::{ColorId, UiColorId};
+
     let interaction = if state.pending_wizard_interaction.is_some() {
         "wizard prompt active".to_string()
     } else if state.pending_spell_interaction.is_some() {
@@ -832,44 +875,116 @@ fn render_status_panel(state: &GameState, save_slot: &Path) -> String {
             .map(|kind| describe_pending_interaction(kind, state))
             .unwrap_or_else(|| "none".to_string())
     };
+
+    let text_default = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDefault));
+    let text_dim = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDim));
+    let highlight = style_cache.get_fg(&ColorId::Ui(UiColorId::Highlight));
+
+    // HP color based on percentage
+    let hp_percent = (state.player.stats.hp as f32 / state.player.stats.max_hp.max(1) as f32) * 100.0;
+    let hp_color = if hp_percent > 66.0 {
+        ColorId::Ui(UiColorId::HealthHigh)
+    } else if hp_percent > 33.0 {
+        ColorId::Ui(UiColorId::HealthMedium)
+    } else {
+        ColorId::Ui(UiColorId::HealthLow)
+    };
+    let hp_style = style_cache.get_fg(&hp_color);
+    let mana_style = style_cache.get_fg(&ColorId::Ui(UiColorId::Mana));
+
+    // State color (Lost/Won)
+    let state_color = match state.status {
+        SessionStatus::Lost => ColorId::Ui(UiColorId::MessageDanger),
+        SessionStatus::Won => ColorId::Ui(UiColorId::MessageSuccess),
+        SessionStatus::InProgress => ColorId::Ui(UiColorId::TextDefault),
+    };
+    let state_style = style_cache.get_fg(&state_color);
+
+    // Interaction color
+    let interaction_style = if interaction == "none" {
+        text_dim
+    } else {
+        highlight
+    };
+
     let mut lines = vec![
-        format!("Name: {}", state.player_name),
-        format!("Mode: {}", state.mode.as_str()),
-        format!("Turn: {}", state.clock.turn),
-        format!("Time: {}m", state.clock.minutes),
-        format!("Pos: ({}, {})", state.player.position.x, state.player.position.y),
-        format!("HP: {}/{}", state.player.stats.hp, state.player.stats.max_hp),
-        format!("Mana: {}/{}", state.spellbook.mana, state.spellbook.max_mana),
-        format!("Inventory: {}/{}", state.player.inventory.len(), state.player.inventory_capacity),
-        format!("Gold/Bank/Food: {}/{}/{}", state.gold, state.bank_gold, state.food),
-        format!("World: {:?}", state.world_mode),
-        format!("Quest: {:?}", state.progression.quest_state),
-        format!("State: {:?}", state.status),
-        format!("Interaction: {interaction}"),
-        format!("Slot: {}", save_slot.display()),
-        "Keys: S save+quit, L load, R restart, Q retire/quit flow, a activate, z zap, Ctrl+F/G/I/K/L/O/P/R/W/X, F12 wizard"
-            .to_string(),
-        "Combat: move into adjacent monsters to bump-attack; uppercase WASD attacks directly. Move west with h or Left."
-            .to_string(),
+        Line::from(Span::styled(format!("Name: {}", state.player_name), text_default)),
+        Line::from(Span::styled(format!("Mode: {}", state.mode.as_str()), text_default)),
+        Line::from(Span::styled(format!("Turn: {}", state.clock.turn), text_default)),
+        Line::from(Span::styled(format!("Time: {}m", state.clock.minutes), text_default)),
+        Line::from(Span::styled(
+            format!("Pos: ({}, {})", state.player.position.x, state.player.position.y),
+            text_default,
+        )),
+        Line::from(vec![
+            Span::styled("HP: ", text_default),
+            Span::styled(
+                format!("{}/{}", state.player.stats.hp, state.player.stats.max_hp),
+                hp_style,
+            ),
+        ]),
+        Line::from(vec![
+            Span::styled("Mana: ", text_default),
+            Span::styled(
+                format!("{}/{}", state.spellbook.mana, state.spellbook.max_mana),
+                mana_style,
+            ),
+        ]),
+        Line::from(Span::styled(
+            format!("Inventory: {}/{}", state.player.inventory.len(), state.player.inventory_capacity),
+            text_default,
+        )),
+        Line::from(Span::styled(
+            format!("Gold/Bank/Food: {}/{}/{}", state.gold, state.bank_gold, state.food),
+            text_default,
+        )),
+        Line::from(Span::styled(format!("World: {:?}", state.world_mode), text_default)),
+        Line::from(Span::styled(format!("Quest: {:?}", state.progression.quest_state), text_default)),
+        Line::from(vec![
+            Span::styled("State: ", text_default),
+            Span::styled(format!("{:?}", state.status), state_style),
+        ]),
+        Line::from(vec![
+            Span::styled("Interaction: ", text_default),
+            Span::styled(interaction, interaction_style),
+        ]),
+        Line::from(Span::styled(format!("Slot: {}", save_slot.display()), text_default)),
+        Line::from(Span::styled(
+            "Keys: S save+quit, L load, R restart, Q retire/quit flow, a activate, z zap, Ctrl+F/G/I/K/L/O/P/R/W/X, F12 wizard",
+            text_default,
+        )),
+        Line::from(Span::styled(
+            "Combat: move into adjacent monsters to bump-attack; uppercase WASD attacks directly. Move west with h or Left.",
+            text_default,
+        )),
     ];
+
     if let Some(last) = renderable_timeline_lines(state, 1).first() {
-        lines.push(format!("Latest: {last}"));
+        lines.push(Line::from(Span::styled(format!("Latest: {last}"), text_default)));
     }
+
     if state.mode == GameMode::Modern {
         let objective_summary = active_objective_snapshot(state)
             .map(|snapshot| snapshot.summary)
             .unwrap_or_else(|| "No active objective.".to_string());
-        lines.push(format!("Objective: {objective_summary}"));
+        lines.push(Line::from(Span::styled(
+            format!("Objective: {objective_summary}"),
+            text_default,
+        )));
         if let Some(target) = objective_map_hints(state).into_iter().next() {
             let dx = target.x - state.player.position.x;
             let dy = target.y - state.player.position.y;
-            lines.push(format!(
-                "Objective marker: ({}, {})  Δx={} Δy={}",
-                target.x, target.y, dx, dy
-            ));
+            lines.push(Line::from(Span::styled(
+                format!(
+                    "Objective marker: ({}, {})  Δx={} Δy={}",
+                    target.x, target.y, dx, dy
+                ),
+                text_default,
+            )));
         }
     }
-    lines.join("\n")
+
+    lines
 }
 
 fn describe_pending_interaction(kind: &SiteInteractionKind, state: &GameState) -> String {
@@ -919,39 +1034,80 @@ fn describe_pending_interaction(kind: &SiteInteractionKind, state: &GameState) -
     }
 }
 
-fn render_inventory_panel(state: &GameState) -> String {
+fn render_inventory_panel(state: &GameState, style_cache: &StyleCache) -> Vec<Line<'static>> {
+    use omega_core::color::{ColorId, UiColorId};
+
+    let text_default = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDefault));
+    let text_dim = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDim));
+    let success = style_cache.get_fg(&ColorId::Ui(UiColorId::MessageSuccess));
+
     let mut lines = Vec::new();
-    lines.push(format!(
-        "Pack: {}/{}  Burden: {}",
-        state.player.inventory.len(),
-        state.player.inventory_capacity,
-        state.carry_burden
-    ));
+    lines.push(Line::from(Span::styled(
+        format!(
+            "Pack: {}/{}  Burden: {}",
+            state.player.inventory.len(),
+            state.player.inventory_capacity,
+            state.carry_burden
+        ),
+        text_default,
+    )));
 
     if state.player.inventory.is_empty() {
-        lines.push("(empty)".to_string());
+        lines.push(Line::from(Span::styled("(empty)", text_dim)));
     } else {
         for (idx, item) in state.player.inventory.iter().enumerate() {
-            lines.push(format!(
-                "{}: {} [{} | {}]",
-                idx + 1,
-                item.name,
-                format!("{:?}", item.family).to_ascii_lowercase(),
-                if item.usef.is_empty() { "no-usef" } else { item.usef.as_str() }
-            ));
+            lines.push(Line::from(Span::styled(
+                format!(
+                    "{}: {} [{} | {}]",
+                    idx + 1,
+                    item.name,
+                    format!("{:?}", item.family).to_ascii_lowercase(),
+                    if item.usef.is_empty() { "no-usef" } else { item.usef.as_str() }
+                ),
+                text_default,
+            )));
         }
     }
 
-    lines.push(format!(
-        "Equip Wpn:{} Shd:{} Arm:{} Clk:{} Bts:{} R1:{} R2:{}",
-        if state.player.equipment.weapon_hand.is_some() { "set" } else { "-" },
-        if state.player.equipment.shield.is_some() { "set" } else { "-" },
-        if state.player.equipment.armor.is_some() { "set" } else { "-" },
-        if state.player.equipment.cloak.is_some() { "set" } else { "-" },
-        if state.player.equipment.boots.is_some() { "set" } else { "-" },
-        if state.player.equipment.ring_1.is_some() { "set" } else { "-" },
-        if state.player.equipment.ring_2.is_some() { "set" } else { "-" },
-    ));
+    // Equipment line with color coding
+    let equip_line = vec![
+        Span::styled("Equip Wpn:", text_default),
+        Span::styled(
+            if state.player.equipment.weapon_hand.is_some() { "set" } else { "-" },
+            if state.player.equipment.weapon_hand.is_some() { success } else { text_dim },
+        ),
+        Span::styled(" Shd:", text_default),
+        Span::styled(
+            if state.player.equipment.shield.is_some() { "set" } else { "-" },
+            if state.player.equipment.shield.is_some() { success } else { text_dim },
+        ),
+        Span::styled(" Arm:", text_default),
+        Span::styled(
+            if state.player.equipment.armor.is_some() { "set" } else { "-" },
+            if state.player.equipment.armor.is_some() { success } else { text_dim },
+        ),
+        Span::styled(" Clk:", text_default),
+        Span::styled(
+            if state.player.equipment.cloak.is_some() { "set" } else { "-" },
+            if state.player.equipment.cloak.is_some() { success } else { text_dim },
+        ),
+        Span::styled(" Bts:", text_default),
+        Span::styled(
+            if state.player.equipment.boots.is_some() { "set" } else { "-" },
+            if state.player.equipment.boots.is_some() { success } else { text_dim },
+        ),
+        Span::styled(" R1:", text_default),
+        Span::styled(
+            if state.player.equipment.ring_1.is_some() { "set" } else { "-" },
+            if state.player.equipment.ring_1.is_some() { success } else { text_dim },
+        ),
+        Span::styled(" R2:", text_default),
+        Span::styled(
+            if state.player.equipment.ring_2.is_some() { "set" } else { "-" },
+            if state.player.equipment.ring_2.is_some() { success } else { text_dim },
+        ),
+    ];
+    lines.push(Line::from(equip_line));
 
     let mut on_ground: Vec<&str> = state
         .ground_items
@@ -961,15 +1117,17 @@ fn render_inventory_panel(state: &GameState) -> String {
         .collect();
     on_ground.sort_unstable();
     if !on_ground.is_empty() {
-        lines.push("Ground here:".to_string());
+        lines.push(Line::from(Span::styled("Ground here:", text_default)));
         for name in on_ground {
-            lines.push(format!("- {name}"));
+            lines.push(Line::from(Span::styled(format!("- {name}"), text_default)));
         }
     }
-    lines.join("\n")
+    lines
 }
 
-fn render_interaction_panel(state: &GameState) -> String {
+fn render_interaction_panel(state: &GameState, style_cache: &StyleCache) -> Vec<Line<'static>> {
+    use omega_core::color::{ColorId, UiColorId};
+
     let active_prompt = active_wizard_interaction_prompt(state)
         .or_else(|| active_spell_interaction_prompt(state))
         .or_else(|| active_quit_interaction_prompt(state))
@@ -988,46 +1146,101 @@ fn render_interaction_panel(state: &GameState) -> String {
         .or_else(|| active_inventory_interaction_help_hint(state))
         .or_else(|| active_item_prompt_help_hint(state))
         .or_else(|| active_site_interaction_help_hint(state));
+
+    let highlight = style_cache.get_fg(&ColorId::Ui(UiColorId::Highlight));
+    let text_dim = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDim));
+    let text_bold = style_cache.get_fg(&ColorId::Ui(UiColorId::TextBold));
+
     let mut lines = Vec::new();
     if let Some(prompt) = active_prompt {
-        lines.push(prompt);
+        lines.push(Line::from(Span::styled(prompt, highlight)));
     } else {
-        lines.push("No active interaction.".to_string());
+        lines.push(Line::from(Span::styled("No active interaction.", text_dim)));
     }
     if let Some(hint) = active_hint {
-        lines.push(hint);
+        lines.push(Line::from(Span::styled(hint, text_dim)));
     }
     if modal_input_profile(state) == ModalInputProfile::TextEntry {
         if state.pending_wizard_interaction.is_some() && !state.wizard_input_buffer.is_empty() {
-            lines.push(format!("Input: {}", state.wizard_input_buffer));
+            lines.push(Line::from(Span::styled(
+                format!("Input: {}", state.wizard_input_buffer),
+                text_bold,
+            )));
         } else if state.pending_spell_interaction.is_some() && !state.spell_input_buffer.is_empty()
         {
-            lines.push(format!("Input: {}", state.spell_input_buffer));
+            lines.push(Line::from(Span::styled(
+                format!("Input: {}", state.spell_input_buffer),
+                text_bold,
+            )));
         } else if state.pending_targeting_interaction.is_some()
             && !state.target_input_buffer.is_empty()
         {
-            lines.push(format!("Input: {}", state.target_input_buffer));
+            lines.push(Line::from(Span::styled(
+                format!("Input: {}", state.target_input_buffer),
+                text_bold,
+            )));
         } else if !state.interaction_buffer.is_empty() {
-            lines.push(format!("Input: {}", state.interaction_buffer));
+            lines.push(Line::from(Span::styled(
+                format!("Input: {}", state.interaction_buffer),
+                text_bold,
+            )));
         }
     }
-    lines.join("\n")
+    lines
 }
 
-fn render_log_panel(state: &GameState, last_outcome: Option<&Outcome>) -> String {
-    let mut lines = renderable_timeline_lines(state, 12);
-    if lines.is_empty()
+fn render_log_panel(
+    state: &GameState,
+    style_cache: &StyleCache,
+    last_outcome: Option<&Outcome>,
+) -> Vec<Line<'static>> {
+    use omega_core::color::{ColorId, UiColorId};
+
+    let mut text_lines = renderable_timeline_lines(state, 12);
+    if text_lines.is_empty()
         && let Some(outcome) = last_outcome
     {
         for event in outcome.events.iter().rev().take(8).rev() {
-            lines.push(format_event(event));
+            text_lines.push(format_event(event));
         }
         if outcome.status != SessionStatus::InProgress {
-            lines.push(format!("session status: {:?}", outcome.status));
+            text_lines.push(format!("session status: {:?}", outcome.status));
         }
     }
 
-    if lines.is_empty() { "(no messages)".to_string() } else { lines.join("\n") }
+    if text_lines.is_empty() {
+        let text_dim = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDim));
+        return vec![Line::from(Span::styled("(no messages)", text_dim))];
+    }
+
+    // Color messages by content heuristic
+    text_lines
+        .into_iter()
+        .map(|msg| {
+            let color = if msg.contains("died")
+                || msg.contains("defeated")
+                || msg.contains("killed")
+                || msg.contains("damage")
+                || msg.contains("hit you")
+            {
+                ColorId::Ui(UiColorId::MessageDanger)
+            } else if msg.contains("warning") || msg.contains("caution") || msg.contains("careful") {
+                ColorId::Ui(UiColorId::MessageWarning)
+            } else if msg.contains("victory")
+                || msg.contains("gained")
+                || msg.contains("found")
+                || msg.contains("success")
+                || msg.contains("healed")
+                || msg.contains("picked")
+            {
+                ColorId::Ui(UiColorId::MessageSuccess)
+            } else {
+                ColorId::Ui(UiColorId::MessageInfo)
+            };
+            let style = style_cache.get_fg(&color);
+            Line::from(Span::styled(msg, style))
+        })
+        .collect()
 }
 
 fn format_event(event: &Event) -> String {
@@ -1369,8 +1582,14 @@ mod tests {
             },
         ];
 
-        let first = render_inventory_panel(&state);
-        let second = render_inventory_panel(&state);
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let first_lines = render_inventory_panel(&state, &cache);
+        let second_lines = render_inventory_panel(&state, &cache);
+        let first = lines_to_string(first_lines.clone());
+        let second = lines_to_string(second_lines);
         assert_eq!(first, second);
         assert!(first.contains("Pack: 2/"));
         assert!(first.contains("1: healing potion"));
@@ -1385,7 +1604,13 @@ mod tests {
     fn log_panel_keeps_chronological_order() {
         let mut state = GameState::new(omega_core::MapBounds { width: 5, height: 5 });
         state.log = vec!["first".to_string(), "second".to_string(), "third".to_string()];
-        let rendered = render_log_panel(&state, None);
+
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let rendered_lines = render_log_panel(&state, &cache, None);
+        let rendered = lines_to_string(rendered_lines);
         assert!(
             rendered.find("first").unwrap_or(usize::MAX) < rendered.find("second").unwrap_or(0)
         );
@@ -1404,8 +1629,14 @@ mod tests {
             "Selected option 1. You make a tithe at the temple.".to_string(),
         ];
 
-        let interaction = render_interaction_panel(&state);
-        let rendered_log = render_log_panel(&state, None);
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let interaction_lines = render_interaction_panel(&state, &cache);
+        let interaction = lines_to_string(interaction_lines);
+        let rendered_log_lines = render_log_panel(&state, &cache, None);
+        let rendered_log = lines_to_string(rendered_log_lines);
 
         assert!(interaction.contains("Temple: [1/t] tithe (15g)"));
         assert!(
@@ -1421,7 +1652,12 @@ mod tests {
         state.pending_site_interaction = Some(SiteInteractionKind::MercGuild);
         let slot = PathBuf::from("target/test-omega-tui-status-hint.json");
 
-        let rendered = render_status_panel(&state, &slot);
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let rendered_lines = render_status_panel(&state, &cache, &slot);
+        let rendered = lines_to_string(rendered_lines);
 
         assert!(rendered.contains("Interaction: merc guild menu"));
     }
@@ -1430,7 +1666,13 @@ mod tests {
     fn status_panel_includes_mana_totals() {
         let state = GameState::new(omega_core::MapBounds { width: 5, height: 5 });
         let slot = PathBuf::from("target/test-omega-tui-status-mana.json");
-        let rendered = render_status_panel(&state, &slot);
+
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let rendered_lines = render_status_panel(&state, &cache, &slot);
+        let rendered = lines_to_string(rendered_lines);
         assert!(rendered.contains("Mana: "));
     }
 
@@ -1441,12 +1683,18 @@ mod tests {
         state.progression.main_quest.objective = "Report to the Mercenary Guild.".to_string();
         let slot = PathBuf::from("target/test-omega-tui-status-objective.json");
 
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
         state.mode = GameMode::Classic;
-        let classic = render_status_panel(&state, &slot);
+        let classic_lines = render_status_panel(&state, &cache, &slot);
+        let classic = lines_to_string(classic_lines);
         assert!(!classic.contains("Objective:"));
 
         state.mode = GameMode::Modern;
-        let modern = render_status_panel(&state, &slot);
+        let modern_lines = render_status_panel(&state, &cache, &slot);
+        let modern = lines_to_string(modern_lines);
         assert!(modern.contains("Objective:"));
         assert!(modern.contains("Mercenary Guild"));
     }
@@ -1455,7 +1703,13 @@ mod tests {
     fn interaction_panel_surfaces_activation_prompt() {
         let mut state = GameState::new(omega_core::MapBounds { width: 5, height: 5 });
         state.pending_activation_interaction = Some(omega_core::ActivationInteraction::ChooseKind);
-        let rendered = render_interaction_panel(&state);
+
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let rendered_lines = render_interaction_panel(&state, &cache);
+        let rendered = lines_to_string(rendered_lines);
         assert!(rendered.contains("Activate -- item [i] or artifact [a]"));
     }
 
