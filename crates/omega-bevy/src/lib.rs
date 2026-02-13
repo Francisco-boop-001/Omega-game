@@ -1189,6 +1189,7 @@ fn sync_tile_entities_system(
     mut commands: Commands,
     frame: Res<RuntimeFrame>,
     existing_tiles: Query<Entity, With<RenderTile>>,
+    bevy_theme: Res<presentation::BevyTheme>,
 ) {
     for entity in existing_tiles.iter() {
         commands.entity(entity).despawn();
@@ -1196,11 +1197,16 @@ fn sync_tile_entities_system(
 
     if let Some(rendered) = &frame.frame {
         for tile in &rendered.tiles {
+            // Resolve the semantic color for this tile type
+            let color_id = tile.kind.to_color_id();
+            let tile_color = bevy_theme.resolve(&color_id);
+
             commands.spawn((
                 RenderTile,
                 RenderTilePosition(tile.position),
                 RenderTileKind(tile.kind),
                 RenderTileSprite(tile.sprite.clone()),
+                RenderTileColor(tile_color),
             ));
         }
     }
