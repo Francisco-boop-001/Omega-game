@@ -37,6 +37,16 @@ pub fn load_builtin_theme(name: &str) -> Result<ColorTheme, String> {
 /// Maps omega-core's HexColor (u8 RGB components) to Bevy's Color::srgb
 /// which expects f32 values in the range [0.0, 1.0].
 ///
+/// # Color Space Handling
+///
+/// This function uses `Color::srgb()` which is correct for both UI and sprite rendering
+/// in Bevy. Bevy internally converts sRGB to linear RGB when needed for physically-based
+/// rendering. The sRGB color space is the standard for authored colors (themes, hex values)
+/// and ensures consistent appearance across different rendering contexts.
+///
+/// **UI Rendering**: Text, backgrounds, borders use sRGB colors directly.
+/// **Sprite Rendering**: Sprite tints use sRGB colors, Bevy converts to linear for lighting.
+///
 /// # Examples
 ///
 /// ```ignore
