@@ -319,10 +319,16 @@ From research summary:
 - `74f86ff`: Map overlay theming documentation
 
 **Decisions Made:**
-- Embed themes via include_str! for zero filesystem dependency
-- Convert HexColor to Bevy::Color using sRGB (r/255.0, g/255.0, b/255.0)
-- Keep ThemeTokens alive for backward compatibility until plan 03-04
-- BevyTheme provides three resolution levels (generic, typed, semantic)
+- Direct TileKind→ColorId mapping via impl method for type safety
+- RenderTileColor component for ECS-based color storage
+- Default color assignments for generic types (Monster→HostileHumanoid, Item→Common)
+- Overlay semantic categories: UI overlays→UiColorId, effect overlays→EffectColorId
+
+**Previous Session (February 13, 2026) - Phase 3 Plan 01 (Bevy Theme Foundation):**
+- Implemented BevyTheme resource wrapper with 70+ convenience methods
+- Created color_adapter.rs for HexColor→Bevy::Color conversion
+- Embedded classic/accessible themes via include_str!
+- Maintained ThemeTokens for backward compatibility
 
 **Previous Session (February 13, 2026) - Phase 2 Complete:**
 - Task 1: CLI --theme option and runtime theme switching
@@ -363,10 +369,10 @@ From research summary:
 - termprofile crate for terminal detection with NO_COLOR support
 
 **Next Session:**
-- Phase 3 Plan 02: Entity Color Application
-  - Apply BevyTheme colors to TileRender entities
-  - Color player, monsters, items, and terrain
-  - Replace hardcoded sprite colors with semantic lookups
+- Phase 3 Plan 04: Theme Migration and Cleanup
+  - Remove legacy ThemeTokens
+  - Migrate remaining hardcoded colors to BevyTheme
+  - Complete Bevy color integration
 
 ### Blockers
 
