@@ -1,0 +1,107 @@
+# Classic Theme for Omega Roguelike
+#
+# A traditional roguelike theme with high contrast colors inspired by
+# classic ASCII roguelikes (NetHack, ADOM, DCSS) while modernizing
+# with TrueColor support.
+
+[meta]
+name = "Classic"
+author = "Omega Team"
+description = "Traditional roguelike aesthetic with high contrast colors for maximum visibility"
+version = "1.0.0"
+variant = "dark"
+min_engine_version = "0.1.0"
+
+[base]
+# Primary palette - core colors for the theme
+red = "#FF0000"
+green = "#00FF00"
+blue = "#0000FF"
+yellow = "#FFFF00"
+cyan = "#00FFFF"
+magenta = "#FF00FF"
+white = "#E0E0E0"
+black = "#121212"
+gray = "#808080"
+
+# Extended palette - additional colors for variety
+orange = "#FFA500"
+purple = "#9370DB"
+brown = "#8B4513"
+dark_gray = "#404040"
+light_gray = "#C0C0C0"
+
+[semantic]
+# Semantic mappings - meaningful color concepts
+danger = { ref = "base.red" }
+success = { ref = "base.green" }
+info = { ref = "base.blue" }
+warning = { ref = "base.yellow" }
+magic = { ref = "base.purple" }
+neutral = { ref = "base.gray" }
+
+# Entity colors - monsters, items, terrain, player
+
+[entity]
+player = { fg = "#00FFFF", bg = "#121212" }
+"monster.hostileundead" = { fg = "#C0C0C0", bg = "#121212" }
+"monster.hostilebeast" = { fg = "#8B4513", bg = "#121212" }
+"monster.hostilehumanoid" = { fg = "#FF0000", bg = "#121212" }
+"monster.hostilemagical" = { fg = "#9370DB", bg = "#121212" }
+"monster.hostileconstruct" = { fg = "#404040", bg = "#121212" }
+"monster.hostiledragon" = { fg = "#FFA500", bg = "#121212" }
+"monster.neutral" = { fg = "#808080", bg = "#121212" }
+"monster.friendly" = { fg = "#00FF00", bg = "#121212" }
+"item.common" = { fg = "#E0E0E0", bg = "#121212" }
+"item.uncommon" = { fg = "#00FF00", bg = "#121212" }
+"item.rare" = { fg = "#0000FF", bg = "#121212" }
+"item.epic" = { fg = "#9370DB", bg = "#121212" }
+"item.legendary" = { fg = "#FFD700", bg = "#121212" }
+"terrain.wallstone" = { fg = "#808080", bg = "#121212" }
+"terrain.wallwood" = { fg = "#8B4513", bg = "#121212" }
+"terrain.wallmetal" = { fg = "#C0C0C0", bg = "#121212" }
+"terrain.wallbrick" = { fg = "#A0522D", bg = "#121212" }
+"terrain.floorstone" = { fg = "#404040", bg = "#121212" }
+"terrain.floorwood" = { fg = "#654321", bg = "#121212" }
+"terrain.floordirt" = { fg = "#3D2B1F", bg = "#121212" }
+"terrain.floorgrass" = { fg = "#228B22", bg = "#121212" }
+"terrain.water" = { fg = "#0000FF", bg = "#121212" }
+"terrain.lava" = { fg = "#FF4500", bg = "#121212" }
+"terrain.door" = { fg = "#8B4513", bg = "#121212" }
+"terrain.stairsup" = { fg = "#E0E0E0", bg = "#121212" }
+"terrain.stairsdown" = { fg = "#E0E0E0", bg = "#121212" }
+
+# UI colors
+
+[ui]
+healthhigh = { fg = "#00FF00", bg = "#121212" }
+healthmedium = { fg = "#FFFF00", bg = "#121212" }
+healthlow = { fg = "#FF0000", bg = "#121212" }
+mana = { fg = "#0000FF", bg = "#121212" }
+stamina = { fg = "#FFA500", bg = "#121212" }
+experience = { fg = "#9370DB", bg = "#121212" }
+highlight = { fg = "#FFFF00", bg = "#404040" }
+selection = { fg = "#000000", bg = "#00FFFF" }
+cursor = { fg = "#000000", bg = "#00FF00" }
+textdefault = { fg = "#E0E0E0", bg = "#121212" }
+textdim = { fg = "#808080", bg = "#121212" }
+textbold = { fg = "#FFFFFF", bg = "#121212" }
+messageinfo = { fg = "#0000FF", bg = "#121212" }
+messagewarning = { fg = "#FFFF00", bg = "#121212" }
+messagedanger = { fg = "#FF0000", bg = "#121212" }
+messagesuccess = { fg = "#00FF00", bg = "#121212" }
+
+# Effect colors
+
+[effect]
+fire = { fg = "#FF4500", bg = "#121212" }
+ice = { fg = "#00FFFF", bg = "#121212" }
+lightning = { fg = "#FFFF00", bg = "#121212" }
+poison = { fg = "#32CD32", bg = "#121212" }
+acid = { fg = "#ADFF2F", bg = "#121212" }
+magicarcane = { fg = "#9370DB", bg = "#121212" }
+magicholy = { fg = "#FFD700", bg = "#121212" }
+magicdark = { fg = "#4B0082", bg = "#121212" }
+blood = { fg = "#8B0000", bg = "#121212" }
+impact = { fg = "#FFFFFF", bg = "#121212" }
+shield = { fg = "#00FFFF", bg = "#404040" }
