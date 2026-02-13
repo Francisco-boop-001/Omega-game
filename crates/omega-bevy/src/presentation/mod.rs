@@ -411,4 +411,101 @@ mod tests {
             "UiFocusState should be inserted"
         );
     }
+
+    #[test]
+    fn derive_focus_state_identifies_interaction_panel() {
+        let frame = RenderFrame {
+            mode: GameMode::Classic,
+            bounds: (10, 10),
+            tiles: Vec::new(),
+            hud_lines: Vec::new(),
+            interaction_lines: vec!["ACTIVE: Choose target".to_string()],
+            timeline_lines: Vec::new(),
+            event_lines: Vec::new(),
+        };
+
+        let focus = derive_focus_state(&frame);
+        assert_eq!(focus.active_panel, UiPanelFocus::Interaction);
+        assert_eq!(focus.urgency, 1.0);
+    }
+
+    #[test]
+    fn derive_focus_state_identifies_map_panel() {
+        let frame = RenderFrame {
+            mode: GameMode::Classic,
+            bounds: (10, 10),
+            tiles: vec![crate::RenderTile {
+                x: 5,
+                y: 5,
+                ch: '+',
+                kind: crate::TileKind::TargetCursor,
+                color: crate::RenderTileColor(Color::WHITE),
+            }],
+            hud_lines: Vec::new(),
+            interaction_lines: Vec::new(),
+            timeline_lines: Vec::new(),
+            event_lines: Vec::new(),
+        };
+
+        let focus = derive_focus_state(&frame);
+        assert_eq!(focus.active_panel, UiPanelFocus::Map);
+        assert_eq!(focus.urgency, 0.85);
+    }
+
+    #[test]
+    fn derive_focus_state_identifies_compass_panel() {
+        let frame = RenderFrame {
+            mode: GameMode::Classic,
+            bounds: (10, 10),
+            tiles: vec![crate::RenderTile {
+                x: 5,
+                y: 5,
+                ch: 'O',
+                kind: crate::TileKind::ObjectiveMarker,
+                color: crate::RenderTileColor(Color::YELLOW),
+            }],
+            hud_lines: Vec::new(),
+            interaction_lines: Vec::new(),
+            timeline_lines: Vec::new(),
+            event_lines: Vec::new(),
+        };
+
+        let focus = derive_focus_state(&frame);
+        assert_eq!(focus.active_panel, UiPanelFocus::Compass);
+        assert_eq!(focus.urgency, 0.7);
+    }
+
+    #[test]
+    fn derive_focus_state_identifies_timeline_panel() {
+        let frame = RenderFrame {
+            mode: GameMode::Classic,
+            bounds: (10, 10),
+            tiles: Vec::new(),
+            hud_lines: Vec::new(),
+            interaction_lines: Vec::new(),
+            timeline_lines: vec!["Player attacked goblin".to_string()],
+            event_lines: Vec::new(),
+        };
+
+        let focus = derive_focus_state(&frame);
+        assert_eq!(focus.active_panel, UiPanelFocus::Timeline);
+        assert_eq!(focus.urgency, 0.55);
+    }
+
+    #[test]
+    fn derive_focus_state_defaults_to_status_panel() {
+        let frame = RenderFrame {
+            mode: GameMode::Classic,
+            bounds: (10, 10),
+            tiles: Vec::new(),
+            hud_lines: vec!["HP: 100/100".to_string()],
+            interaction_lines: Vec::new(),
+            timeline_lines: Vec::new(),
+            event_lines: Vec::new(),
+        };
+
+        let focus = derive_focus_state(&frame);
+        assert_eq!(focus.active_panel, UiPanelFocus::Status);
+        assert_eq!(focus.urgency, 0.35);
+    }
 }
