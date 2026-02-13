@@ -5,6 +5,7 @@ use omega_core::GameMode;
 use std::env;
 
 pub mod animation;
+pub mod bevy_theme;
 pub mod color_adapter;
 pub mod hud;
 pub mod input;
@@ -14,6 +15,9 @@ pub mod scene;
 pub mod theme;
 pub mod tilemap;
 pub mod timeline;
+
+// Re-export key types for convenience
+pub use bevy_theme::BevyTheme;
 
 #[derive(Component)]
 pub struct MapPanelText;
