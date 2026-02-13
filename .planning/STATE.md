@@ -35,8 +35,8 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 ┌─────────────────────────────────────────────────────────────────┐
 │  Phase 1: Foundation      ████████████ 100% - COMPLETE          │
 │  Phase 2: TUI             ████████████ 100% - COMPLETE          │
-│  Phase 3: Bevy            ████████░░░  75% - IN PROGRESS        │
-│  Phase 4: Customization   ░░░░░░░░░░  0% - Blocked             │
+│  Phase 3: Bevy            ████████████ 100% - COMPLETE          │
+│  Phase 4: Customization   ░░░░░░░░░░  0% - Ready                │
 │  Phase 5: Advanced        ░░░░░░░░░░  0% - Blocked             │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -55,7 +55,8 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 - ✅ Phase 3 Plan 01 complete (Bevy Theme Foundation)
 - ✅ Phase 3 Plan 02 complete (UI Theming Integration)
 - ✅ Phase 3 Plan 03 complete (Map and Sprite Theming)
-- 🎯 Next: Phase 3 Plan 04 (Theme Migration and Cleanup)
+- ✅ Phase 3 Plan 04 complete (Theme Switching and Refinement)
+- 🎯 Next: Phase 4 Plan 01 (User Customization & Tooling)
 
 ### Status Summary
 
@@ -128,17 +129,15 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 
 ### Phase 3: Bevy Color Integration
 
-**Status:** 🟡 IN PROGRESS (3/4 plans complete)
+**Status:** ✅ COMPLETE (4/4 plans complete)
 
 **Completed Plans:**
 - Plan 01: Bevy Theme Foundation ✅
 - Plan 02: UI Theming Integration ✅
 - Plan 03: Map and Sprite Theming ✅
+- Plan 04: Theme Switching and Refinement ✅
 
-**In Progress:**
-- Plan 04: Theme Migration and Cleanup (next)
-
-**Progress:** 75% (3/4 plans)
+**Progress:** 100% (4/4 plans)
 
 **Prerequisites:**
 - ✅ Phase 1 complete
@@ -149,12 +148,12 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 
 ### Phase 4: User Customization & Tooling
 
-**Status:** ⚪ Blocked (needs Phase 2 & 3)
+**Status:** 🟢 Ready (Phase 2 & 3 complete)
 
 **Prerequisites:**
-- Phase 2 complete
-- Phase 3 complete
-- Both frontends working with themes
+- ✅ Phase 2 complete
+- ✅ Phase 3 complete
+- ✅ Both frontends working with themes
 
 ---
 
@@ -190,6 +189,10 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 | 2026-02-13 | Panel focus borders use get_ui_highlight() | Replace hardcoded focus_ring with semantic color | Phase 3 Plan 02 |
 | 2026-02-13 | TileKind::to_color_id() mapping | Centralized semantic color mapping for all entity types | Phase 3 |
 | 2026-02-13 | RenderTileColor component | ECS-based color storage instead of direct Sprite modification | Phase 3 |
+| 2026-02-13 | Runtime theme switching via ThemeChangeEvent | Event-driven architecture for theme updates | Phase 3 Plan 04 |
+| 2026-02-13 | F5 hotkey for theme cycling | User-accessible theme switching (Classic ↔ Accessible) | Phase 3 Plan 04 |
+| 2026-02-13 | Split ThemeTokens into Layout + Chrome | Separate semantic colors (BevyTheme) from layout (UiLayoutTokens) and structure (UiChromeColors) | Phase 3 Plan 04 |
+| 2026-02-13 | sRGB color space for all rendering | Bevy handles linear conversion internally, no manual conversion needed | Phase 3 Plan 04 |
 
 ### Technical Decisions
 
@@ -288,41 +291,45 @@ From research summary:
 ### Last Session Summary
 
 **Date:** February 13, 2026
-**Activity:** Phase 3 Plan 03 (Map and Sprite Theming) Execution and Completion
+**Activity:** Phase 3 Plan 04 (Theme Switching and Refinement) Execution and Completion
 
 **Completed:**
-- Task 2.1: Tile to Color Mapping
-  - Implemented `TileKind::to_color_id()` mapping function
-  - Maps 10 TileKind variants to semantic ColorId categories
-  - Terrain: Floor/Wall/Feature → TerrainColorId
-  - Entities: Player/Monster/Item → EntityColorId
-  - UI overlays: Cursor/Marker → UiColorId
-  - Effects: ProjectileTrail/Impact → EffectColorId
-  - Added `RenderTileColor(Color)` component for ECS color storage
-- Task 2.2: Entity Rendering Integration
-  - Injected `BevyTheme` as system parameter in `sync_tile_entities_system`
-  - Resolve ColorId for each tile using `TileKind::to_color_id()`
-  - Apply resolved color to `RenderTileColor` component
-  - Each spawned tile entity now includes semantic color tint
-- Task 2.3: Map Overlay Theming
-  - Documented overlay color mapping in code
-  - UI overlays (cursor, markers) → UiColorId
-  - Effect overlays (projectiles) → EffectColorId
-  - All overlays themed via existing TileKind mapping
+- Task 2.1: Theme Switching Event
+  - Defined `ThemeChangeEvent` with `theme_name` field
+  - Implemented `handle_theme_change_events` system to reload themes
+  - Implemented `handle_theme_cycle_key` system for F5 hotkey
+  - Added `ActiveThemeName` resource to track current theme
+  - Theme cycling: Classic → Accessible → Classic
+- Task 2.2: Color Space Refinement
+  - Verified `to_bevy_color` uses `Color::srgb()` correctly
+  - Documented sRGB as correct for both UI and sprite rendering
+  - Explained Bevy's internal linear RGB conversion
+  - Confirmed no manual linear conversion needed
+- Task 2.3: Cleanup - Remove ThemeTokens
+  - Removed `ThemeTokens` struct entirely
+  - Created `UiLayoutTokens` with 13 layout properties (spacing, sizing, timing)
+  - Created `UiChromeColors` with 20 structural UI colors
+  - Updated all systems to use new resources
+  - Updated scene.rs to use `layout.` and `chrome.` instead of `theme.`
+  - Updated tests to check for new resource types
 
 **Files Modified:**
-- `crates/omega-bevy/src/lib.rs` - Added mapping function, component, and system integration
+- `crates/omega-bevy/src/presentation/mod.rs` - Theme events, systems, resource setup
+- `crates/omega-bevy/src/presentation/theme.rs` - Replaced ThemeTokens with new resources
+- `crates/omega-bevy/src/presentation/scene.rs` - Updated to use layout/chrome resources
+- `crates/omega-bevy/src/presentation/color_adapter.rs` - Documented color space handling
 
 **Commits:**
-- `a051aa8`: TileKind to ColorId mapping and RenderTileColor component
-- `7cba146`: BevyTheme integration into sync_tile_entities_system
-- `74f86ff`: Map overlay theming documentation
+- `a42e346`: Runtime theme switching with F5 key
+- `b8631f4`: Color space handling documentation
+- `071ef38`: Remove ThemeTokens, add UiLayoutTokens + UiChromeColors
 
 **Decisions Made:**
-- Direct TileKind→ColorId mapping via impl method for type safety
-- RenderTileColor component for ECS-based color storage
-- Default color assignments for generic types (Monster→HostileHumanoid, Item→Common)
-- Overlay semantic categories: UI overlays→UiColorId, effect overlays→EffectColorId
+- F5 for theme cycling (not F10) to avoid TUI conflict
+- Two-theme cycle (Classic ↔ Accessible) - only embedded themes
+- Split ThemeTokens into Layout + Chrome for clean separation
+- Keep Chrome colors as resource (not hardcoded) for future customization
+- Document color space handling, no linear conversion needed
 
 **Previous Session (February 13, 2026) - Phase 3 Plan 01 (Bevy Theme Foundation):**
 - Implemented BevyTheme resource wrapper with 70+ convenience methods
@@ -369,10 +376,10 @@ From research summary:
 - termprofile crate for terminal detection with NO_COLOR support
 
 **Next Session:**
-- Phase 3 Plan 04: Theme Migration and Cleanup
-  - Remove legacy ThemeTokens
-  - Migrate remaining hardcoded colors to BevyTheme
-  - Complete Bevy color integration
+- Phase 4 Plan 01: User Customization & Tooling
+  - Custom theme TOML loading from filesystem
+  - Theme validation and error reporting
+  - Begin CLI tooling for theme creation
 
 ### Blockers
 
