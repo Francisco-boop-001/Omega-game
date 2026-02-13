@@ -11,6 +11,27 @@ use omega_core::color::{
 use ratatui::style::{Color, Style};
 use std::collections::HashMap;
 
+/// Embedded classic theme TOML
+pub const CLASSIC_THEME_TOML: &str = include_str!("../../omega-content/themes/classic.toml");
+
+/// Embedded accessible theme TOML
+pub const ACCESSIBLE_THEME_TOML: &str = include_str!("../../omega-content/themes/accessible.toml");
+
+/// Loads a built-in theme by name.
+///
+/// Supports "classic" and "accessible" themes.
+/// Returns an error if the theme name is unknown or the theme fails to parse.
+pub fn load_builtin_theme(name: &str) -> Result<ColorTheme, String> {
+    let toml_str = match name.to_lowercase().as_str() {
+        "classic" => CLASSIC_THEME_TOML,
+        "accessible" => ACCESSIBLE_THEME_TOML,
+        _ => return Err(format!("Unknown theme '{}'. Available: classic, accessible", name)),
+    };
+
+    ColorTheme::from_toml(toml_str)
+        .map_err(|e| format!("Failed to parse {} theme: {}", name, e))
+}
+
 /// StyleCache holds precomputed ratatui styles for all ColorId variants.
 ///
 /// Built at application startup from a ColorTheme and ColorCapability,

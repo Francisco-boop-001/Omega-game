@@ -45,6 +45,7 @@ pub enum UiKey {
     Enter,
     Backspace,
     Esc,
+    ThemeCycle,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -145,6 +146,31 @@ impl App {
         self
     }
 
+    /// Switches to a new theme and rebuilds the style cache.
+    ///
+    /// This is the mutable variant of with_theme for runtime switching.
+    pub fn switch_theme(&mut self, theme: omega_core::color::ColorTheme) {
+        self.style_cache = StyleCache::new(&theme, self.capability);
+        self.theme = theme;
+    }
+
+    /// Cycles between built-in themes (classic <-> accessible).
+    fn cycle_theme(&mut self) {
+        let next_theme_name = if self.theme.meta.name.contains("Classic") {
+            "accessible"
+        } else {
+            "classic"
+        };
+
+        if let Ok(theme) = color_adapter::load_builtin_theme(next_theme_name) {
+            let theme_name = theme.meta.name.clone();
+            self.switch_theme(theme);
+            self.state.log.push(format!("Theme switched to: {}", theme_name));
+        } else {
+            self.state.log.push(format!("Failed to load {} theme", next_theme_name));
+        }
+    }
+
     fn has_modal_interaction(&self) -> bool {
         self.state.pending_wizard_interaction.is_some()
             || self.state.pending_spell_interaction.is_some()
@@ -160,6 +186,7 @@ impl App {
     pub fn map_input(key: UiKey) -> UiAction {
         match key {
             UiKey::Esc => UiAction::Quit,
+            UiKey::ThemeCycle => UiAction::None, // Only handled in handle_key directly
             UiKey::WizardToggle => UiAction::Dispatch(Command::Legacy { token: "^g".to_string() }),
             UiKey::Enter => UiAction::Dispatch(Command::Legacy { token: "<enter>".to_string() }),
             UiKey::Backspace => {
@@ -216,6 +243,12 @@ impl App {
     }
 
     pub fn handle_key(&mut self, key: UiKey) {
+        // Handle theme cycling early - works in any state
+        if key == UiKey::ThemeCycle {
+            self.cycle_theme();
+            return;
+        }
+
         if self.state.is_terminal() && self.handle_terminal_key(key) {
             return;
         }
@@ -268,6 +301,7 @@ impl App {
                 UiKey::WizardToggle => {
                     UiAction::Dispatch(Command::Legacy { token: "^g".to_string() })
                 }
+                UiKey::ThemeCycle => UiAction::None, // Handled before modal check
             };
             self.apply_action(action);
             return;
@@ -490,6 +524,32 @@ pub fn run_ratatui_app_with_options(
     Ok(app.state)
 }
 
+pub fn run_ratatui_app_themed(
+    seed: u64,
+    initial_state: GameState,
+    bootstrap_state: GameState,
+    save_slot: PathBuf,
+    theme: omega_core::color::ColorTheme,
+) -> Result<GameState> {
+    let mut app = App::with_options(seed, initial_state, bootstrap_state, save_slot)
+        .with_theme(theme);
+    let mut terminal = setup_terminal()?;
+
+    while !app.quit {
+        terminal.draw(|frame| render_frame(frame, &app))?;
+
+        if event::poll(Duration::from_millis(100))? {
+            let maybe_key = read_ui_key()?;
+            if let Some(key) = maybe_key {
+                app.handle_key(key);
+            }
+        }
+    }
+
+    restore_terminal(&mut terminal)?;
+    Ok(app.state)
+}
+
 pub fn run_headless_bootstrap() -> Result<GameState> {
     let app = run_scripted_session([UiKey::Char(' ')]);
     Ok(app.state)
@@ -554,7 +614,7 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         .block(Block::default().title("MAP").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
-    let status = Paragraph::new(render_status_panel(&app.state, &app.style_cache, &app.save_slot))
+    let status = Paragraph::new(render_status_panel(&app.state, &app.style_cache, &app.save_slot, &app.theme.meta.name))
         .block(Block::default().title("STATUS").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
@@ -686,6 +746,7 @@ fn read_ui_key() -> Result<Option<UiKey>> {
             KeyCode::Down => Some(UiKey::Down),
             KeyCode::Left => Some(UiKey::Left),
             KeyCode::Right => Some(UiKey::Right),
+            KeyCode::F(10) => Some(UiKey::ThemeCycle),
             KeyCode::F(12) => Some(UiKey::WizardToggle),
             KeyCode::Char(ch)
                 if key.modifiers.contains(KeyModifiers::CONTROL)
@@ -849,6 +910,7 @@ fn render_status_panel(
     state: &GameState,
     style_cache: &StyleCache,
     save_slot: &Path,
+    theme_name: &str,
 ) -> Vec<Line<'static>> {
     use omega_core::color::{ColorId, UiColorId};
 
@@ -949,6 +1011,10 @@ fn render_status_panel(
             Span::styled(interaction, interaction_style),
         ]),
         Line::from(Span::styled(format!("Slot: {}", save_slot.display()), text_default)),
+        Line::from(Span::styled(
+            format!("Theme: {} (F10 to switch)", theme_name),
+            text_default,
+        )),
         Line::from(Span::styled(
             "Keys: S save+quit, L load, R restart, Q retire/quit flow, a activate, z zap, Ctrl+F/G/I/K/L/O/P/R/W/X, F12 wizard",
             text_default,
@@ -1656,7 +1722,7 @@ mod tests {
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
-        let rendered_lines = render_status_panel(&state, &cache, &slot);
+        let rendered_lines = render_status_panel(&state, &cache, &slot, "Test");
         let rendered = lines_to_string(rendered_lines);
 
         assert!(rendered.contains("Interaction: merc guild menu"));
@@ -1671,7 +1737,7 @@ mod tests {
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
-        let rendered_lines = render_status_panel(&state, &cache, &slot);
+        let rendered_lines = render_status_panel(&state, &cache, &slot, "Test");
         let rendered = lines_to_string(rendered_lines);
         assert!(rendered.contains("Mana: "));
     }
@@ -1688,12 +1754,12 @@ mod tests {
         let cache = StyleCache::new(&theme, capability);
 
         state.mode = GameMode::Classic;
-        let classic_lines = render_status_panel(&state, &cache, &slot);
+        let classic_lines = render_status_panel(&state, &cache, &slot, "Test");
         let classic = lines_to_string(classic_lines);
         assert!(!classic.contains("Objective:"));
 
         state.mode = GameMode::Modern;
-        let modern_lines = render_status_panel(&state, &cache, &slot);
+        let modern_lines = render_status_panel(&state, &cache, &slot, "Test");
         let modern = lines_to_string(modern_lines);
         assert!(modern.contains("Objective:"));
         assert!(modern.contains("Mercenary Guild"));

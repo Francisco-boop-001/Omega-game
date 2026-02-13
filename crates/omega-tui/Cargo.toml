@@ -1,0 +1,13 @@
+﻿[package]
+name = "omega-tui"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+anyhow = { workspace = true }
+clap = { version = "4.5", features = ["derive"] }
+crossterm = "0.28"
+omega-core = { path = "../omega-core" }
+omega-content = { path = "../omega-content" }
+omega-save = { path = "../omega-save" }
+ratatui = "0.29"
