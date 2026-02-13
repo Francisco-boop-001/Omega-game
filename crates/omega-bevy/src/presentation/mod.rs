@@ -109,7 +109,13 @@ pub struct ArcaneCartographerPlugin;
 
 impl Plugin for ArcaneCartographerPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(theme::ThemeTokens::default())
+        // Load classic theme as default
+        let color_theme = color_adapter::load_builtin_theme("classic")
+            .expect("Failed to load classic theme - this should never happen with embedded themes");
+        let bevy_theme = BevyTheme::new(color_theme);
+
+        app.insert_resource(bevy_theme)
+            .insert_resource(theme::ThemeTokens::default())
             .insert_resource(UiReadabilityConfig::default())
             .insert_resource(animation::UiMotionState::default())
             .insert_resource(UiFocusState::default())
@@ -355,5 +361,52 @@ fn apply_focus_styles(
         } else {
             base_border
         });
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn arcane_cartographer_plugin_inserts_bevy_theme() {
+        let mut app = bevy::prelude::App::new();
+        app.add_plugins(ArcaneCartographerPlugin);
+
+        // Verify BevyTheme resource exists
+        let theme = app.world().get_resource::<BevyTheme>();
+        assert!(theme.is_some(), "BevyTheme should be inserted by plugin");
+
+        // Verify it's the classic theme
+        let theme = theme.unwrap();
+        assert_eq!(theme.theme().meta.name, "Classic");
+    }
+
+    #[test]
+    fn arcane_cartographer_plugin_inserts_all_resources() {
+        let mut app = bevy::prelude::App::new();
+        app.add_plugins(ArcaneCartographerPlugin);
+
+        // Verify all expected resources exist
+        assert!(
+            app.world().get_resource::<BevyTheme>().is_some(),
+            "BevyTheme should be inserted"
+        );
+        assert!(
+            app.world().get_resource::<theme::ThemeTokens>().is_some(),
+            "ThemeTokens should be inserted"
+        );
+        assert!(
+            app.world().get_resource::<UiReadabilityConfig>().is_some(),
+            "UiReadabilityConfig should be inserted"
+        );
+        assert!(
+            app.world().get_resource::<animation::UiMotionState>().is_some(),
+            "UiMotionState should be inserted"
+        );
+        assert!(
+            app.world().get_resource::<UiFocusState>().is_some(),
+            "UiFocusState should be inserted"
+        );
     }
 }
