@@ -85,6 +85,19 @@ impl TileKind {
     ///
     /// This mapping determines which color from the active theme
     /// should be applied to each type of tile entity.
+    ///
+    /// # Map Overlay Colors
+    ///
+    /// Map overlays (halos, markers, targeting cursor, projectiles) are themed
+    /// using semantic color categories:
+    ///
+    /// - **TargetCursor**: `UiColorId::Cursor` - Spell/action targeting reticle
+    /// - **ObjectiveMarker**: `UiColorId::Highlight` - Quest objective halos and markers
+    /// - **ProjectileTrail**: `EffectColorId::MagicArcane` - Magic projectile paths
+    /// - **ProjectileImpact**: `EffectColorId::Impact` - Hit/explosion effects
+    ///
+    /// These colors are resolved via `BevyTheme` in `sync_tile_entities_system`
+    /// and applied as `RenderTileColor` components for sprite rendering.
     pub fn to_color_id(self) -> omega_core::color::ColorId {
         use omega_core::color::{
             ColorId, EffectColorId, EntityColorId, ItemRarityColorId, MonsterColorId,
@@ -98,8 +111,10 @@ impl TileKind {
             TileKind::Player => ColorId::Entity(EntityColorId::Player),
             TileKind::Monster => ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid)),
             TileKind::GroundItem => ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Common)),
+            // UI Overlays
             TileKind::TargetCursor => ColorId::Ui(UiColorId::Cursor),
             TileKind::ObjectiveMarker => ColorId::Ui(UiColorId::Highlight),
+            // Effect Overlays
             TileKind::ProjectileTrail => ColorId::Effect(EffectColorId::MagicArcane),
             TileKind::ProjectileImpact => ColorId::Effect(EffectColorId::Impact),
         }
