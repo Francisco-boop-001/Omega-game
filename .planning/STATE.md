@@ -114,7 +114,7 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 - Plan 02: Panel Color Integration ✅
 - Plan 03: CLI Theme Selection and Runtime Switching ✅
 
-**Progress:** 100% (3/3 plans complete)
+**Progress:** [█████████░] 86%
 
 **Prerequisites:**
 - ✅ Phase 1 complete
@@ -125,12 +125,20 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 
 ### Phase 3: Bevy Color Integration
 
-**Status:** ⚪ Blocked (needs Phase 1)
+**Status:** 🟡 IN PROGRESS (1/4 plans complete)
+
+**Completed Plans:**
+- Plan 01: Bevy Theme Foundation ✅
+
+**In Progress:**
+- Plan 02: Entity Color Application (next)
+
+**Progress:** 25% (1/4 plans)
 
 **Prerequisites:**
-- Phase 1 complete
-- ColorId and Theme types available
-- Bevy integration research (optional)
+- ✅ Phase 1 complete
+- ✅ ColorId and Theme types available
+- ✅ Bevy integration research (optional)
 
 ---
 
@@ -167,9 +175,12 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 | 2026-02-12 | Use termprofile crate for detection | Robust, handles edge cases | Phase 1 |
 | 2026-02-12 | Custom themes in omega-content/ | Themes are content, not core logic | Phase 1 |
 | 2026-02-12 | Classic theme as default | Fits traditional roguelike audience | Phase 1 |
-| 2026-02-13 | Embed classic theme via include_str! | Zero filesystem dependency, guaranteed valid theme | Phase 2 |
+| 2026-02-13 | Embed classic theme via include_str! | Zero filesystem dependency, guaranteed valid theme | Phase 2, 3 |
 | 2026-02-13 | Precompute StyleCache at startup | O(1) lookups critical for 60fps rendering | Phase 2 |
 | 2026-02-13 | NO_COLOR as hard override | Accessibility compliance, zero overhead | Phase 2 |
+| 2026-02-13 | BevyTheme as Resource wrapper | Provides semantic methods matching game domain | Phase 3 |
+| 2026-02-13 | sRGB conversion formula for Bevy | Bevy uses linear sRGB f32 [0.0, 1.0] | Phase 3 |
+| 2026-02-13 | Keep ThemeTokens until plan 03-04 | Gradual migration, backward compatibility | Phase 3 |
 
 ### Technical Decisions
 
@@ -268,26 +279,51 @@ From research summary:
 ### Last Session Summary
 
 **Date:** February 13, 2026
-**Activity:** Phase 2 Plan 03 (CLI Theme Selection) Execution and Completion
+**Activity:** Phase 3 Plan 01 (Bevy Theme Foundation) Execution and Completion
 
 **Completed:**
-- Task 1: Added CLI --theme option and runtime theme switching
-  - clap-based CLI argument parsing with --theme option
-  - Support for: classic, accessible, or custom TOML file paths
-  - load_theme() function with helpful error messages for invalid themes
-  - switch_theme() method to rebuild StyleCache on theme change
-  - F10 keybinding for runtime theme cycling
-  - cycle_theme() method that toggles between classic and accessible
-  - Status panel hint showing current theme name and F10 keybinding
-  - Embedded theme constants (CLASSIC_THEME_TOML, ACCESSIBLE_THEME_TOML)
-- Task 2: Human visual verification checkpoint (APPROVED)
-  - Colors visible in 16-color mode and higher
-  - F10 theme switching works instantly without restart
-  - Visual output confirmed correct with no artifacts or flickering
-  - NO_COLOR environment variable support working
-- Bug fixes applied (Rule 1 & Rule 2):
-  - Fixed monochrome output (NO_COLOR support not fully working)
-  - Fixed accessible theme TOML loading and parsing
+- Task 2.1: Color Adapter Implementation
+  - Created `color_adapter.rs` with HexColor to Bevy::Color conversion
+  - Implemented `to_bevy_color()` using sRGB formula (r/255.0, g/255.0, b/255.0)
+  - Implemented `resolve_to_bevy_color()` for ColorId resolution
+  - Embedded classic and accessible themes via include_str!
+  - Added `load_builtin_theme()` following omega-tui pattern
+  - 10 comprehensive unit tests
+- Task 2.2: Theme Resource
+  - Created `BevyTheme` as Bevy Resource wrapping ColorTheme
+  - Implemented 70+ convenience methods across all color categories
+  - Generic resolution: `resolve(&ColorId)`
+  - Typed resolution: `get_monster_color(MonsterColorId)`
+  - Semantic resolution: `get_monster_hostile_undead()`
+  - 10 unit tests covering all color categories
+- Task 2.3: Plugin Integration
+  - Updated `ArcaneCartographerPlugin` to load classic theme by default
+  - Inserted `BevyTheme` as Bevy resource during plugin initialization
+  - Maintained `ThemeTokens` for backward compatibility
+  - 2 integration tests verifying resource insertion
+
+**Files Created:**
+- `crates/omega-bevy/src/presentation/color_adapter.rs` (254 lines)
+- `crates/omega-bevy/src/presentation/bevy_theme.rs` (479 lines)
+
+**Files Modified:**
+- `crates/omega-bevy/src/presentation/mod.rs` (added modules + plugin integration)
+
+**Commits:**
+- `f1a11a3`: Implement color adapter for Bevy
+- `994b807`: Add BevyTheme resource wrapper
+- `f785159`: Integrate BevyTheme into ArcaneCartographerPlugin
+
+**Decisions Made:**
+- Embed themes via include_str! for zero filesystem dependency
+- Convert HexColor to Bevy::Color using sRGB (r/255.0, g/255.0, b/255.0)
+- Keep ThemeTokens alive for backward compatibility until plan 03-04
+- BevyTheme provides three resolution levels (generic, typed, semantic)
+
+**Previous Session (February 13, 2026) - Phase 2 Complete:**
+- Task 1: CLI --theme option and runtime theme switching
+- Task 2: Human visual verification (APPROVED)
+- Bug fixes: NO_COLOR support, accessible theme TOML loading
 
 **Previous Session (February 12, 2026) - Phase 1 Complete:**
 - Task 1.1: Color module structure and ColorId enum implementation (8 enums, 63 variants)
@@ -323,10 +359,10 @@ From research summary:
 - termprofile crate for terminal detection with NO_COLOR support
 
 **Next Session:**
-- Phase 2 Plan 02: Panel Color Integration
-  - Apply styles to render_map_panel()
-  - Color entities, terrain, and UI elements
-  - Add context-specific modifiers (bold, italic)
+- Phase 3 Plan 02: Entity Color Application
+  - Apply BevyTheme colors to TileRender entities
+  - Color player, monsters, items, and terrain
+  - Replace hardcoded sprite colors with semantic lookups
 
 ### Blockers
 
