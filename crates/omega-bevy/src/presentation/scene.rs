@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::bevy_theme::BevyTheme;
-use super::theme::ThemeTokens;
+use super::theme::{UiChromeColors, UiLayoutTokens};
 use super::{
     CompassPanelCard, CompassPanelText, HudPanelText, InteractionPanelCard, InteractionPanelText,
     MapPanelCard, MapPanelText, StatusPanelCard, TimelinePanelCard, TimelinePanelText,
@@ -10,15 +10,16 @@ use super::{
 
 pub fn setup_arcane_scene(
     mut commands: Commands,
-    theme: Res<ThemeTokens>,
+    layout: Res<UiLayoutTokens>,
+    chrome: Res<UiChromeColors>,
     bevy_theme: Res<BevyTheme>,
     readability: Res<UiReadabilityConfig>,
 ) {
     let scale = readability.scale;
-    let spacing_xs = theme.spacing_xs * scale;
-    let spacing_sm = theme.spacing_sm * scale;
-    let spacing_md = theme.spacing_md * scale;
-    let spacing_lg = theme.spacing_lg * scale;
+    let spacing_xs = layout.spacing_xs * scale;
+    let spacing_sm = layout.spacing_sm * scale;
+    let spacing_md = layout.spacing_md * scale;
+    let spacing_lg = layout.spacing_lg * scale;
 
     commands.spawn(Camera2d);
 
@@ -33,7 +34,7 @@ pub fn setup_arcane_scene(
                 column_gap: Val::Px(spacing_lg),
                 ..default()
             },
-            BackgroundColor(theme.background_haze),
+            BackgroundColor(chrome.background_haze),
         ))
         .with_children(|root| {
             root.spawn((
@@ -45,7 +46,7 @@ pub fn setup_arcane_scene(
                     bottom: Val::Px(0.0),
                     ..default()
                 },
-                BackgroundColor(theme.background_noise),
+                BackgroundColor(chrome.background_noise),
             ));
 
             root.spawn((
@@ -57,8 +58,8 @@ pub fn setup_arcane_scene(
                     row_gap: Val::Px(spacing_md),
                     ..default()
                 },
-                BackgroundColor(theme.map_backdrop),
-                BorderColor(theme.panel_border),
+                BackgroundColor(chrome.map_backdrop),
+                BorderColor(chrome.panel_border),
             ))
             .with_children(|left| {
                 left.spawn((
@@ -71,8 +72,8 @@ pub fn setup_arcane_scene(
                         row_gap: Val::Px(spacing_xs),
                         ..default()
                     },
-                    BackgroundColor(theme.panel_surface_depth),
-                    BorderColor(theme.panel_border),
+                    BackgroundColor(chrome.panel_surface_depth),
+                    BorderColor(chrome.panel_border),
                 ))
                 .with_children(|header| {
                     header.spawn((
@@ -82,7 +83,7 @@ pub fn setup_arcane_scene(
                     ));
                     header.spawn((
                         Text::new("Occult Navigation Instrument // modern mode"),
-                        TextFont { font_size: theme.panel_body_font_size * scale, ..default() },
+                        TextFont { font_size: layout.panel_body_font_size * scale, ..default() },
                         TextColor(bevy_theme.get_ui_text_dim()),
                     ));
                 });
@@ -100,19 +101,19 @@ pub fn setup_arcane_scene(
                         ..default()
                     },
                     MapPanelCard,
-                    BackgroundColor(theme.map_frame),
-                    BorderColor(theme.panel_border),
+                    BackgroundColor(chrome.map_frame),
+                    BorderColor(chrome.panel_border),
                 ))
                 .with_children(|map_card| {
                     map_card.spawn((
                         Text::new("Survey Grid"),
-                        TextFont { font_size: theme.panel_title_font_size * scale, ..default() },
+                        TextFont { font_size: layout.panel_title_font_size * scale, ..default() },
                         TextColor(bevy_theme.get_ui_text_bold()),
                     ));
                     map_card.spawn((
                         MapPanelText,
                         Text::new("Calibrating terrain and actor layers..."),
-                        TextFont { font_size: theme.map_font_size * scale, ..default() },
+                        TextFont { font_size: layout.map_font_size * scale, ..default() },
                         TextColor(bevy_theme.get_ui_text_default()),
                     ));
                 });
@@ -130,19 +131,19 @@ pub fn setup_arcane_scene(
                         ..default()
                     },
                     CompassPanelCard,
-                    BackgroundColor(theme.panel_surface_alt),
-                    BorderColor(theme.panel_border),
+                    BackgroundColor(chrome.panel_surface_alt),
+                    BorderColor(chrome.panel_border),
                 ))
                 .with_children(|compass_card| {
                     compass_card.spawn((
                         Text::new("Objective Halo"),
-                        TextFont { font_size: theme.panel_title_font_size * scale, ..default() },
+                        TextFont { font_size: layout.panel_title_font_size * scale, ..default() },
                         TextColor(bevy_theme.get_ui_text_bold()),
                     ));
                     compass_card.spawn((
                         CompassPanelText,
                         Text::new("Syncing objective beacons..."),
-                        TextFont { font_size: theme.panel_body_font_size * scale, ..default() },
+                        TextFont { font_size: layout.panel_body_font_size * scale, ..default() },
                         TextColor(bevy_theme.get_ui_text_default()),
                     ));
                 });
@@ -172,14 +173,14 @@ pub fn setup_arcane_scene(
                                 ..default()
                             },
                             StatusPanelCard,
-                            BackgroundColor(theme.panel_surface),
-                            BorderColor(theme.panel_border),
+                            BackgroundColor(chrome.panel_surface),
+                            BorderColor(chrome.panel_border),
                         ))
                         .with_children(|status_card| {
                             status_card.spawn((
                                 Text::new("Status Deck"),
                                 TextFont {
-                                    font_size: theme.panel_title_font_size * scale,
+                                    font_size: layout.panel_title_font_size * scale,
                                     ..default()
                                 },
                                 TextColor(bevy_theme.get_ui_text_bold()),
@@ -188,7 +189,7 @@ pub fn setup_arcane_scene(
                                 HudPanelText,
                                 Text::new("Loading vitals and quest state..."),
                                 TextFont {
-                                    font_size: theme.panel_body_font_size * scale,
+                                    font_size: layout.panel_body_font_size * scale,
                                     ..default()
                                 },
                                 TextColor(bevy_theme.get_ui_text_default()),
@@ -209,14 +210,14 @@ pub fn setup_arcane_scene(
                                 ..default()
                             },
                             InteractionPanelCard,
-                            BackgroundColor(theme.panel_surface_focus),
-                            BorderColor(theme.focus_ring),
+                            BackgroundColor(chrome.panel_surface_focus),
+                            BorderColor(chrome.focus_ring),
                         ))
                         .with_children(|interaction_card| {
                             interaction_card.spawn((
                                 Text::new("Interaction Focus"),
                                 TextFont {
-                                    font_size: theme.panel_title_font_size * scale,
+                                    font_size: layout.panel_title_font_size * scale,
                                     ..default()
                                 },
                                 TextColor(bevy_theme.get_ui_message_warning()),
@@ -225,7 +226,7 @@ pub fn setup_arcane_scene(
                                 InteractionPanelText,
                                 Text::new("Waiting for active interaction..."),
                                 TextFont {
-                                    font_size: theme.panel_body_font_size * scale,
+                                    font_size: layout.panel_body_font_size * scale,
                                     ..default()
                                 },
                                 TextColor(bevy_theme.get_ui_text_default()),
@@ -246,14 +247,14 @@ pub fn setup_arcane_scene(
                                 ..default()
                             },
                             TimelinePanelCard,
-                            BackgroundColor(theme.panel_brass),
-                            BorderColor(theme.panel_border),
+                            BackgroundColor(chrome.panel_brass),
+                            BorderColor(chrome.panel_border),
                         ))
                         .with_children(|timeline_card| {
                             timeline_card.spawn((
                                 Text::new("Outcome Timeline"),
                                 TextFont {
-                                    font_size: theme.panel_title_font_size * scale,
+                                    font_size: layout.panel_title_font_size * scale,
                                     ..default()
                                 },
                                 TextColor(bevy_theme.get_ui_text_bold()),
@@ -262,7 +263,7 @@ pub fn setup_arcane_scene(
                                 TimelinePanelText,
                                 Text::new("No outcomes captured yet..."),
                                 TextFont {
-                                    font_size: theme.panel_body_small_font_size * scale,
+                                    font_size: layout.panel_body_small_font_size * scale,
                                     ..default()
                                 },
                                 TextColor(bevy_theme.get_ui_text_dim()),

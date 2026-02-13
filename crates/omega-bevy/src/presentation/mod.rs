@@ -136,7 +136,8 @@ impl Plugin for ArcaneCartographerPlugin {
         let bevy_theme = BevyTheme::new(color_theme);
 
         app.insert_resource(bevy_theme)
-            .insert_resource(theme::ThemeTokens::default())
+            .insert_resource(theme::UiLayoutTokens::default())
+            .insert_resource(theme::UiChromeColors::default())
             .insert_resource(UiReadabilityConfig::default())
             .insert_resource(animation::UiMotionState::default())
             .insert_resource(UiFocusState::default())
@@ -307,7 +308,7 @@ fn blend_color(left: Color, right: Color, t: f32) -> Color {
 }
 
 fn apply_focus_styles(
-    theme: Res<theme::ThemeTokens>,
+    chrome: Res<theme::UiChromeColors>,
     bevy_theme: Res<BevyTheme>,
     focus: Res<UiFocusState>,
     motion: Res<animation::UiMotionState>,
@@ -322,14 +323,14 @@ fn apply_focus_styles(
 ) {
     let pulse = if readability.reduced_motion { 0.0 } else { motion.pulse01 };
     let intensity = (0.45 + focus.urgency * 0.4 + pulse * 0.15).clamp(0.0, 1.0);
-    let base_border = if readability.high_contrast { theme.text_focus } else { theme.panel_border };
+    let base_border = if readability.high_contrast { chrome.text_focus } else { chrome.panel_border };
     let highlight_color = bevy_theme.get_ui_highlight();
 
     if let Ok((mut background, mut border)) = card_queries.p0().get_single_mut() {
         *background = BackgroundColor(if focus.active_panel == UiPanelFocus::Map {
-            blend_color(theme.map_frame, theme.objective_halo_calm, intensity * 0.35)
+            blend_color(chrome.map_frame, chrome.objective_halo_calm, intensity * 0.35)
         } else {
-            theme.map_frame
+            chrome.map_frame
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Map {
             blend_color(base_border, highlight_color, intensity)
@@ -340,9 +341,9 @@ fn apply_focus_styles(
 
     if let Ok((mut background, mut border)) = card_queries.p1().get_single_mut() {
         *background = BackgroundColor(if focus.active_panel == UiPanelFocus::Compass {
-            blend_color(theme.panel_surface_alt, theme.objective_halo_calm, intensity * 0.45)
+            blend_color(chrome.panel_surface_alt, chrome.objective_halo_calm, intensity * 0.45)
         } else {
-            theme.panel_surface_alt
+            chrome.panel_surface_alt
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Compass {
             blend_color(base_border, highlight_color, intensity)
@@ -353,9 +354,9 @@ fn apply_focus_styles(
 
     if let Ok((mut background, mut border)) = card_queries.p2().get_single_mut() {
         *background = BackgroundColor(if focus.active_panel == UiPanelFocus::Status {
-            blend_color(theme.panel_surface, theme.panel_surface_focus, intensity * 0.35)
+            blend_color(chrome.panel_surface, chrome.panel_surface_focus, intensity * 0.35)
         } else {
-            theme.panel_surface
+            chrome.panel_surface
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Status {
             blend_color(base_border, highlight_color, intensity * 0.75)
@@ -366,9 +367,9 @@ fn apply_focus_styles(
 
     if let Ok((mut background, mut border)) = card_queries.p3().get_single_mut() {
         *background = BackgroundColor(if focus.active_panel == UiPanelFocus::Interaction {
-            blend_color(theme.panel_surface_focus, theme.accent_chaos, intensity * 0.3)
+            blend_color(chrome.panel_surface_focus, chrome.accent_chaos, intensity * 0.3)
         } else {
-            theme.panel_surface_focus
+            chrome.panel_surface_focus
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Interaction {
             blend_color(base_border, highlight_color, intensity)
@@ -379,9 +380,9 @@ fn apply_focus_styles(
 
     if let Ok((mut background, mut border)) = card_queries.p4().get_single_mut() {
         *background = BackgroundColor(if focus.active_panel == UiPanelFocus::Timeline {
-            blend_color(theme.panel_brass, theme.panel_surface_focus, intensity * 0.28)
+            blend_color(chrome.panel_brass, chrome.panel_surface_focus, intensity * 0.28)
         } else {
-            theme.panel_brass
+            chrome.panel_brass
         });
         *border = BorderColor(if focus.active_panel == UiPanelFocus::Timeline {
             blend_color(base_border, highlight_color, intensity * 0.7)
@@ -464,8 +465,12 @@ mod tests {
             "BevyTheme should be inserted"
         );
         assert!(
-            app.world().get_resource::<theme::ThemeTokens>().is_some(),
-            "ThemeTokens should be inserted"
+            app.world().get_resource::<theme::UiLayoutTokens>().is_some(),
+            "UiLayoutTokens should be inserted"
+        );
+        assert!(
+            app.world().get_resource::<theme::UiChromeColors>().is_some(),
+            "UiChromeColors should be inserted"
         );
         assert!(
             app.world().get_resource::<UiReadabilityConfig>().is_some(),
