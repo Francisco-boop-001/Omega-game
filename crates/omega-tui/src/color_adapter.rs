@@ -380,4 +380,20 @@ fire = { fg = "#FF0000", bg = "#000000" }
         // Total: 59
         assert_eq!(ids.len(), 59);
     }
+
+    #[test]
+    fn load_builtin_classic_theme() {
+        let theme = load_builtin_theme("classic").expect("classic theme should load");
+        assert_eq!(theme.meta.name, "Classic");
+        let cache = StyleCache::new(&theme, ColorCapability::TrueColor);
+        assert!(cache.get(&ColorId::Entity(EntityColorId::Player)).fg.is_some());
+    }
+
+    #[test]
+    fn load_builtin_accessible_theme() {
+        let theme = load_builtin_theme("accessible").expect("accessible theme should load");
+        assert_eq!(theme.meta.name, "Accessible");
+        let cache = StyleCache::new(&theme, ColorCapability::TrueColor);
+        assert!(cache.get(&ColorId::Entity(EntityColorId::Player)).fg.is_some());
+    }
 }

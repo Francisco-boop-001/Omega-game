@@ -77,7 +77,9 @@ impl ColorCapability {
             termprofile::TermProfile::Ansi256 => ColorCapability::Ansi256,
             termprofile::TermProfile::Ansi16 => ColorCapability::Ansi16,
             termprofile::TermProfile::NoColor | termprofile::TermProfile::NoTty => {
-                ColorCapability::None
+                // Fallback to environment variable detection when termprofile
+                // can't detect (common on Windows Terminal)
+                Self::detect_from_env()
             }
         }
     }
