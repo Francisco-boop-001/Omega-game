@@ -1,9 +1,9 @@
 # Colorful Omega - Project State
 
-**Project:** Colorful Omega - Terminal/UI Color Support  
-**Version:** 1.0  
-**Last Updated:** February 12, 2026  
-**Status:** Phase 1 Complete
+**Project:** Colorful Omega - Terminal/UI Color Support
+**Version:** 1.0
+**Last Updated:** February 13, 2026
+**Status:** Phase 3 In Progress (Plan 02 Complete)
 
 ---
 
@@ -35,7 +35,7 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 ┌─────────────────────────────────────────────────────────────────┐
 │  Phase 1: Foundation      ████████████ 100% - COMPLETE          │
 │  Phase 2: TUI             ████████████ 100% - COMPLETE          │
-│  Phase 3: Bevy            ░░░░░░░░░░  0% - Ready to Start      │
+│  Phase 3: Bevy            ████████░░░  75% - IN PROGRESS        │
 │  Phase 4: Customization   ░░░░░░░░░░  0% - Blocked             │
 │  Phase 5: Advanced        ░░░░░░░░░░  0% - Blocked             │
 └─────────────────────────────────────────────────────────────────┘
@@ -52,7 +52,10 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 - ✅ Phase 2 Plan 01 complete (StyleCache adapter)
 - ✅ Phase 2 Plan 02 complete (Panel color integration)
 - ✅ Phase 2 Plan 03 complete (CLI theme selection and verification)
-- 🎯 Next: Phase 3 (Bevy color integration)
+- ✅ Phase 3 Plan 01 complete (Bevy Theme Foundation)
+- ✅ Phase 3 Plan 02 complete (UI Theming Integration)
+- ✅ Phase 3 Plan 03 complete (Map and Sprite Theming)
+- 🎯 Next: Phase 3 Plan 04 (Theme Migration and Cleanup)
 
 ### Status Summary
 
@@ -125,15 +128,17 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 
 ### Phase 3: Bevy Color Integration
 
-**Status:** 🟡 IN PROGRESS (1/4 plans complete)
+**Status:** 🟡 IN PROGRESS (3/4 plans complete)
 
 **Completed Plans:**
 - Plan 01: Bevy Theme Foundation ✅
+- Plan 02: UI Theming Integration ✅
+- Plan 03: Map and Sprite Theming ✅
 
 **In Progress:**
-- Plan 02: Entity Color Application (next)
+- Plan 04: Theme Migration and Cleanup (next)
 
-**Progress:** 25% (1/4 plans)
+**Progress:** 75% (3/4 plans)
 
 **Prerequisites:**
 - ✅ Phase 1 complete
@@ -181,6 +186,10 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 | 2026-02-13 | BevyTheme as Resource wrapper | Provides semantic methods matching game domain | Phase 3 |
 | 2026-02-13 | sRGB conversion formula for Bevy | Bevy uses linear sRGB f32 [0.0, 1.0] | Phase 3 |
 | 2026-02-13 | Keep ThemeTokens until plan 03-04 | Gradual migration, backward compatibility | Phase 3 |
+| 2026-02-13 | UI text colors from BevyTheme semantic methods | get_ui_text_bold/default/dim for consistent theming | Phase 3 Plan 02 |
+| 2026-02-13 | Panel focus borders use get_ui_highlight() | Replace hardcoded focus_ring with semantic color | Phase 3 Plan 02 |
+| 2026-02-13 | TileKind::to_color_id() mapping | Centralized semantic color mapping for all entity types | Phase 3 |
+| 2026-02-13 | RenderTileColor component | ECS-based color storage instead of direct Sprite modification | Phase 3 |
 
 ### Technical Decisions
 
@@ -279,40 +288,35 @@ From research summary:
 ### Last Session Summary
 
 **Date:** February 13, 2026
-**Activity:** Phase 3 Plan 01 (Bevy Theme Foundation) Execution and Completion
+**Activity:** Phase 3 Plan 03 (Map and Sprite Theming) Execution and Completion
 
 **Completed:**
-- Task 2.1: Color Adapter Implementation
-  - Created `color_adapter.rs` with HexColor to Bevy::Color conversion
-  - Implemented `to_bevy_color()` using sRGB formula (r/255.0, g/255.0, b/255.0)
-  - Implemented `resolve_to_bevy_color()` for ColorId resolution
-  - Embedded classic and accessible themes via include_str!
-  - Added `load_builtin_theme()` following omega-tui pattern
-  - 10 comprehensive unit tests
-- Task 2.2: Theme Resource
-  - Created `BevyTheme` as Bevy Resource wrapping ColorTheme
-  - Implemented 70+ convenience methods across all color categories
-  - Generic resolution: `resolve(&ColorId)`
-  - Typed resolution: `get_monster_color(MonsterColorId)`
-  - Semantic resolution: `get_monster_hostile_undead()`
-  - 10 unit tests covering all color categories
-- Task 2.3: Plugin Integration
-  - Updated `ArcaneCartographerPlugin` to load classic theme by default
-  - Inserted `BevyTheme` as Bevy resource during plugin initialization
-  - Maintained `ThemeTokens` for backward compatibility
-  - 2 integration tests verifying resource insertion
-
-**Files Created:**
-- `crates/omega-bevy/src/presentation/color_adapter.rs` (254 lines)
-- `crates/omega-bevy/src/presentation/bevy_theme.rs` (479 lines)
+- Task 2.1: Tile to Color Mapping
+  - Implemented `TileKind::to_color_id()` mapping function
+  - Maps 10 TileKind variants to semantic ColorId categories
+  - Terrain: Floor/Wall/Feature → TerrainColorId
+  - Entities: Player/Monster/Item → EntityColorId
+  - UI overlays: Cursor/Marker → UiColorId
+  - Effects: ProjectileTrail/Impact → EffectColorId
+  - Added `RenderTileColor(Color)` component for ECS color storage
+- Task 2.2: Entity Rendering Integration
+  - Injected `BevyTheme` as system parameter in `sync_tile_entities_system`
+  - Resolve ColorId for each tile using `TileKind::to_color_id()`
+  - Apply resolved color to `RenderTileColor` component
+  - Each spawned tile entity now includes semantic color tint
+- Task 2.3: Map Overlay Theming
+  - Documented overlay color mapping in code
+  - UI overlays (cursor, markers) → UiColorId
+  - Effect overlays (projectiles) → EffectColorId
+  - All overlays themed via existing TileKind mapping
 
 **Files Modified:**
-- `crates/omega-bevy/src/presentation/mod.rs` (added modules + plugin integration)
+- `crates/omega-bevy/src/lib.rs` - Added mapping function, component, and system integration
 
 **Commits:**
-- `f1a11a3`: Implement color adapter for Bevy
-- `994b807`: Add BevyTheme resource wrapper
-- `f785159`: Integrate BevyTheme into ArcaneCartographerPlugin
+- `a051aa8`: TileKind to ColorId mapping and RenderTileColor component
+- `7cba146`: BevyTheme integration into sync_tile_entities_system
+- `74f86ff`: Map overlay theming documentation
 
 **Decisions Made:**
 - Embed themes via include_str! for zero filesystem dependency
