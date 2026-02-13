@@ -34,8 +34,8 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │  Phase 1: Foundation      ████████████ 100% - COMPLETE          │
-│  Phase 2: TUI             ███░░░░░░░░  33% - IN PROGRESS        │
-│  Phase 3: Bevy            ░░░░░░░░░░  0% - Blocked             │
+│  Phase 2: TUI             ████████████ 100% - COMPLETE          │
+│  Phase 3: Bevy            ░░░░░░░░░░  0% - Ready to Start      │
 │  Phase 4: Customization   ░░░░░░░░░░  0% - Blocked             │
 │  Phase 5: Advanced        ░░░░░░░░░░  0% - Blocked             │
 └─────────────────────────────────────────────────────────────────┘
@@ -50,7 +50,9 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 - ✅ Phase 1 planning complete
 - ✅ Phase 1 foundation implementation complete
 - ✅ Phase 2 Plan 01 complete (StyleCache adapter)
-- 🎯 Next: Phase 2 Plan 02 (Panel color integration)
+- ✅ Phase 2 Plan 02 complete (Panel color integration)
+- ✅ Phase 2 Plan 03 complete (CLI theme selection and verification)
+- 🎯 Next: Phase 3 (Bevy color integration)
 
 ### Status Summary
 
@@ -105,14 +107,14 @@ Users can enjoy a visually rich Omega experience with colors that convey meaning
 
 ### Phase 2: TUI Color Integration
 
-**Status:** 🟡 IN PROGRESS (Plan 01 of 03 complete)
-
-**Current Plan:** 02 (Panel Color Integration)
+**Status:** ✅ COMPLETE (3/3 plans complete)
 
 **Completed Plans:**
 - Plan 01: StyleCache Adapter ✅
+- Plan 02: Panel Color Integration ✅
+- Plan 03: CLI Theme Selection and Runtime Switching ✅
 
-**Progress:** 33% (1/3 plans complete)
+**Progress:** 100% (3/3 plans complete)
 
 **Prerequisites:**
 - ✅ Phase 1 complete
@@ -266,24 +268,26 @@ From research summary:
 ### Last Session Summary
 
 **Date:** February 13, 2026
-**Activity:** Phase 2 Plan 01 (StyleCache Adapter) Execution and Completion
+**Activity:** Phase 2 Plan 03 (CLI Theme Selection) Execution and Completion
 
 **Completed:**
-- Task 1: Created StyleCache adapter in color_adapter.rs
-  - Precomputes all 59 ColorId variants to ratatui::Style
-  - O(1) HashMap-based lookup
-  - Terminal capability adaptation (TrueColor → Ansi256 → Ansi16 → None)
-  - NO_COLOR support (returns Style::default())
-  - ColorSpec → ratatui::Color mapping with full ANSI coverage
-- Task 2: Integrated StyleCache into App struct
-  - Added theme, style_cache, capability fields
-  - Embedded classic.toml via include_str!
-  - ColorCapability::detect() at startup
-  - Builder method with_theme() for runtime switching
-- Bug fixes applied (Rule 1):
-  - Fixed termprofile 0.2.0 API usage in omega-core
-  - Corrected classic.toml format (HexColor serialization)
-  - Fixed test theme TOML syntax
+- Task 1: Added CLI --theme option and runtime theme switching
+  - clap-based CLI argument parsing with --theme option
+  - Support for: classic, accessible, or custom TOML file paths
+  - load_theme() function with helpful error messages for invalid themes
+  - switch_theme() method to rebuild StyleCache on theme change
+  - F10 keybinding for runtime theme cycling
+  - cycle_theme() method that toggles between classic and accessible
+  - Status panel hint showing current theme name and F10 keybinding
+  - Embedded theme constants (CLASSIC_THEME_TOML, ACCESSIBLE_THEME_TOML)
+- Task 2: Human visual verification checkpoint (APPROVED)
+  - Colors visible in 16-color mode and higher
+  - F10 theme switching works instantly without restart
+  - Visual output confirmed correct with no artifacts or flickering
+  - NO_COLOR environment variable support working
+- Bug fixes applied (Rule 1 & Rule 2):
+  - Fixed monochrome output (NO_COLOR support not fully working)
+  - Fixed accessible theme TOML loading and parsing
 
 **Previous Session (February 12, 2026) - Phase 1 Complete:**
 - Task 1.1: Color module structure and ColorId enum implementation (8 enums, 63 variants)
