@@ -1,8 +1,29 @@
+use bevy::input::ButtonInput;
+use bevy::input::keyboard::KeyCode;
 use bevy::prelude::*;
 
 use crate::{AppState, FrontendRuntime, InputAction, RenderFrame, RuntimeFrame, RuntimeStatus};
 use omega_core::GameMode;
 use std::env;
+
+/// Event for requesting a theme change at runtime.
+///
+/// Send this event to switch the active theme. The theme name must match
+/// a built-in theme ("classic" or "accessible").
+#[derive(Event, Debug, Clone)]
+pub struct ThemeChangeEvent {
+    pub theme_name: String,
+}
+
+/// Resource tracking the currently active theme name.
+#[derive(Resource, Debug, Clone)]
+struct ActiveThemeName(String);
+
+impl Default for ActiveThemeName {
+    fn default() -> Self {
+        Self("classic".to_string())
+    }
+}
 
 pub mod animation;
 pub mod bevy_theme;
@@ -120,12 +141,16 @@ impl Plugin for ArcaneCartographerPlugin {
             .insert_resource(animation::UiMotionState::default())
             .insert_resource(UiFocusState::default())
             .insert_resource(UiBootLatch::default())
+            .insert_resource(ActiveThemeName::default())
+            .add_event::<ThemeChangeEvent>()
             .add_systems(Startup, scene::setup_arcane_scene)
             .add_systems(
                 Update,
                 (
                     animation::advance_ui_motion,
                     input::keyboard_to_runtime_input,
+                    handle_theme_change_events,
+                    handle_theme_cycle_key,
                     ensure_session_started,
                     update_ui_panels,
                     apply_focus_styles,
@@ -363,6 +388,50 @@ fn apply_focus_styles(
         } else {
             base_border
         });
+    }
+}
+
+/// System that handles `ThemeChangeEvent` and updates the `BevyTheme` resource.
+///
+/// When a theme change event is received, this system:
+/// 1. Loads the requested theme by name (must be "classic" or "accessible")
+/// 2. Creates a new BevyTheme from the loaded ColorTheme
+/// 3. Replaces the BevyTheme resource, which triggers UI updates on next frame
+fn handle_theme_change_events(
+    mut events: EventReader<ThemeChangeEvent>,
+    mut bevy_theme: ResMut<BevyTheme>,
+    mut active_theme_name: ResMut<ActiveThemeName>,
+) {
+    for event in events.read() {
+        match color_adapter::load_builtin_theme(&event.theme_name) {
+            Ok(color_theme) => {
+                *bevy_theme = BevyTheme::new(color_theme);
+                active_theme_name.0 = event.theme_name.clone();
+                info!("Theme changed to: {}", event.theme_name);
+            }
+            Err(err) => {
+                error!("Failed to load theme '{}': {}", event.theme_name, err);
+            }
+        }
+    }
+}
+
+/// System that listens for F5 key press and cycles between built-in themes.
+///
+/// Cycles through themes in this order: Classic → Accessible → Classic
+/// This is a debug/accessibility feature for runtime theme testing.
+fn handle_theme_cycle_key(
+    keys: Res<ButtonInput<KeyCode>>,
+    active_theme_name: Res<ActiveThemeName>,
+    mut theme_events: EventWriter<ThemeChangeEvent>,
+) {
+    if keys.just_pressed(KeyCode::F5) {
+        let next_theme = match active_theme_name.0.as_str() {
+            "classic" => "accessible",
+            "accessible" => "classic",
+            _ => "classic", // Fallback to classic if unknown
+        };
+        theme_events.send(ThemeChangeEvent { theme_name: next_theme.to_string() });
     }
 }
 
