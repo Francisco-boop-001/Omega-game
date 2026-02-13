@@ -22,6 +22,7 @@ use omega_save::{decode_state_json_for_mode, encode_json};
 use ratatui::backend::{CrosstermBackend, TestBackend};
 use ratatui::layout::{Constraint, Direction as LayoutDirection, Layout};
 use ratatui::prelude::*;
+use ratatui::text::{Line, Span};
 use ratatui::widgets::{Block, Borders, Paragraph, Wrap};
 use std::collections::HashSet;
 use std::fs;
@@ -549,7 +550,7 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
 
     let map_view_width = top[0].width.saturating_sub(2).max(1);
     let map_view_height = top[0].height.saturating_sub(2).max(1);
-    let map = Paragraph::new(render_map_panel(&app.state, map_view_width, map_view_height))
+    let map = Paragraph::new(render_map_panel(&app.state, &app.style_cache, map_view_width, map_view_height))
         .block(Block::default().title("MAP").borders(Borders::ALL))
         .wrap(Wrap { trim: false });
 
@@ -664,7 +665,14 @@ fn read_ui_key() -> Result<Option<UiKey>> {
     Ok(None)
 }
 
-fn render_map_panel(state: &GameState, view_width: u16, view_height: u16) -> String {
+fn render_map_panel(
+    state: &GameState,
+    style_cache: &StyleCache,
+    view_width: u16,
+    view_height: u16,
+) -> Vec<Line<'static>> {
+    use omega_core::color::{ColorId, EffectColorId, EntityColorId, ItemRarityColorId, MonsterColorId, TerrainColorId, UiColorId};
+
     let max_w = i32::from(view_width.max(1)).min(state.bounds.width.max(1));
     let max_h = i32::from(view_height.max(1)).min(state.bounds.height.max(1));
     let center = state.player.position;
@@ -675,7 +683,6 @@ fn render_map_panel(state: &GameState, view_width: u16, view_height: u16) -> Str
     let max_x = (min_x + max_w - 1).clamp(0, state.bounds.width - 1);
     let max_y = (min_y + max_h - 1).clamp(0, state.bounds.height - 1);
 
-    let mut rows = Vec::new();
     let targeting_cursor =
         state.pending_targeting_interaction.as_ref().map(|interaction| interaction.cursor);
     let projectile_impact = state.transient_projectile_impact;
@@ -701,34 +708,79 @@ fn render_map_panel(state: &GameState, view_width: u16, view_height: u16) -> Str
                 .collect()
         })
         .unwrap_or_default();
+
+    let mut lines = Vec::new();
+
     for y in min_y..=max_y {
-        let mut row = String::new();
+        let mut spans: Vec<Span> = Vec::new();
+        let mut current_text = String::new();
+        let mut current_style = Style::default();
+
         for x in min_x..=max_x {
             let pos = Position { x, y };
-            let ch = if targeting_cursor == Some(pos) {
-                'X'
+
+            // Determine character and color
+            let (ch, color_id) = if targeting_cursor == Some(pos) {
+                ('X', Some(ColorId::Ui(UiColorId::Cursor)))
             } else if projectile_impact == Some(pos) {
-                '!'
+                ('!', Some(ColorId::Effect(EffectColorId::Impact)))
             } else if projectile_path.contains(&pos) {
-                ':'
+                (':', Some(ColorId::Effect(EffectColorId::MagicArcane)))
             } else if state.player.position == pos {
-                '@'
+                ('@', Some(ColorId::Entity(EntityColorId::Player)))
             } else if state.monsters.iter().any(|m| m.position == pos) {
-                'm'
+                ('m', Some(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid))))
             } else if state.ground_items.iter().any(|g| g.position == pos) {
-                '*'
+                ('*', Some(ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Common))))
             } else if objective_target == Some(pos) && state.map_glyph_at(pos) == '.' {
-                'o'
+                ('o', Some(ColorId::Ui(UiColorId::Highlight)))
             } else if objective_route.contains(&(pos.x, pos.y)) && state.map_glyph_at(pos) == '.' {
-                ':'
+                (':', Some(ColorId::Ui(UiColorId::TextDim)))
             } else {
-                state.map_glyph_at(pos)
+                let glyph = state.map_glyph_at(pos);
+                let terrain_color = match glyph {
+                    '#' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallStone))),
+                    '.' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorStone))),
+                    '+' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Door))),
+                    '<' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsUp))),
+                    '>' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsDown))),
+                    '~' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Water))),
+                    '^' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Lava))),
+                    '"' | ',' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorGrass))),
+                    ' ' => None,
+                    _ => Some(ColorId::Ui(UiColorId::TextDefault)),
+                };
+                (glyph, terrain_color)
             };
-            row.push(ch);
+
+            // Get style for this character
+            let style = if let Some(cid) = color_id {
+                style_cache.get_fg(&cid)
+            } else {
+                Style::default()
+            };
+
+            // Batch consecutive characters with same style
+            if style == current_style {
+                current_text.push(ch);
+            } else {
+                if !current_text.is_empty() {
+                    spans.push(Span::styled(std::mem::take(&mut current_text), current_style));
+                }
+                current_text.push(ch);
+                current_style = style;
+            }
         }
-        rows.push(row);
+
+        // Flush remaining text in this row
+        if !current_text.is_empty() {
+            spans.push(Span::styled(current_text, current_style));
+        }
+
+        lines.push(Line::from(spans));
     }
-    rows.join("\n")
+
+    lines
 }
 
 fn line_path(mut from: Position, to: Position) -> Vec<Position> {
@@ -1407,14 +1459,32 @@ mod tests {
         assert!(rendered.contains("Activate -- item [i] or artifact [a]"));
     }
 
+    // Helper to extract plain text from styled lines for testing
+    fn lines_to_string(lines: Vec<Line>) -> String {
+        lines
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect::<String>()
+            })
+            .collect::<Vec<String>>()
+            .join("\n")
+    }
+
     #[test]
     fn map_panel_scales_to_available_space() {
         let state = GameState::new(omega_core::MapBounds { width: 80, height: 80 });
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
 
-        let rendered = render_map_panel(&state, 40, 18);
+        let rendered_lines = render_map_panel(&state, &cache, 40, 18);
+        let rendered = lines_to_string(rendered_lines.clone());
         let lines: Vec<&str> = rendered.lines().collect();
 
-        assert_eq!(lines.len(), 18);
+        assert_eq!(rendered_lines.len(), 18);
         assert!(lines.iter().all(|line| line.chars().count() == 40));
     }
 
@@ -1434,7 +1504,12 @@ mod tests {
         ];
         state.transient_projectile_impact = Some(Position { x: origin.x + 2, y: origin.y });
 
-        let rendered = render_map_panel(&state, 20, 10);
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let rendered_lines = render_map_panel(&state, &cache, 20, 10);
+        let rendered = lines_to_string(rendered_lines);
         assert!(rendered.contains("X"));
         assert!(rendered.contains(":"));
         assert!(rendered.contains("!"));
@@ -1449,12 +1524,18 @@ mod tests {
         state.site_grid = vec![omega_core::TileSiteCell::default(); 400];
         state.site_grid[5 * 20 + 14].aux = omega_core::SITE_AUX_SERVICE_MERC_GUILD;
 
-        let rendered = render_map_panel(&state, 20, 12);
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let capability = omega_core::color::ColorCapability::TrueColor;
+        let cache = StyleCache::new(&theme, capability);
+
+        let rendered_lines = render_map_panel(&state, &cache, 20, 12);
+        let rendered = lines_to_string(rendered_lines);
         assert!(rendered.contains('o'));
         assert!(rendered.contains(':'));
 
         state.mode = GameMode::Classic;
-        let classic = render_map_panel(&state, 20, 12);
+        let classic_lines = render_map_panel(&state, &cache, 20, 12);
+        let classic = lines_to_string(classic_lines);
         assert!(!classic.contains('o'));
     }
 
