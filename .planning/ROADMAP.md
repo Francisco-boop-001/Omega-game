@@ -51,10 +51,15 @@ This roadmap outlines the implementation of a Cellular Automata based elemental 
   - Liquids (Water/Mud) flow "downward" into empty or lower-pressure cells.
   - Steam (Gas) rises vertically and dissipates or pools against "ceilings".
 
-### Phase 5: Wizard's Arena Integration & Stress Test
+### Phase 5: Stress Test & Wizard's Arena Integration
 **Goal:** Validate system stability, performance, and fun in a controlled sandbox environment.
 - **Dependencies:** Phase 4
 - **Requirements:** TEST-01, TEST-02, TEST-03
+- **Plans:** 4 plans
+  - [ ] 05-01-PLAN.md — Catastrophe scenarios, snapshot/restore, turret mode, emergency safety
+  - [ ] 05-02-PLAN.md — Performance diagnostics plugin (CA timing, PerfSnapshot, reaction logging)
+  - [ ] 05-03-PLAN.md — TUI arena controls and Bevy arena controls panel
+  - [ ] 05-04-PLAN.md — Automated stress test binary and integration verification
 - **Success Criteria:**
   - "Wizard's Arena" scene allows testing all elemental combinations via user input.
   - Simulation maintains 60 FPS with 100+ active projectiles.
@@ -64,8 +69,8 @@ This roadmap outlines the implementation of a Cellular Automata based elemental 
 
 | Phase | Description | Status |
 |-------|-------------|--------|
-| 1 | Core Elemental State & Reaction System | Pending |
-| 2 | Projectile ECS & Trajectory Physics | Pending |
-| 3 | Visual FX System | Pending |
-| 4 | Environmental Interaction | Pending |
-| 5 | Wizard's Arena Integration & Stress Test | Pending |
+| 1 | Core Elemental State & Reaction System | Completed |
+| 2 | Projectile ECS & Trajectory Physics | Completed |
+| 3 | Visual FX System | Completed |
+| 4 | Environmental Interaction | Completed |
+| 5 | Stress Test & Wizard's Arena Integration | Pending |
