@@ -1,9 +1,13 @@
 use bevy::prelude::*;
+use bevy::diagnostic::FrameTimeDiagnosticsPlugin;
 use omega_core::simulation::grid::CaGrid;
 use omega_core::simulation::wind::WindGrid;
 use super::systems::*;
 
 use super::emitters::*;
+use super::turret::*;
+use super::safety::*;
+use super::diagnostics::*;
 use omega_core::simulation::displacement::DisplacementEvent;
 
 pub struct SimulationPlugin {
@@ -24,14 +28,19 @@ impl SimulationPlugin {
 
 impl Plugin for SimulationPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(CaGrid::new(self.width, self.height))
+        app.add_plugins(FrameTimeDiagnosticsPlugin)
+            .add_plugins(CaDiagnosticsPlugin)
+            .insert_resource(CaGrid::new(self.width, self.height))
             .insert_resource(WindGrid::new(self.width, self.height))
             .insert_resource(SimulationTick::default())
+            .insert_resource(TurretMode::default())
+            .insert_resource(SafetyConfig::default())
             .insert_resource(Time::<Fixed>::from_hz(self.tick_rate_hz))
             .add_event::<DisplacementEvent>()
             .add_systems(
                 FixedUpdate,
                 (
+                    fixed_timing_start,
                     increment_tick,
                     particle_physics_system,
                     particle_wind_drift_system,
@@ -42,13 +51,18 @@ impl Plugin for SimulationPlugin {
                     projectile_movement_system,
                     projectile_collision_system,
                     projectile_interception_system,
+                    turret_mode_system,
+                    ca_timing_start,
                     update_ca_cells,
                     process_explosions,
                     environmental_behaviors,
                     swap_ca_buffers,
+                    ca_timing_end,
+                    fixed_timing_end,
                 )
                     .chain(),
-            );
+            )
+            .add_systems(Update, (emergency_cleanup_system, particle_cap_system));
     }
 }
 

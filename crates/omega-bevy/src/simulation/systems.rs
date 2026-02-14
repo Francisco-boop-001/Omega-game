@@ -11,6 +11,7 @@ use omega_core::simulation::{
 };
 use super::projectiles::Projectile;
 use super::particles::{Particle, ParticleKind, VisualCascade};
+use super::diagnostics::ReactionLog;
 use omega_core::simulation::displacement::DisplacementEvent;
 
 #[derive(Resource, Default)]
@@ -196,6 +197,7 @@ pub fn projectile_collision_system(
     mut grid: ResMut<CaGrid>,
     mut projectiles: Query<(Entity, &Projectile)>,
     monsters: Query<(Entity, &omega_core::Position, &omega_core::Stats)>,
+    mut reaction_logs: EventWriter<ReactionLog>,
 ) {
     for (entity, projectile) in projectiles.iter_mut() {
         // 1. World Collision
@@ -207,6 +209,13 @@ pub fn projectile_collision_system(
                 // Apply Impact to CA Grid
                 if let Some(impact_cell) = projectile.element_impact {
                     let mut target = *grid.get(x as usize, y as usize);
+
+                    let element = impact_cell.visible_material();
+                    reaction_logs.send(ReactionLog {
+                        description: format!("{} impact at ({},{}) -> heat:{} wet:{} pressure:{}", 
+                            element, x, y, impact_cell.heat, impact_cell.wet, impact_cell.pressure)
+                    });
+
                     target.heat = target.heat.saturating_add(impact_cell.heat);
                     target.wet = target.wet.saturating_add(impact_cell.wet);
                     target.pressure = target.pressure.saturating_add(impact_cell.pressure);
@@ -215,6 +224,10 @@ pub fn projectile_collision_system(
                     grid.set(x as usize, y as usize, target);
 
                     if target.pressure > 200 {
+                        reaction_logs.send(ReactionLog {
+                            description: format!("Explosive displacement at ({},{}) radius:3", x, y)
+                        });
+
                          let event = DisplacementEvent {
                             origin_x: x as usize,
                             origin_y: y as usize,

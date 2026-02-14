@@ -3,6 +3,9 @@ pub mod systems;
 pub mod projectiles;
 pub mod particles;
 pub mod emitters;
+pub mod turret;
+pub mod safety;
+pub mod diagnostics;
 
 pub use plugin::SimulationPlugin;
 pub use systems::SimulationTick;

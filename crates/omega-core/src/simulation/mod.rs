@@ -10,6 +10,8 @@ pub mod wind;
 pub mod displacement;
 pub mod decay;
 pub mod environmental;
+pub mod catastrophe;
+pub mod snapshot;
 
 pub use cell::Cell;
 pub use state::{Solid, Liquid, Gas};

@@ -261,6 +261,9 @@ pub const COUNTRY_SITE_STARPEAK: u16 = 9;
 pub const COUNTRY_SITE_MAGIC_ISLE: u16 = 10;
 pub const CITY_SITE_GARDEN: u16 = 41;
 pub const CITY_SITE_CEMETARY: u16 = 44;
+pub const CITY_SITE_MANSION: u16 = 46;
+pub const CITY_SITE_HOVEL: u16 = 61;
+pub const CITY_SITE_HOUSE: u16 = 62;
 
 pub const LEGACY_STATUS_CHEATED: u64 = 0x0004_0000;
 
@@ -287,6 +290,7 @@ pub enum LegacyEnvironment {
     MagicIsle,
     Temple,
     Circle,
+    HedgeMaze,
     Unknown,
 }
 
@@ -3144,7 +3148,12 @@ fn resolve_enter_country_site(state: &mut GameState) -> (String, bool) {
             }
         }
         CountryTerrainKind::Temple => {
-            if state.activate_site_map_by_id(16, Some(Position { x: 32, y: 15 })) {
+            if cell.aux == DEITY_ID_DESTINY
+                && state.activate_site_map_by_id(7, Some(Position { x: 1, y: 1 }))
+            {
+                state.topology.dungeon_level = 0;
+                ("entered the Hedge Maze".to_string(), true)
+            } else if state.activate_site_map_by_id(16, Some(Position { x: 32, y: 15 })) {
                 state.topology.dungeon_level = 0;
                 (format!("entered temple {}", cell.aux), true)
             } else {
@@ -3317,6 +3326,24 @@ fn resolve_enter_local_site(state: &mut GameState, events: &mut Vec<Event>) -> (
         return (note, true);
     }
 
+    let site_id = state.tile_site_at(state.player.position).map(|s| s.site_id).unwrap_or(0);
+    if site_id == CITY_SITE_HOUSE {
+        if state.activate_site_map_by_id(8, Some(Position { x: 1, y: 12 })) {
+            state.topology.dungeon_level = 0;
+            return ("entered a house".to_string(), true);
+        }
+    } else if site_id == CITY_SITE_HOVEL {
+        if state.activate_site_map_by_id(9, Some(Position { x: 1, y: 8 })) {
+            state.topology.dungeon_level = 0;
+            return ("entered a hovel".to_string(), true);
+        }
+    } else if site_id == CITY_SITE_MANSION {
+        if state.activate_site_map_by_id(10, Some(Position { x: 1, y: 7 })) {
+            state.topology.dungeon_level = 0;
+            return ("entered a mansion".to_string(), true);
+        }
+    }
+
     if matches!(
         state.environment,
         LegacyEnvironment::City
@@ -3329,6 +3356,7 @@ fn resolve_enter_local_site(state: &mut GameState, events: &mut Vec<Event>) -> (
             | LegacyEnvironment::Hovel
             | LegacyEnvironment::House
             | LegacyEnvironment::Mansion
+            | LegacyEnvironment::HedgeMaze
     ) {
         return ("there is nothing to enter on this tile".to_string(), true);
     }

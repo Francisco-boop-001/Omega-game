@@ -1,7 +1,7 @@
 use bevy_ecs::prelude::Resource;
 use super::cell::Cell;
 
-#[derive(Resource)]
+#[derive(Resource, Debug, Clone)]
 pub struct CaGrid {
     width: usize,
     height: usize,
@@ -46,6 +46,19 @@ impl CaGrid {
         self.back[y * self.width + x] = cell;
     }
 
+    pub fn set_immediate(&mut self, x: usize, y: usize, cell: Cell) {
+        debug_assert!(x < self.width && y < self.height);
+        let idx = y * self.width + x;
+        self.front[idx] = cell;
+        self.back[idx] = cell;
+    }
+
+    pub fn load_front_buffer(&mut self, cells: &[Cell]) {
+        assert_eq!(cells.len(), self.front.len());
+        self.front.copy_from_slice(cells);
+        self.back.copy_from_slice(cells);
+    }
+
     pub fn swap_buffers(&mut self) {
         std::mem::swap(&mut self.front, &mut self.back);
         self.back.copy_from_slice(&self.front);
@@ -57,6 +70,10 @@ impl CaGrid {
 
     pub fn cell_count(&self) -> usize {
         self.width * self.height
+    }
+
+    pub fn front_buffer(&self) -> &[Cell] {
+        &self.front
     }
 }
 

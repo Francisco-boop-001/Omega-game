@@ -1133,6 +1133,10 @@ fn map_spawn_for_id(map_id: u16) -> Option<Position> {
         4 => Some(Position { x: 32, y: 8 }),   // volcano/abyss
         5 => Some(Position { x: 32, y: 2 }),   // court/palace
         6 => Some(Position { x: 8, y: 0 }),    // dragon lair
+        7 => Some(Position { x: 1, y: 1 }),    // hedges
+        8 => Some(Position { x: 1, y: 12 }),   // house
+        9 => Some(Position { x: 1, y: 8 }),    // hovel
+        10 => Some(Position { x: 1, y: 7 }),   // mansion
         11 => Some(Position { x: 62, y: 14 }), // magic isle
         12 => Some(Position { x: 2, y: 8 }),   // skorch
         13 => Some(Position { x: 2, y: 9 }),   // star peak
@@ -1153,6 +1157,10 @@ fn map_environment_for_id(map_id: u16) -> LegacyEnvironment {
         4 => LegacyEnvironment::Volcano,
         5 => LegacyEnvironment::Castle,
         6 => LegacyEnvironment::DragonLair,
+        7 => LegacyEnvironment::HedgeMaze,
+        8 => LegacyEnvironment::House,
+        9 => LegacyEnvironment::Hovel,
+        10 => LegacyEnvironment::Mansion,
         11 => LegacyEnvironment::MagicIsle,
         13 => LegacyEnvironment::StarPeak,
         16 => LegacyEnvironment::Temple,

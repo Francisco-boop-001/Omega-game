@@ -73,4 +73,4 @@ This roadmap outlines the implementation of a Cellular Automata based elemental 
 | 2 | Projectile ECS & Trajectory Physics | Completed |
 | 3 | Visual FX System | Completed |
 | 4 | Environmental Interaction | Completed |
-| 5 | Stress Test & Wizard's Arena Integration | Pending |
+| 5 | Stress Test & Wizard's Arena Integration | Completed |

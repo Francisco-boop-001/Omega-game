@@ -34,6 +34,7 @@ struct TargetTheme(Option<BevyTheme>);
 struct ThemeTransitionProgress(f32);
 
 pub mod animation;
+pub mod arena_controls;
 pub mod bevy_theme;
 pub mod color_adapter;
 pub mod editor;
@@ -163,6 +164,7 @@ impl Plugin for ArcaneCartographerPlugin {
             .insert_resource(editor::ThemeEditorState::default())
             .insert_resource(spawner::SpawnerState::default())
             .insert_resource(inspector::InspectorState::default())
+            .insert_resource(arena_controls::ArenaSnapshotState::default())
             .add_event::<ThemeChangeEvent>()
             .add_systems(Startup, scene::setup_arcane_scene)
             .add_systems(
@@ -183,6 +185,7 @@ impl Plugin for ArcaneCartographerPlugin {
                     spawner::mouse_spawning_system,
                     inspector::mouse_inspector_system,
                     inspector::inspector_ui_system,
+                    arena_controls::arena_controls_ui_system,
                     targeting::update_targeting_visualization,
                     targeting::update_projected_path,
                 )

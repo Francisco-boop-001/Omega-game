@@ -10,6 +10,7 @@ omega-content = { path = "../omega-content" }
 omega-save = { path = "../omega-save" }
 omega-tui = { path = "../omega-tui" }
 omega-bevy = { path = "../omega-bevy" }
+bevy = "0.15"
 serde = { workspace = true }
 serde_json = { workspace = true }
 clap = { version = "4", features = ["derive"] }

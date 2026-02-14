@@ -10,7 +10,7 @@ pub struct WindVector {
     pub strength: u8,  // 0-255 force magnitude
 }
 
-#[derive(Resource)]
+#[derive(Resource, Debug, Clone)]
 pub struct WindGrid {
     width: usize,
     height: usize,

@@ -32,6 +32,7 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 pub mod color_adapter;
+pub mod arena;
 pub use color_adapter::{StyleCache, colorspec_to_ratatui};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -47,6 +48,7 @@ pub enum UiKey {
     Backspace,
     Esc,
     ThemeCycle,
+    Mouse(crossterm::event::MouseEvent),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -73,6 +75,10 @@ pub struct App {
     pub style_cache: StyleCache,
     pub capability: omega_core::color::ColorCapability,
     pub animation_time: f32,
+    pub arena_ui: Option<arena::ArenaUi>,
+    pub ca_grid: Option<omega_core::simulation::CaGrid>,
+    pub wind_grid: Option<omega_core::simulation::WindGrid>,
+    pub last_map_area: Rect,
     rng: DeterministicRng,
     seed: u64,
     restart_count: u64,
@@ -145,6 +151,16 @@ impl App {
         // Create style cache
         let style_cache = StyleCache::new(&theme, capability);
 
+        let (arena_ui, ca_grid, wind_grid) = if initial_state.environment == omega_core::LegacyEnvironment::Arena {
+            (
+                Some(arena::ArenaUi::default()),
+                Some(omega_core::simulation::CaGrid::new(initial_state.bounds.width as usize, initial_state.bounds.height as usize)),
+                Some(omega_core::simulation::WindGrid::new(initial_state.bounds.width as usize, initial_state.bounds.height as usize)),
+            )
+        } else {
+            (None, None, None)
+        };
+
         Self {
             state: initial_state,
             quit: false,
@@ -156,6 +172,10 @@ impl App {
             style_cache,
             capability,
             animation_time: 0.0,
+            arena_ui,
+            ca_grid,
+            wind_grid,
+            last_map_area: Rect::default(),
             rng: DeterministicRng::seeded(seed),
             seed,
             restart_count: 0,
@@ -264,6 +284,7 @@ impl App {
                 }
                 _ => UiAction::None,
             },
+            UiKey::Mouse(_) => UiAction::None,
         }
     }
 
@@ -272,6 +293,38 @@ impl App {
         if key == UiKey::ThemeCycle {
             self.cycle_theme();
             return;
+        }
+
+        // Arena Controls
+        if let Some(arena_ui) = &mut self.arena_ui {
+            if let (Some(grid), Some(wind)) = (&mut self.ca_grid, &mut self.wind_grid) {
+                match key {
+                    UiKey::Mouse(mouse) => {
+                        arena_ui.handle_brush_paint(mouse, self.last_map_area, grid);
+                        return;
+                    }
+                    _ => {
+                        let key_code = match key {
+                            UiKey::Char(c) => KeyCode::Char(c),
+                            UiKey::Up => KeyCode::Up,
+                            UiKey::Down => KeyCode::Down,
+                            UiKey::Enter => KeyCode::Enter,
+                            UiKey::Esc => KeyCode::Esc,
+                            UiKey::Backspace => KeyCode::Backspace,
+                            _ => KeyCode::Null,
+                        };
+                        let action = arena_ui.handle_arena_input(key_code, grid, wind, self.state.player.position);
+                        match action {
+                            arena::ArenaAction::Consumed => return,
+                            arena::ArenaAction::SpawnMonster(id) => {
+                                arena_ui.log_event(&format!("Spawn {} (not implemented)", id));
+                                return;
+                            }
+                            arena::ArenaAction::None => {}
+                        }
+                    }
+                }
+            }
         }
 
         if self.state.is_terminal() && self.handle_terminal_key(key) {
@@ -327,6 +380,7 @@ impl App {
                     UiAction::Dispatch(Command::Legacy { token: "^g".to_string() })
                 }
                 UiKey::ThemeCycle => UiAction::None, // Handled before modal check
+                UiKey::Mouse(_) => UiAction::None,
             };
             self.apply_action(action);
             return;
@@ -552,6 +606,8 @@ pub fn run_ratatui_app_with_options(
         if event::poll(poll_duration)? {
             let maybe_key = read_ui_key()?;
             if let Some(key) = maybe_key {
+                let size = terminal.size()?;
+                app.last_map_area = calculate_map_area(Rect::new(0, 0, size.width, size.height), app.arena_ui.is_some());
                 app.handle_key(key);
             }
         }
@@ -580,6 +636,8 @@ pub fn run_ratatui_app_themed(
         if event::poll(poll_duration)? {
             let maybe_key = read_ui_key()?;
             if let Some(key) = maybe_key {
+                let size = terminal.size()?;
+                app.last_map_area = calculate_map_area(Rect::new(0, 0, size.width, size.height), app.arena_ui.is_some());
                 app.handle_key(key);
             }
         }
@@ -619,6 +677,31 @@ pub fn render_to_string_with_ratatui(app: &App, width: u16, height: u16) -> Stri
     lines.join("\n")
 }
 
+pub fn calculate_map_area(total_area: Rect, arena_active: bool) -> Rect {
+    let game_area = if arena_active {
+        let chunks = Layout::default()
+            .direction(LayoutDirection::Horizontal)
+            .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
+            .split(total_area);
+        chunks[0]
+    } else {
+        total_area
+    };
+
+    let rows = Layout::default()
+        .direction(LayoutDirection::Vertical)
+        .constraints([Constraint::Percentage(68), Constraint::Percentage(32)])
+        .split(game_area);
+
+    let top = Layout::default()
+        .direction(LayoutDirection::Horizontal)
+        .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
+        .split(rows[0]);
+    
+    // Account for Borders::ALL
+    top[0].inner(Margin { vertical: 1, horizontal: 1 })
+}
+
 pub fn render_frame(frame: &mut Frame, app: &App) {
     if app.state.is_terminal() {
         let title = match app.state.status {
@@ -633,10 +716,26 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         return;
     }
 
+    let (game_area, arena_area) = if app.arena_ui.is_some() {
+        let chunks = Layout::default()
+            .direction(LayoutDirection::Horizontal)
+            .constraints([Constraint::Percentage(70), Constraint::Percentage(30)])
+            .split(frame.area());
+        (chunks[0], Some(chunks[1]))
+    } else {
+        (frame.area(), None)
+    };
+
+    if let Some(arena_ui) = &app.arena_ui {
+        if let Some(area) = arena_area {
+            arena_ui.render_controls_panel(frame, area);
+        }
+    }
+
     let rows = Layout::default()
         .direction(LayoutDirection::Vertical)
         .constraints([Constraint::Percentage(68), Constraint::Percentage(32)])
-        .split(frame.area());
+        .split(game_area);
 
     let top = Layout::default()
         .direction(LayoutDirection::Horizontal)
@@ -760,6 +859,7 @@ fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
     enable_raw_mode()?;
     let mut out = stdout();
     out.execute(EnterAlternateScreen)?;
+    out.execute(crossterm::event::EnableMouseCapture)?;
     let backend = CrosstermBackend::new(out);
     let terminal = Terminal::new(backend)?;
     Ok(terminal)
@@ -767,40 +867,43 @@ fn setup_terminal() -> Result<Terminal<CrosstermBackend<Stdout>>> {
 
 fn restore_terminal(terminal: &mut Terminal<CrosstermBackend<Stdout>>) -> Result<()> {
     disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
+    execute!(terminal.backend_mut(), crossterm::event::DisableMouseCapture, LeaveAlternateScreen)?;
     terminal.show_cursor()?;
     Ok(())
 }
 
 fn read_ui_key() -> Result<Option<UiKey>> {
-    if let CEvent::Key(key) = event::read()? {
-        if key.kind != KeyEventKind::Press {
-            return Ok(None);
-        }
-
-        let mapped = match key.code {
-            KeyCode::Esc => Some(UiKey::Esc),
-            KeyCode::Enter => Some(UiKey::Enter),
-            KeyCode::Backspace => Some(UiKey::Backspace),
-            KeyCode::Up => Some(UiKey::Up),
-            KeyCode::Down => Some(UiKey::Down),
-            KeyCode::Left => Some(UiKey::Left),
-            KeyCode::Right => Some(UiKey::Right),
-            KeyCode::F(10) => Some(UiKey::ThemeCycle),
-            KeyCode::F(12) => Some(UiKey::WizardToggle),
-            KeyCode::Char(ch)
-                if key.modifiers.contains(KeyModifiers::CONTROL)
-                    && App::map_ctrl_legacy(ch).is_some() =>
-            {
-                Some(UiKey::Ctrl(ch.to_ascii_lowercase()))
+    match event::read()? {
+        CEvent::Key(key) => {
+            if key.kind != KeyEventKind::Press {
+                return Ok(None);
             }
-            KeyCode::Char(ch) => Some(UiKey::Char(ch)),
-            _ => None,
-        };
 
-        return Ok(mapped);
+            let mapped = match key.code {
+                KeyCode::Esc => Some(UiKey::Esc),
+                KeyCode::Enter => Some(UiKey::Enter),
+                KeyCode::Backspace => Some(UiKey::Backspace),
+                KeyCode::Up => Some(UiKey::Up),
+                KeyCode::Down => Some(UiKey::Down),
+                KeyCode::Left => Some(UiKey::Left),
+                KeyCode::Right => Some(UiKey::Right),
+                KeyCode::F(10) => Some(UiKey::ThemeCycle),
+                KeyCode::F(12) => Some(UiKey::WizardToggle),
+                KeyCode::Char(ch)
+                    if key.modifiers.contains(KeyModifiers::CONTROL)
+                        && App::map_ctrl_legacy(ch).is_some() =>
+                {
+                    Some(UiKey::Ctrl(ch.to_ascii_lowercase()))
+                }
+                KeyCode::Char(ch) => Some(UiKey::Char(ch)),
+                _ => None,
+            };
+
+            Ok(mapped)
+        }
+        CEvent::Mouse(mouse) => Ok(Some(UiKey::Mouse(mouse))),
+        _ => Ok(None),
     }
-    Ok(None)
 }
 
 fn render_map_panel(
