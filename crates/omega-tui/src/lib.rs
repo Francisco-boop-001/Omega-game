@@ -955,29 +955,7 @@ fn render_status_panel(
 ) -> Vec<Line<'static>> {
     use omega_core::color::{ColorId, UiColorId};
 
-    let interaction = if state.pending_wizard_interaction.is_some() {
-        "wizard prompt active".to_string()
-    } else if state.pending_spell_interaction.is_some() {
-        "spell prompt active".to_string()
-    } else if state.pending_activation_interaction.is_some() {
-        "activation prompt active".to_string()
-    } else if state.pending_quit_interaction.is_some() {
-        "quit confirmation active".to_string()
-    } else if state.pending_talk_direction.is_some() {
-        "directional talk/tunnel prompt active".to_string()
-    } else if state.pending_inventory_interaction.is_some() {
-        "inventory interaction active".to_string()
-    } else if state.pending_item_prompt.is_some() {
-        "item selection prompt active".to_string()
-    } else if state.pending_targeting_interaction.is_some() {
-        "targeting prompt active".to_string()
-    } else {
-        state
-            .pending_site_interaction
-            .as_ref()
-            .map(|kind| describe_pending_interaction(kind, state))
-            .unwrap_or_else(|| "none".to_string())
-    };
+    let interaction = describe_interaction_state(state);
 
     let text_default = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDefault));
     let text_dim = style_cache.get_fg(&ColorId::Ui(UiColorId::TextDim));
@@ -1142,6 +1120,32 @@ fn describe_pending_interaction(kind: &SiteInteractionKind, state: &GameState) -
             };
             format!("{deity} altar menu (1-4, q/x close)")
         }
+    }
+}
+
+fn describe_interaction_state(state: &GameState) -> String {
+    if state.pending_wizard_interaction.is_some() {
+        "wizard prompt active".to_string()
+    } else if state.pending_spell_interaction.is_some() {
+        "spell prompt active".to_string()
+    } else if state.pending_activation_interaction.is_some() {
+        "activation prompt active".to_string()
+    } else if state.pending_quit_interaction.is_some() {
+        "quit confirmation active".to_string()
+    } else if state.pending_talk_direction.is_some() {
+        "directional talk/tunnel prompt active".to_string()
+    } else if state.pending_inventory_interaction.is_some() {
+        "inventory interaction active".to_string()
+    } else if state.pending_item_prompt.is_some() {
+        "item selection prompt active".to_string()
+    } else if state.pending_targeting_interaction.is_some() {
+        "targeting prompt active".to_string()
+    } else {
+        state
+            .pending_site_interaction
+            .as_ref()
+            .map(|kind| describe_pending_interaction(kind, state))
+            .unwrap_or_else(|| "none".to_string())
     }
 }
 
@@ -1978,5 +1982,31 @@ mod tests {
         assert!(screen.contains("DEATH"));
         assert!(screen.contains("You died!"));
         assert!(screen.contains("Press c/q/esc to continue"));
+    }
+
+    #[test]
+    fn test_describe_interaction_state() {
+        let mut state = GameState::new(omega_core::MapBounds {
+            width: 10,
+            height: 10,
+        });
+
+        // Default state
+        assert_eq!(describe_interaction_state(&state), "none");
+
+        // Site interaction
+        state.pending_site_interaction = Some(SiteInteractionKind::Shop);
+        assert_eq!(
+            describe_interaction_state(&state),
+            "shop menu (1-4, q/x close)"
+        );
+
+        // Talk direction (Direction usually doesn't have Default but we can use a variant if imported)
+        // Since Direction is imported, we can use Direction::North
+        state.pending_talk_direction = Some(Direction::North);
+        assert_eq!(
+            describe_interaction_state(&state),
+            "directional talk/tunnel prompt active"
+        );
     }
 }
