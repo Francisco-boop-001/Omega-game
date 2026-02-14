@@ -43,6 +43,9 @@ This roadmap outlines the implementation of a Cellular Automata based elemental 
 **Goal:** Create emergent environmental behaviors where elements spread and flow.
 - **Dependencies:** Phase 1, Phase 3
 - **Requirements:** ENV-01, ENV-02, ENV-03
+- **Plans:** 2 plans
+  - [ ] 04-01-PLAN.md — Liquid flow, gas rise/dissipation, fire spread bias (TDD)
+  - [ ] 04-02-PLAN.md — Bevy FixedUpdate pipeline integration
 - **Success Criteria:**
   - Fire spreads to adjacent flammable cells based on Heat and combustible CA rules.
   - Liquids (Water/Mud) flow "downward" into empty or lower-pressure cells.
