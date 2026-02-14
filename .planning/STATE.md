@@ -1,33 +1,31 @@
-# Project State: Wizard's Arena
+# Project State: Omega Elemental Systems
 
 ## Project Reference
-**Core Value:** A robust, isolated sandbox for verifying gameplay systems (AI, Magic, Physics) in real-time.
-**Current Focus:** Initializing the project roadmap and state tracking.
+**Core Value:** Emergent elemental interactions via Cellular Automata and ECS.
+**Current Focus:** Initializing project roadmap and requirements.
 
 ## Current Position
-**Phase:** 4 - Environmental Hazards (Fire)
-**Status:** Completed
-**Progress:** 100%
+**Phase:** 4 (Environmental Interaction)
+**Plan:** 01 (Core Environmental Logic)
+**Status:** 🟡 IN_PROGRESS
+**Progress:** [███████░░░] 70%
 
 ## Performance Metrics
-- **Target FPS:** 60+ (at 100+ entities)
-- **Memory Isolation:** Verified (Isolated GameState initialization)
+- **CA Update Latency:** N/A
+- **Entity Count:** 0
+- **FPS:** N/A
 
 ## Accumulated Context
-- **Decisions:**
-  - Added `AppState::WizardArena` to Bevy frontend.
-  - Implemented `bootstrap_wizard_arena` in `omega-content` for custom test environment generation.
-  - Integrated "Wizard Arena" into Bevy and TUI main menus.
-  - Added 'Grass' and 'Water' tile kinds to Bevy for Arena terrain rendering.
-  - Implemented `SpawnerState` and `egui` side panel for entity placement in Bevy.
-  - Added click-to-spawn with coordinate translation using `RelativeCursorPosition`.
-  - Implemented AI Pause in `omega-core` and linked it to the UI.
-  - Created an entity inspector with right-click selection and property display.
-  - Added global arena controls (Clear Monsters, Clear Items, Pause AI).
-  - Implemented fire propagation logic using cellular automata on `TILE_FLAG_BURNING`.
-  - Added visual fire rendering in Bevy.
-  - Added a "Fire" hazard brush to the spawner.
-- **Blockers:** None.
+### Decisions
+- Use Bevy 0.15 for the core engine.
+- Implement CA in a Bevy Resource for performance.
+- Use a 2D grid with simulated Z-height for projectiles.
+- [Phase 4]: Use bottom-up scanning for liquids and top-down for gases to prevent teleportation.
+- [Phase 4]: Implement gas dissipation when pressure drops below 10.
+
+### Blockers
+- None.
 
 ## Session Continuity
-Project roadmap complete. All phases for the Wizard's Arena have been implemented and verified.
+- **Last Action:** Completed Phase 4 Plan 01 - Core Environmental Logic.
+- **Next Step:** Begin Phase 4 Plan 02 - Gas Diffusion & Integration.
