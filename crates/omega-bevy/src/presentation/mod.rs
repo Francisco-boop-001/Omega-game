@@ -44,10 +44,10 @@ pub mod interaction;
 pub mod overlays;
 pub mod scene;
 pub mod spawner;
+pub mod targeting;
 pub mod theme;
 pub mod tilemap;
 pub mod timeline;
-pub mod targeting;
 
 // Re-export key types for convenience
 pub use bevy_theme::BevyTheme;
@@ -264,10 +264,7 @@ fn update_ui_panels(
             commands.entity(map_entity).despawn_descendants();
             commands.entity(map_entity).with_children(|parent| {
                 for (text, color) in expected_spans {
-                    parent.spawn((
-                        TextSpan::new(text),
-                        TextColor(color),
-                    ));
+                    parent.spawn((TextSpan::new(text), TextColor(color)));
                 }
             });
         }
@@ -352,7 +349,8 @@ fn apply_focus_styles(
 ) {
     let pulse = if readability.reduced_motion { 0.0 } else { motion.pulse01 };
     let intensity = (0.45 + focus.urgency * 0.4 + pulse * 0.15).clamp(0.0, 1.0);
-    let base_border = if readability.high_contrast { chrome.text_focus } else { chrome.panel_border };
+    let base_border =
+        if readability.high_contrast { chrome.text_focus } else { chrome.panel_border };
     let highlight_color = bevy_theme.get_ui_highlight();
 
     if let Ok((mut background, mut border)) = card_queries.p0().get_single_mut() {
@@ -483,16 +481,19 @@ fn monitor_environment_changes(
     mut last_env: Local<Option<omega_core::LegacyEnvironment>>,
 ) {
     if let Some(session) = &runtime.0.session
-        && (last_env.is_none() || last_env.unwrap() != session.state.environment) {
-            let recommended = omega_core::color::ColorTheme::name_for_environment(session.state.environment);
-            if active_theme.0 != recommended {
-                info!("Environment change detected: {:?}, recommending theme: {}", session.state.environment, recommended);
-                theme_events.send(ThemeChangeEvent {
-                    theme_name: recommended.to_string(),
-                });
-            }
-            *last_env = Some(session.state.environment);
+        && (last_env.is_none() || last_env.unwrap() != session.state.environment)
+    {
+        let recommended =
+            omega_core::color::ColorTheme::name_for_environment(session.state.environment);
+        if active_theme.0 != recommended {
+            info!(
+                "Environment change detected: {:?}, recommending theme: {}",
+                session.state.environment, recommended
+            );
+            theme_events.send(ThemeChangeEvent { theme_name: recommended.to_string() });
         }
+        *last_env = Some(session.state.environment);
+    }
 }
 
 /// System that interpolates colors during a theme transition.
@@ -505,7 +506,7 @@ fn process_theme_transition(
     if let Some(target) = &target_theme.0 {
         progress.0 += time.delta_secs() * 2.0; // 0.5s transition
         info!("Transition progress: {:.2}", progress.0);
-        
+
         if progress.0 >= 1.0 {
             // Transition complete
             info!("Theme transition complete");
@@ -567,10 +568,7 @@ mod tests {
         app.add_plugins(ArcaneCartographerPlugin);
 
         // Verify all expected resources exist
-        assert!(
-            app.world().get_resource::<BevyTheme>().is_some(),
-            "BevyTheme should be inserted"
-        );
+        assert!(app.world().get_resource::<BevyTheme>().is_some(), "BevyTheme should be inserted");
         assert!(
             app.world().get_resource::<theme::UiLayoutTokens>().is_some(),
             "UiLayoutTokens should be inserted"

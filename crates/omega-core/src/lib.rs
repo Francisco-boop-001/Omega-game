@@ -394,14 +394,12 @@ impl Default for CountryCell {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct CountryGrid {
     pub width: i32,
     pub height: i32,
     pub cells: Vec<CountryCell>,
 }
-
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub enum Alignment {
@@ -475,8 +473,7 @@ impl Default for CombatStep {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct GuildTrackState {
     #[serde(default)]
     pub rank: i16,
@@ -492,9 +489,7 @@ pub struct GuildTrackState {
     pub quest_flags: u64,
 }
 
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct QuestProgression {
     #[serde(default)]
     pub merc: GuildTrackState,
@@ -521,7 +516,6 @@ pub struct QuestProgression {
     #[serde(default)]
     pub monastery: GuildTrackState,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MainQuestState {
@@ -964,8 +958,7 @@ impl Default for PrimaryAttributes {
     }
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct ResistanceProfile {
     pub fire: i16,
     pub cold: i16,
@@ -974,18 +967,14 @@ pub struct ResistanceProfile {
     pub magic: i16,
 }
 
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct ImmunityFlags {
     pub poison: bool,
     pub sleep: bool,
     pub fear: bool,
 }
 
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct WorldTopology {
     pub dungeon_level: i16,
     pub city_site_id: u8,
@@ -995,16 +984,13 @@ pub struct WorldTopology {
     pub country_rampart_position: Option<Position>,
 }
 
-
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
-#[derive(Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Default)]
 pub struct TurnScheduler {
     pub player_phase: u64,
     pub monster_phase: u64,
     pub environment_phase: u64,
     pub timed_effect_phase: u64,
 }
-
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub struct SpellState {
@@ -1393,28 +1379,56 @@ pub fn default_character_archetypes() -> Vec<CharacterArchetype> {
         CharacterArchetype {
             id: "fighter".to_string(),
             label: "Fighter".to_string(),
-            stats: Stats { hp: 26, max_hp: 26, attack_min: 3, attack_max: 7, defense: 2, weight: 80 },
+            stats: Stats {
+                hp: 26,
+                max_hp: 26,
+                attack_min: 3,
+                attack_max: 7,
+                defense: 2,
+                weight: 80,
+            },
             starting_gold: 320,
             starting_mana: 80,
         },
         CharacterArchetype {
             id: "mage".to_string(),
             label: "Mage".to_string(),
-            stats: Stats { hp: 18, max_hp: 18, attack_min: 2, attack_max: 5, defense: 1, weight: 65 },
+            stats: Stats {
+                hp: 18,
+                max_hp: 18,
+                attack_min: 2,
+                attack_max: 5,
+                defense: 1,
+                weight: 65,
+            },
             starting_gold: 220,
             starting_mana: 160,
         },
         CharacterArchetype {
             id: "rogue".to_string(),
             label: "Rogue".to_string(),
-            stats: Stats { hp: 22, max_hp: 22, attack_min: 2, attack_max: 6, defense: 1, weight: 70 },
+            stats: Stats {
+                hp: 22,
+                max_hp: 22,
+                attack_min: 2,
+                attack_max: 6,
+                defense: 1,
+                weight: 70,
+            },
             starting_gold: 260,
             starting_mana: 110,
         },
         CharacterArchetype {
             id: "priest".to_string(),
             label: "Priest".to_string(),
-            stats: Stats { hp: 20, max_hp: 20, attack_min: 2, attack_max: 6, defense: 1, weight: 75 },
+            stats: Stats {
+                hp: 20,
+                max_hp: 20,
+                attack_min: 2,
+                attack_max: 6,
+                defense: 1,
+                weight: 75,
+            },
             starting_gold: 240,
             starting_mana: 140,
         },
@@ -1805,7 +1819,14 @@ impl GameState {
             },
             player: Player {
                 position: start,
-                stats: Stats { hp: 20, max_hp: 20, attack_min: 2, attack_max: 6, defense: 1, weight: 70 },
+                stats: Stats {
+                    hp: 20,
+                    max_hp: 20,
+                    attack_min: 2,
+                    attack_max: 6,
+                    defense: 1,
+                    weight: 70,
+                },
                 inventory: Vec::new(),
                 inventory_capacity: default_pack_capacity(),
                 pack_capacity: default_pack_capacity(),
@@ -2333,52 +2354,52 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
     if !command_consumed
         && let Some(quit_resolution) =
             resolve_pending_quit_interaction(state, &command, &mut events)
-        {
-            command_consumed = true;
-            freeze_world_progression = quit_resolution.freeze_world_progression;
-            command_for_accounting = quit_resolution.command_for_accounting;
-            turn_minutes = quit_resolution.turn_minutes;
-        }
+    {
+        command_consumed = true;
+        freeze_world_progression = quit_resolution.freeze_world_progression;
+        command_for_accounting = quit_resolution.command_for_accounting;
+        turn_minutes = quit_resolution.turn_minutes;
+    }
 
     if !command_consumed
         && let Some(talk_resolution) =
             resolve_pending_talk_direction_interaction(state, &command, &mut events)
-        {
-            command_consumed = true;
-            freeze_world_progression = talk_resolution.freeze_world_progression;
-            command_for_accounting = talk_resolution.command_for_accounting;
-            turn_minutes = talk_resolution.turn_minutes;
-        }
+    {
+        command_consumed = true;
+        freeze_world_progression = talk_resolution.freeze_world_progression;
+        command_for_accounting = talk_resolution.command_for_accounting;
+        turn_minutes = talk_resolution.turn_minutes;
+    }
 
     if !command_consumed
         && let Some(spell_resolution) =
             resolve_pending_spell_interaction(state, &command, &mut events)
-        {
-            command_consumed = true;
-            freeze_world_progression = spell_resolution.freeze_world_progression;
-            command_for_accounting = spell_resolution.command_for_accounting;
-            turn_minutes = spell_resolution.turn_minutes;
-        }
+    {
+        command_consumed = true;
+        freeze_world_progression = spell_resolution.freeze_world_progression;
+        command_for_accounting = spell_resolution.command_for_accounting;
+        turn_minutes = spell_resolution.turn_minutes;
+    }
 
     if !command_consumed
         && let Some(activation_resolution) =
             resolve_pending_activation_interaction(state, &command, &mut events)
-        {
-            command_consumed = true;
-            freeze_world_progression = activation_resolution.freeze_world_progression;
-            command_for_accounting = activation_resolution.command_for_accounting;
-            turn_minutes = activation_resolution.turn_minutes;
-        }
+    {
+        command_consumed = true;
+        freeze_world_progression = activation_resolution.freeze_world_progression;
+        command_for_accounting = activation_resolution.command_for_accounting;
+        turn_minutes = activation_resolution.turn_minutes;
+    }
 
     if !command_consumed
         && let Some(inventory_resolution) =
             resolve_pending_inventory_interaction(state, &command, &mut events)
-        {
-            command_consumed = true;
-            freeze_world_progression = inventory_resolution.freeze_world_progression;
-            command_for_accounting = inventory_resolution.command_for_accounting;
-            turn_minutes = inventory_resolution.turn_minutes;
-        }
+    {
+        command_consumed = true;
+        freeze_world_progression = inventory_resolution.freeze_world_progression;
+        command_for_accounting = inventory_resolution.command_for_accounting;
+        turn_minutes = inventory_resolution.turn_minutes;
+    }
 
     if !command_consumed
         && let Some(item_prompt_resolution) = resolve_pending_item_prompt_interaction(
@@ -2387,22 +2408,23 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
             &mut events,
             rng,
             &mut bonus_minutes,
-        ) {
-            command_consumed = true;
-            freeze_world_progression = item_prompt_resolution.freeze_world_progression;
-            command_for_accounting = item_prompt_resolution.command_for_accounting;
-            turn_minutes = item_prompt_resolution.turn_minutes;
-        }
+        )
+    {
+        command_consumed = true;
+        freeze_world_progression = item_prompt_resolution.freeze_world_progression;
+        command_for_accounting = item_prompt_resolution.command_for_accounting;
+        turn_minutes = item_prompt_resolution.turn_minutes;
+    }
 
     if !command_consumed
         && let Some(targeting_resolution) =
             resolve_pending_targeting_interaction(state, &command, &mut events, rng)
-        {
-            command_consumed = true;
-            freeze_world_progression = targeting_resolution.freeze_world_progression;
-            command_for_accounting = targeting_resolution.command_for_accounting;
-            turn_minutes = targeting_resolution.turn_minutes;
-        }
+    {
+        command_consumed = true;
+        freeze_world_progression = targeting_resolution.freeze_world_progression;
+        command_for_accounting = targeting_resolution.command_for_accounting;
+        turn_minutes = targeting_resolution.turn_minutes;
+    }
 
     if !command_consumed {
         let interaction_consumed = resolve_pending_site_interaction(state, &command, &mut events);
@@ -3380,7 +3402,14 @@ fn arena_rival_profile(opponent: u8, arena_rank: i8) -> (String, Stats) {
     if arena_rank > 0 {
         (
             "the arena champion".to_string(),
-            Stats { hp: 120, max_hp: 120, attack_min: 12, attack_max: 20, defense: 10, weight: 200 },
+            Stats {
+                hp: 120,
+                max_hp: 120,
+                attack_min: 12,
+                attack_max: 20,
+                defense: 10,
+                weight: 200,
+            },
         )
     } else {
         (
@@ -4190,9 +4219,7 @@ pub fn active_inventory_interaction_help_hint(state: &GameState) -> Option<Strin
 fn item_prompt_filter_allows(item: &Item, filter: &ItemPromptFilter) -> bool {
     match filter {
         ItemPromptFilter::Any => true,
-        ItemPromptFilter::Families(families) => {
-            families.contains(&item.family)
-        }
+        ItemPromptFilter::Families(families) => families.contains(&item.family),
     }
 }
 
@@ -4340,8 +4367,7 @@ fn talk_direction_interaction_prompt(interaction: TalkDirectionInteraction) -> S
 fn talk_direction_interaction_help_hint(interaction: TalkDirectionInteraction) -> String {
     match interaction {
         TalkDirectionInteraction::Talk => {
-            "Talk prompt active: choose direction (hjklyubn or arrows), q/esc cancels."
-                .to_string()
+            "Talk prompt active: choose direction (hjklyubn or arrows), q/esc cancels.".to_string()
         }
         TalkDirectionInteraction::Tunnel => {
             "Tunnel prompt active: choose direction (hjklyubn or arrows), q/esc cancels."
@@ -4916,7 +4942,11 @@ fn resolve_pending_talk_direction_interaction(
             } else {
                 "tunnel canceled".to_string()
             };
-            events.push(Event::LegacyHandled { token: token.to_string(), note, fully_modeled: true });
+            events.push(Event::LegacyHandled {
+                token: token.to_string(),
+                note,
+                fully_modeled: true,
+            });
             return Some(resolution);
         }
         WizardInputToken::DirectionDelta { dx, dy } => {
@@ -4932,8 +4962,7 @@ fn resolve_pending_talk_direction_interaction(
         return Some(resolution);
     };
 
-    let target =
-        Position { x: state.player.position.x + dx, y: state.player.position.y + dy };
+    let target = Position { x: state.player.position.x + dx, y: state.player.position.y + dy };
     state.pending_talk_direction = None;
     let (token, note, fully_modeled) = match interaction {
         TalkDirectionInteraction::Talk => {
@@ -9170,7 +9199,11 @@ fn set_site_glyph_at(state: &mut GameState, pos: Position, glyph: char) {
     }
 }
 
-fn monster_is_hostile_to_player(state: &GameState, behavior: MonsterBehavior, faction: Faction) -> bool {
+fn monster_is_hostile_to_player(
+    state: &GameState,
+    behavior: MonsterBehavior,
+    faction: Faction,
+) -> bool {
     match (faction, state.progression.alignment, behavior) {
         (Faction::Law, Alignment::Lawful, _) => false,
         (Faction::Chaos, Alignment::Chaotic, _) => false,
@@ -9198,10 +9231,7 @@ fn resolve_talk_direction(
     let monster = state.monsters[idx].clone();
     let hostile = monster_is_hostile_to_player(state, monster.behavior, monster.faction);
     if hostile {
-        return (
-            format!("{} refuses to parley and keeps their distance.", monster.name),
-            true,
-        );
+        return (format!("{} refuses to parley and keeps their distance.", monster.name), true);
     }
 
     events.push(Event::DialogueAdvanced {
@@ -14120,7 +14150,6 @@ fn mark_player_defeated(state: &mut GameState, source: impl Into<String>, events
     events.push(Event::PlayerDefeated);
 }
 
-
 fn estimate_action_points(command: &Command, world_mode: WorldMode) -> u16 {
     match command {
         Command::Wait => 100,
@@ -14179,31 +14208,32 @@ fn apply_environment_effects<R: RandomSource>(
         for x in 0..width {
             let pos = Position { x, y };
             if let Some(cell) = state.tile_site_at(pos)
-                && (cell.flags & TILE_FLAG_BURNING) != 0 {
-                    // Spread logic
-                    for dy in -1..=1 {
-                        for dx in -1..=1 {
-                            if dx == 0 && dy == 0 {
-                                continue;
-                            }
-                            let neighbor_pos = Position { x: x + dx, y: y + dy };
-                            if let Some(neighbor) = state.tile_site_at(neighbor_pos) {
-                                // Spread to grass (")
-                                if neighbor.glyph == '"' && (neighbor.flags & TILE_FLAG_BURNING) == 0 {
-                                    // 30% chance to spread
-                                    if rng.range_inclusive_i32(0, 99) < 30 {
-                                        to_ignite.push(neighbor_pos);
-                                    }
+                && (cell.flags & TILE_FLAG_BURNING) != 0
+            {
+                // Spread logic
+                for dy in -1..=1 {
+                    for dx in -1..=1 {
+                        if dx == 0 && dy == 0 {
+                            continue;
+                        }
+                        let neighbor_pos = Position { x: x + dx, y: y + dy };
+                        if let Some(neighbor) = state.tile_site_at(neighbor_pos) {
+                            // Spread to grass (")
+                            if neighbor.glyph == '"' && (neighbor.flags & TILE_FLAG_BURNING) == 0 {
+                                // 30% chance to spread
+                                if rng.range_inclusive_i32(0, 99) < 30 {
+                                    to_ignite.push(neighbor_pos);
                                 }
                             }
                         }
                     }
-
-                    // Burn out logic: 10% chance
-                    if rng.range_inclusive_i32(0, 99) < 10 {
-                        to_burnout.push(pos);
-                    }
                 }
+
+                // Burn out logic: 10% chance
+                if rng.range_inclusive_i32(0, 99) < 10 {
+                    to_burnout.push(pos);
+                }
+            }
         }
     }
 
@@ -14258,31 +14288,34 @@ fn apply_environment_effects<R: RandomSource>(
         for x in 0..width {
             let idx = y * width + x;
             if let Some(cell) = state.site_grid.get(idx)
-                && (cell.flags & TILE_FLAG_BURNING) != 0 {
-                    // Spread logic
-                    let dx = [-1, 0, 1, -1, 1, -1, 0, 1];
-                    let dy = [-1, -1, -1, 0, 0, 1, 1, 1];
-                    
-                    for i in 0..8 {
-                        let nx = x as i32 + dx[i];
-                        let ny = y as i32 + dy[i];
-                        
-                        if nx >= 0 && nx < width as i32 && ny >= 0 && ny < height as i32 {
-                            let n_idx = (ny as usize) * width + (nx as usize);
-                            if let Some(neighbor) = state.site_grid.get(n_idx)
-                                && neighbor.glyph == '\"' && (neighbor.flags & (TILE_FLAG_BURNING | TILE_FLAG_BURNT)) == 0
-                                    && rng.range_inclusive_i32(0, 100) < 30 {
-                                        fire_updates.push((n_idx, TILE_FLAG_BURNING, true));
-                                    }
+                && (cell.flags & TILE_FLAG_BURNING) != 0
+            {
+                // Spread logic
+                let dx = [-1, 0, 1, -1, 1, -1, 0, 1];
+                let dy = [-1, -1, -1, 0, 0, 1, 1, 1];
+
+                for i in 0..8 {
+                    let nx = x as i32 + dx[i];
+                    let ny = y as i32 + dy[i];
+
+                    if nx >= 0 && nx < width as i32 && ny >= 0 && ny < height as i32 {
+                        let n_idx = (ny as usize) * width + (nx as usize);
+                        if let Some(neighbor) = state.site_grid.get(n_idx)
+                            && neighbor.glyph == '\"'
+                            && (neighbor.flags & (TILE_FLAG_BURNING | TILE_FLAG_BURNT)) == 0
+                            && rng.range_inclusive_i32(0, 100) < 30
+                        {
+                            fire_updates.push((n_idx, TILE_FLAG_BURNING, true));
                         }
                     }
-
-                    // Burnout logic
-                    if rng.range_inclusive_i32(0, 100) < 15 {
-                        fire_updates.push((idx, TILE_FLAG_BURNING, false)); // Extinguish
-                        fire_updates.push((idx, TILE_FLAG_BURNT, true)); // Mark as burnt
-                    }
                 }
+
+                // Burnout logic
+                if rng.range_inclusive_i32(0, 100) < 15 {
+                    fire_updates.push((idx, TILE_FLAG_BURNING, false)); // Extinguish
+                    fire_updates.push((idx, TILE_FLAG_BURNT, true)); // Mark as burnt
+                }
+            }
         }
     }
 

@@ -1,2 +1,2 @@
-pub mod mode;
 pub mod combat;
+pub mod mode;

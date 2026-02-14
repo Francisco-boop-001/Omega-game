@@ -1,4 +1,4 @@
-use super::state::{Solid, Liquid, Gas};
+use super::state::{Gas, Liquid, Solid};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Cell {
@@ -16,7 +16,7 @@ impl Cell {
     }
 
     pub fn is_waterlogged(&self) -> bool {
-        self.wet >= 255
+        self.wet == 255
     }
 
     pub fn can_ignite(&self) -> bool {
@@ -73,15 +73,19 @@ mod tests {
 
     #[test]
     fn test_waterlogged_detection() {
-        let mut cell = Cell::default();
-        cell.wet = 255;
+        let cell = Cell {
+            wet: 255,
+            ..Default::default()
+        };
         assert!(cell.is_waterlogged());
     }
 
     #[test]
     fn test_can_ignite() {
-        let mut cell = Cell::default();
-        cell.solid = Some(Solid::Grass);
+        let mut cell = Cell {
+            solid: Some(Solid::Grass),
+            ..Default::default()
+        };
         assert!(cell.can_ignite());
 
         cell.wet = 255;
@@ -101,8 +105,10 @@ mod tests {
 
     #[test]
     fn test_visible_material_priority() {
-        let mut cell = Cell::default();
-        cell.solid = Some(Solid::Earth);
+        let mut cell = Cell {
+            solid: Some(Solid::Earth),
+            ..Default::default()
+        };
         assert_eq!(cell.visible_material(), "Earth");
 
         cell.liquid = Some(Liquid::Water);

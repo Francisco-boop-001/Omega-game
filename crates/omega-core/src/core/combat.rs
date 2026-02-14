@@ -1,7 +1,7 @@
 use crate::{
+    CombatLine, CombatManeuver, CombatStep, Direction, Event, Faction, GameState, RandomSource,
     default_combat_sequence, equipment_effect_profile, monster_index_at, push_or_refresh_status,
-    remove_monster_with_drops, CombatLine, CombatManeuver, CombatStep, Direction, Event, Faction,
-    GameState, RandomSource,
+    remove_monster_with_drops,
 };
 
 fn next_combat_step(state: &mut GameState) -> CombatStep {

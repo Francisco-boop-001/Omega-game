@@ -21,12 +21,7 @@ pub fn load_builtin_theme(name: &str) -> Result<ColorTheme, String> {
     let toml_str = match name.to_lowercase().as_str() {
         "classic" => CLASSIC_THEME_TOML,
         "accessible" => ACCESSIBLE_THEME_TOML,
-        _ => {
-            return Err(format!(
-                "Unknown theme '{}'. Available: classic, accessible",
-                name
-            ))
-        }
+        _ => return Err(format!("Unknown theme '{}'. Available: classic, accessible", name)),
     };
 
     ColorTheme::from_toml(toml_str).map_err(|e| format!("Failed to parse {} theme: {}", name, e))

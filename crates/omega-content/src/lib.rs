@@ -1519,15 +1519,20 @@ pub fn bootstrap_game_state_from_pack_with_mode(
 pub fn bootstrap_wizard_arena() -> Result<(GameState, BootstrapDiagnostics)> {
     let bounds = MapBounds { width: 50, height: 50 };
     let mut state = GameState::with_mode(GameMode::Modern, bounds);
-    
+
     state.world_mode = omega_core::WorldMode::DungeonCity;
     state.environment = LegacyEnvironment::Arena;
-    
+
     let mut rows = Vec::with_capacity(bounds.height as usize);
     for y in 0..bounds.height {
         let mut row = String::with_capacity(bounds.width as usize);
         for x in 0..bounds.width {
-            let glyph = if x == 0 || y == 0 || x == bounds.width - 1 || y == bounds.height - 1 || (x + y) % 17 == 0 {
+            let glyph = if x == 0
+                || y == 0
+                || x == bounds.width - 1
+                || y == bounds.height - 1
+                || (x + y) % 17 == 0
+            {
                 '#' // Perimeter or sparse walls
             } else if (x * y) % 13 == 0 {
                 '~' // Water
@@ -1540,10 +1545,10 @@ pub fn bootstrap_wizard_arena() -> Result<(GameState, BootstrapDiagnostics)> {
         }
         rows.push(row);
     }
-    
+
     state.set_map_rows(rows.clone());
     state.city_map_rows = rows.clone();
-    
+
     // Initialize site grid with basic walkable/blocking flags
     let mut site_grid = Vec::with_capacity((bounds.width * bounds.height) as usize);
     for row in &rows {
@@ -1557,9 +1562,9 @@ pub fn bootstrap_wizard_arena() -> Result<(GameState, BootstrapDiagnostics)> {
     }
     state.site_grid = site_grid.clone();
     state.city_site_grid = site_grid;
-    
+
     state.player.position = Position { x: 25, y: 25 };
-    
+
     let diagnostics = BootstrapDiagnostics {
         map_source: "wizard_arena_generator".to_string(),
         player_spawn_source: "fixed_center".to_string(),

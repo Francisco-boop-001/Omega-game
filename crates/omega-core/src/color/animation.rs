@@ -37,11 +37,7 @@ impl AnimationKind {
             AnimationKind::Flash { colors, frequency } => {
                 // Determine phase: 0 or 1
                 let phase = ((time * frequency * 2.0) % 2.0).floor() as i32;
-                if phase == 0 {
-                    colors.0
-                } else {
-                    colors.1
-                }
+                if phase == 0 { colors.0 } else { colors.1 }
             }
             AnimationKind::Pulse { base, target, frequency } => {
                 // Sine wave normalized to [0, 1]
@@ -99,11 +95,7 @@ mod tests {
     fn test_pulse() {
         let white = ColorSpec::Rgb { r: 255, g: 255, b: 255 };
         let black = ColorSpec::Rgb { r: 0, g: 0, b: 0 };
-        let anim = AnimationKind::Pulse {
-            base: white,
-            target: black,
-            frequency: 1.0,
-        };
+        let anim = AnimationKind::Pulse { base: white, target: black, frequency: 1.0 };
 
         // At t=0, sin(0)=0, result=(0*0.5)+0.5 = 0.5 (middle?)
         // Let's check the math: sin(time * freq * 2PI)
@@ -115,7 +107,7 @@ mod tests {
 
         // t=0.25 (1/4 period): sin(PI/2)=1 -> 1.0. Result = black
         assert_eq!(anim.resolve_at(0.25), black);
-        
+
         // t=0.75 (3/4 period): sin(3PI/2)=-1 -> 0.0. Result = white
         assert_eq!(anim.resolve_at(0.75), white);
     }

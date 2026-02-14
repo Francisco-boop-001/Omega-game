@@ -1,10 +1,10 @@
-pub mod plugin;
-pub mod systems;
-pub mod projectiles;
-pub mod particles;
 pub mod emitters;
+pub mod particles;
+pub mod plugin;
+pub mod projectiles;
+pub mod systems;
 
+pub use particles::{Particle, ParticleKind, VisualCascade};
 pub use plugin::SimulationPlugin;
-pub use systems::SimulationTick;
 pub use projectiles::Projectile;
-pub use particles::{Particle, VisualCascade, ParticleKind};
+pub use systems::SimulationTick;

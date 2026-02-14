@@ -1,6 +1,6 @@
 use super::cell::Cell;
-use super::state::{Gas};
-use super::transitions::{apply_transitions, apply_decay};
+use super::state::Gas;
+use super::transitions::{apply_decay, apply_transitions};
 
 pub fn count_burning_neighbors(neighbors: &[Cell; 8]) -> u8 {
     neighbors.iter().filter(|n| matches!(n.gas, Some(Gas::Fire))).count() as u8
@@ -69,8 +69,10 @@ mod tests {
 
     #[test]
     fn test_fire_plus_water_makes_steam() {
-        let mut cell = Cell::default();
-        cell.gas = Some(Gas::Fire);
+        let cell = Cell {
+            gas: Some(Gas::Fire),
+            ..Default::default()
+        };
         let mut neighbors = [Cell::default(); 8];
         neighbors[0].wet = 200;
         let next = apply_reactions(&cell, &neighbors);
@@ -79,8 +81,10 @@ mod tests {
 
     #[test]
     fn test_fire_spreads_to_adjacent_combustible() {
-        let mut cell = Cell::default();
-        cell.solid = Some(Solid::Grass);
+        let cell = Cell {
+            solid: Some(Solid::Grass),
+            ..Default::default()
+        };
         let mut neighbors = [Cell::default(); 8];
         neighbors[0].gas = Some(Gas::Fire);
         let next = apply_reactions(&cell, &neighbors);
