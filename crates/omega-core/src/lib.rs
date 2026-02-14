@@ -51,13 +51,13 @@ pub struct Stats {
 }
 
 impl Stats {
-    fn apply_damage(&mut self, raw_damage: i32) -> i32 {
+    pub(crate) fn apply_damage(&mut self, raw_damage: i32) -> i32 {
         let applied = raw_damage.max(0).min(self.hp.max(0));
         self.hp -= applied;
         applied
     }
 
-    fn is_alive(self) -> bool {
+    pub(crate) fn is_alive(self) -> bool {
         self.hp > 0
     }
 }
@@ -1757,7 +1757,7 @@ fn default_pack_capacity() -> usize {
     26
 }
 
-fn default_combat_sequence() -> Vec<CombatStep> {
+pub(crate) fn default_combat_sequence() -> Vec<CombatStep> {
     vec![CombatStep::default()]
 }
 
@@ -2456,7 +2456,7 @@ pub fn step<R: RandomSource>(state: &mut GameState, command: Command, rng: &mut 
                 }
             }
             Command::Attack(direction) => {
-                resolve_attack_command(state, direction, rng, &mut events);
+                core::combat::resolve_attack_command(state, direction, rng, &mut events);
             }
             Command::Pickup => {
                 try_pickup_at_player(state, &mut events);
@@ -9034,7 +9034,7 @@ fn try_bump_attack_on_move<R: RandomSource>(
     if monster_index_at(state, target).is_none() {
         return false;
     }
-    resolve_attack_command(state, direction, rng, events);
+    core::combat::resolve_attack_command(state, direction, rng, events);
     true
 }
 
@@ -9073,7 +9073,7 @@ fn apply_post_move_effects<R: RandomSource>(
     if state.options.belligerent
         && let Some(direction) = adjacent_monster_direction(state)
     {
-        resolve_attack_command(state, direction, rng, events);
+        core::combat::resolve_attack_command(state, direction, rng, events);
     }
 }
 
@@ -12522,7 +12522,7 @@ fn parse_direction_delta_from_text(text: &str) -> Option<(i32, i32)> {
     direction_delta_from_char(ch)
 }
 
-fn remove_monster_with_drops(
+pub(crate) fn remove_monster_with_drops(
     state: &mut GameState,
     idx: usize,
     events: &mut Vec<Event>,
@@ -13099,19 +13099,19 @@ fn unequip_item_id(equipment: &mut EquipmentSlots, item_id: u32) {
 }
 
 #[derive(Debug, Clone, Copy, Default)]
-struct EquipmentEffectProfile {
-    attack_min_bonus: i32,
-    attack_max_bonus: i32,
-    to_hit_bonus: i32,
-    defense_bonus: i32,
-    block_bonus: i32,
-    poison_resist_bonus: i32,
-    fire_resist_bonus: i32,
-    magic_resist_bonus: i32,
-    grants_poison_immunity: bool,
-    grants_fear_immunity: bool,
-    regen_per_turn: i32,
-    carry_capacity_delta: i32,
+pub(crate) struct EquipmentEffectProfile {
+    pub(crate) attack_min_bonus: i32,
+    pub(crate) attack_max_bonus: i32,
+    pub(crate) to_hit_bonus: i32,
+    pub(crate) defense_bonus: i32,
+    pub(crate) block_bonus: i32,
+    pub(crate) poison_resist_bonus: i32,
+    pub(crate) fire_resist_bonus: i32,
+    pub(crate) magic_resist_bonus: i32,
+    pub(crate) grants_poison_immunity: bool,
+    pub(crate) grants_fear_immunity: bool,
+    pub(crate) regen_per_turn: i32,
+    pub(crate) carry_capacity_delta: i32,
 }
 
 fn equipped_item_ids(equipment: &EquipmentSlots) -> Vec<u32> {
@@ -13198,7 +13198,7 @@ fn remove_item_by_id(state: &mut GameState, item_id: u32) -> Option<Item> {
     Some(removed)
 }
 
-fn equipment_effect_profile(state: &GameState) -> EquipmentEffectProfile {
+pub(crate) fn equipment_effect_profile(state: &GameState) -> EquipmentEffectProfile {
     let mut profile = EquipmentEffectProfile::default();
     for item_id in equipped_item_ids(&state.player.equipment) {
         let Some(item) = state.player.inventory.iter().find(|entry| entry.id == item_id) else {
@@ -14086,7 +14086,7 @@ fn apply_item_usef_effect(state: &mut GameState, item: &Item, events: &mut Vec<E
     }
 }
 
-fn push_or_refresh_status(
+pub(crate) fn push_or_refresh_status(
     effects: &mut Vec<StatusEffect>,
     id: &str,
     remaining_turns: u32,
@@ -14120,97 +14120,6 @@ fn mark_player_defeated(state: &mut GameState, source: impl Into<String>, events
     events.push(Event::PlayerDefeated);
 }
 
-fn next_combat_step(state: &mut GameState) -> CombatStep {
-    if state.combat_sequence.is_empty() {
-        state.combat_sequence = default_combat_sequence();
-    }
-    let idx = state.combat_sequence_cursor % state.combat_sequence.len();
-    let step = state.combat_sequence[idx].clone();
-    state.combat_sequence_cursor = (state.combat_sequence_cursor + 1) % state.combat_sequence.len();
-    step
-}
-
-fn resolve_attack_command<R: RandomSource>(
-    state: &mut GameState,
-    direction: Direction,
-    rng: &mut R,
-    events: &mut Vec<Event>,
-) {
-    let combat_step = next_combat_step(state);
-    if matches!(combat_step.maneuver, CombatManeuver::Block | CombatManeuver::Riposte) {
-        let block_magnitude = if combat_step.maneuver == CombatManeuver::Riposte { 1 } else { 2 };
-        push_or_refresh_status(&mut state.status_effects, "block_bonus", 2, block_magnitude);
-        if combat_step.maneuver == CombatManeuver::Riposte {
-            push_or_refresh_status(&mut state.status_effects, "riposte_ready", 2, 2);
-        }
-        state.log.push(format!(
-            "Combat step prepared: {:?} {:?}.",
-            combat_step.maneuver, combat_step.line
-        ));
-        events.push(Event::LegacyHandled {
-            token: "F".to_string(),
-            note: format!("{:?} {:?} stance prepared", combat_step.maneuver, combat_step.line),
-            fully_modeled: true,
-        });
-        return;
-    }
-
-    let profile = equipment_effect_profile(state);
-    let effective_attack_min =
-        (state.player.stats.attack_min + profile.attack_min_bonus).clamp(1, 400);
-    let effective_attack_max = (state.player.stats.attack_max + profile.attack_max_bonus)
-        .max(effective_attack_min + 1)
-        .clamp(effective_attack_min + 1, 500);
-
-    let target_pos = state.player.position.offset(direction);
-    if let Some(monster_index) = monster_index_at(state, target_pos) {
-        let (monster_id, monster_name, monster_faction, damage_done, remaining_hp, defeated) = {
-            let monster = &mut state.monsters[monster_index];
-            let rolled = rng.range_inclusive_i32(effective_attack_min, effective_attack_max);
-            let maneuver_bonus = if combat_step.maneuver == CombatManeuver::Lunge { 2 } else { 0 };
-            let line_bonus = match combat_step.line {
-                CombatLine::High => 1,
-                CombatLine::Center => 0,
-                CombatLine::Low => 1,
-            };
-            let mitigated = (rolled + profile.to_hit_bonus + maneuver_bonus + line_bonus
-                - monster.stats.defense)
-                .max(1);
-            let applied = monster.stats.apply_damage(mitigated);
-            (
-                monster.id,
-                monster.name.clone(),
-                monster.faction,
-                applied,
-                monster.stats.hp,
-                !monster.stats.is_alive(),
-            )
-        };
-
-        state.log.push(format!("You hit {} for {} damage.", monster_name, damage_done));
-        events.push(Event::Attacked { monster_id, damage: damage_done, remaining_hp });
-        match monster_faction {
-            Faction::Law => {
-                state.progression.law_chaos_score -= 1;
-                state.legal_heat += 1;
-            }
-            Faction::Chaos => {
-                state.progression.law_chaos_score += 1;
-            }
-            _ => {}
-        }
-
-        if defeated {
-            let _ = remove_monster_with_drops(state, monster_index, events);
-            state.monsters_defeated += 1;
-            state.log.push(format!("{} is defeated.", monster_name));
-            events.push(Event::MonsterDefeated { monster_id });
-        }
-    } else {
-        state.log.push("You swing at empty space.".to_string());
-        events.push(Event::AttackMissed { target: target_pos });
-    }
-}
 
 fn estimate_action_points(command: &Command, world_mode: WorldMode) -> u16 {
     match command {
@@ -14606,7 +14515,7 @@ fn resolve_session_outcome(state: &mut GameState, events: &mut Vec<Event>) {
     });
 }
 
-fn monster_index_at(state: &GameState, position: Position) -> Option<usize> {
+pub(crate) fn monster_index_at(state: &GameState, position: Position) -> Option<usize> {
     state.monsters.iter().position(|monster| monster.position == position)
 }
 
