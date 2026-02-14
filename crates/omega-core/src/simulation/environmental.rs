@@ -297,10 +297,7 @@ mod tests {
     #[test]
     fn test_liquid_falls_down() {
         let mut grid = CaGrid::new(3, 3);
-        let water_cell = Cell {
-            liquid: Some(Liquid::Water),
-            ..Default::default()
-        };
+        let water_cell = Cell { liquid: Some(Liquid::Water), ..Default::default() };
 
         // Place water at (1, 1)
         grid.set(1, 1, water_cell);
@@ -319,16 +316,10 @@ mod tests {
         let mut grid = CaGrid::new(3, 3);
 
         // Solid at (1, 2) blocking direct fall from (1, 1)
-        let stone = Cell {
-            solid: Some(Solid::Stone),
-            ..Default::default()
-        };
+        let stone = Cell { solid: Some(Solid::Stone), ..Default::default() };
         grid.set(1, 2, stone);
 
-        let water = Cell {
-            liquid: Some(Liquid::Water),
-            ..Default::default()
-        };
+        let water = Cell { liquid: Some(Liquid::Water), ..Default::default() };
         grid.set(1, 1, water);
 
         grid.swap_buffers();
@@ -347,18 +338,12 @@ mod tests {
         let mut grid = CaGrid::new(3, 3);
 
         // Floor at y=2
-        let stone = Cell {
-            solid: Some(Solid::Stone),
-            ..Default::default()
-        };
+        let stone = Cell { solid: Some(Solid::Stone), ..Default::default() };
         grid.set(0, 2, stone);
         grid.set(1, 2, stone);
         grid.set(2, 2, stone);
 
-        let water = Cell {
-            liquid: Some(Liquid::Water),
-            ..Default::default()
-        };
+        let water = Cell { liquid: Some(Liquid::Water), ..Default::default() };
         grid.set(1, 1, water);
 
         grid.swap_buffers();
@@ -378,20 +363,14 @@ mod tests {
     fn test_liquid_respects_solids() {
         let mut grid = CaGrid::new(3, 3);
 
-        let stone = Cell {
-            solid: Some(Solid::Stone),
-            ..Default::default()
-        };
+        let stone = Cell { solid: Some(Solid::Stone), ..Default::default() };
         grid.set(1, 2, stone); // Directly below
         grid.set(0, 2, stone); // Diagonal down left
         grid.set(2, 2, stone); // Diagonal down right
         grid.set(0, 1, stone); // Left
         grid.set(2, 1, stone); // Right
 
-        let water = Cell {
-            liquid: Some(Liquid::Water),
-            ..Default::default()
-        };
+        let water = Cell { liquid: Some(Liquid::Water), ..Default::default() };
         grid.set(1, 1, water);
 
         grid.swap_buffers();
@@ -409,16 +388,10 @@ mod tests {
     fn test_liquid_does_not_overwrite_liquid() {
         let mut grid = CaGrid::new(3, 3);
 
-        let oil = Cell {
-            liquid: Some(Liquid::Oil),
-            ..Default::default()
-        };
+        let oil = Cell { liquid: Some(Liquid::Oil), ..Default::default() };
         grid.set(1, 2, oil);
 
-        let water = Cell {
-            liquid: Some(Liquid::Water),
-            ..Default::default()
-        };
+        let water = Cell { liquid: Some(Liquid::Water), ..Default::default() };
         grid.set(1, 1, water);
 
         grid.swap_buffers();
@@ -434,11 +407,7 @@ mod tests {
     #[test]
     fn test_gas_rises_up() {
         let mut grid = CaGrid::new(3, 3);
-        let steam = Cell {
-            gas: Some(Gas::Steam),
-            pressure: 50,
-            ..Default::default()
-        };
+        let steam = Cell { gas: Some(Gas::Steam), pressure: 50, ..Default::default() };
 
         // Place steam at (1, 1)
         grid.set(1, 1, steam);
@@ -456,11 +425,7 @@ mod tests {
     #[test]
     fn test_fire_does_not_rise() {
         let mut grid = CaGrid::new(3, 3);
-        let fire = Cell {
-            gas: Some(Gas::Fire),
-            pressure: 50,
-            ..Default::default()
-        };
+        let fire = Cell { gas: Some(Gas::Fire), pressure: 50, ..Default::default() };
 
         grid.set(1, 1, fire);
         grid.swap_buffers();
@@ -478,10 +443,7 @@ mod tests {
         let mut grid = CaGrid::new(3, 3);
 
         // Surround (1, 1) with stone
-        let stone = Cell {
-            solid: Some(Solid::Stone),
-            ..Default::default()
-        };
+        let stone = Cell { solid: Some(Solid::Stone), ..Default::default() };
         grid.set(1, 0, stone);
         grid.set(1, 2, stone);
         grid.set(0, 1, stone);
@@ -491,11 +453,7 @@ mod tests {
         grid.set(0, 2, stone);
         grid.set(2, 2, stone);
 
-        let smoke = Cell {
-            gas: Some(Gas::Smoke),
-            pressure: 20,
-            ..Default::default()
-        };
+        let smoke = Cell { gas: Some(Gas::Smoke), pressure: 20, ..Default::default() };
         grid.set(1, 1, smoke);
 
         grid.swap_buffers();
@@ -526,18 +484,11 @@ mod tests {
         let mut grid = CaGrid::new(3, 3);
 
         // Combustible wood at (1, 1)
-        let wood = Cell {
-            solid: Some(Solid::Wood),
-            heat: 0,
-            ..Default::default()
-        };
+        let wood = Cell { solid: Some(Solid::Wood), heat: 0, ..Default::default() };
         grid.set(1, 1, wood);
 
         // Fire below at (1, 2)
-        let fire = Cell {
-            gas: Some(Gas::Fire),
-            ..Default::default()
-        };
+        let fire = Cell { gas: Some(Gas::Fire), ..Default::default() };
         grid.set(1, 2, fire);
 
         grid.swap_buffers();

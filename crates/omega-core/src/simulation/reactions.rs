@@ -69,10 +69,7 @@ mod tests {
 
     #[test]
     fn test_fire_plus_water_makes_steam() {
-        let cell = Cell {
-            gas: Some(Gas::Fire),
-            ..Default::default()
-        };
+        let cell = Cell { gas: Some(Gas::Fire), ..Default::default() };
         let mut neighbors = [Cell::default(); 8];
         neighbors[0].wet = 200;
         let next = apply_reactions(&cell, &neighbors);
@@ -81,10 +78,7 @@ mod tests {
 
     #[test]
     fn test_fire_spreads_to_adjacent_combustible() {
-        let cell = Cell {
-            solid: Some(Solid::Grass),
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Grass), ..Default::default() };
         let mut neighbors = [Cell::default(); 8];
         neighbors[0].gas = Some(Gas::Fire);
         let next = apply_reactions(&cell, &neighbors);

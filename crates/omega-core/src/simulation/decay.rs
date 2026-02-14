@@ -75,34 +75,21 @@ mod tests {
 
     #[test]
     fn test_residual_heat_decay() {
-        let cell = Cell {
-            heat: 10,
-            ..Default::default()
-        };
+        let cell = Cell { heat: 10, ..Default::default() };
         let next = apply_residual_decay(&cell);
         assert_eq!(next.heat, 9);
     }
 
     #[test]
     fn test_nature_reclaims_ash() {
-        let cell = Cell {
-            solid: Some(Solid::Ash),
-            heat: 5,
-            wet: 60,
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Ash), heat: 5, wet: 60, ..Default::default() };
         let next = apply_nature_reclaims(&cell);
         assert_eq!(next.solid, Some(Solid::Earth));
     }
 
     #[test]
     fn test_nature_reclaims_tick_dependency() {
-        let cell = Cell {
-            solid: Some(Solid::Ash),
-            heat: 5,
-            wet: 60,
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Ash), heat: 5, wet: 60, ..Default::default() };
 
         let next = apply_full_decay_cycle(&cell, false);
         assert_eq!(next.solid, Some(Solid::Ash));

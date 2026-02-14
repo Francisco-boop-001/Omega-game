@@ -37,10 +37,7 @@ mod tests {
     #[test]
     fn test_get_neighbor_edge_cases() {
         let mut grid = CaGrid::new(2, 2);
-        let cell = Cell {
-            solid: Some(Solid::Stone),
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Stone), ..Default::default() };
         grid.set(1, 1, cell);
         grid.swap_buffers();
 

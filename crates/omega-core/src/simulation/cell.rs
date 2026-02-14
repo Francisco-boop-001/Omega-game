@@ -73,19 +73,13 @@ mod tests {
 
     #[test]
     fn test_waterlogged_detection() {
-        let cell = Cell {
-            wet: 255,
-            ..Default::default()
-        };
+        let cell = Cell { wet: 255, ..Default::default() };
         assert!(cell.is_waterlogged());
     }
 
     #[test]
     fn test_can_ignite() {
-        let mut cell = Cell {
-            solid: Some(Solid::Grass),
-            ..Default::default()
-        };
+        let mut cell = Cell { solid: Some(Solid::Grass), ..Default::default() };
         assert!(cell.can_ignite());
 
         cell.wet = 255;
@@ -105,10 +99,7 @@ mod tests {
 
     #[test]
     fn test_visible_material_priority() {
-        let mut cell = Cell {
-            solid: Some(Solid::Earth),
-            ..Default::default()
-        };
+        let mut cell = Cell { solid: Some(Solid::Earth), ..Default::default() };
         assert_eq!(cell.visible_material(), "Earth");
 
         cell.liquid = Some(Liquid::Water);

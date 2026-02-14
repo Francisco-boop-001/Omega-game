@@ -115,10 +115,7 @@ mod tests {
         let mut wind = WindGrid::new(3, 3);
         wind.set_global(WindVector { dx: 1, dy: 0, strength: 100 });
 
-        let cell = Cell {
-            gas: Some(Gas::Smoke),
-            ..Default::default()
-        };
+        let cell = Cell { gas: Some(Gas::Smoke), ..Default::default() };
 
         let (current, displaced) = apply_wind(&grid, &wind, 1, 1, &cell);
         assert!(current.gas.is_none());
@@ -134,10 +131,7 @@ mod tests {
         let mut wind = WindGrid::new(3, 3);
         wind.set_global(WindVector { dx: 1, dy: 0, strength: 255 });
 
-        let cell = Cell {
-            solid: Some(Solid::Stone),
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Stone), ..Default::default() };
 
         let (current, displaced) = apply_wind(&grid, &wind, 1, 1, &cell);
         assert_eq!(current.solid, Some(Solid::Stone));

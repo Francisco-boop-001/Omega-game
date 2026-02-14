@@ -71,10 +71,7 @@ mod tests {
     #[test]
     fn test_get_set_and_swap() {
         let mut grid = CaGrid::new(2, 2);
-        let cell = Cell {
-            heat: 100,
-            ..Default::default()
-        };
+        let cell = Cell { heat: 100, ..Default::default() };
 
         grid.set(1, 1, cell);
         assert_eq!(grid.get(1, 1).heat, 0); // Read from front

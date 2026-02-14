@@ -86,10 +86,7 @@ mod tests {
 
     #[test]
     fn test_fireball_ignites_grass() {
-        let cell = Cell {
-            solid: Some(Solid::Grass),
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Grass), ..Default::default() };
         let next = apply_heat(&cell, 200, true);
         assert_eq!(next.gas, Some(Gas::Fire));
         assert_eq!(next.heat, 255);
@@ -97,31 +94,21 @@ mod tests {
 
     #[test]
     fn test_fireball_ignites_wood() {
-        let cell = Cell {
-            solid: Some(Solid::Wood),
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Wood), ..Default::default() };
         let next = apply_heat(&cell, 200, true);
         assert_eq!(next.gas, Some(Gas::Fire));
     }
 
     #[test]
     fn test_fireball_fails_on_stone() {
-        let cell = Cell {
-            solid: Some(Solid::Stone),
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Stone), ..Default::default() };
         let next = apply_heat(&cell, 200, true);
         assert_ne!(next.gas, Some(Gas::Fire));
     }
 
     #[test]
     fn test_torch_accumulates_heat() {
-        let cell = Cell {
-            solid: Some(Solid::Grass),
-            heat: 100,
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Grass), heat: 100, ..Default::default() };
         let next = apply_heat(&cell, 30, false);
         assert_eq!(next.heat, 130);
         assert_eq!(next.gas, Some(Gas::Fire)); // 130 > 120
@@ -129,11 +116,7 @@ mod tests {
 
     #[test]
     fn test_torch_below_flash_point() {
-        let cell = Cell {
-            solid: Some(Solid::Wood),
-            heat: 100,
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Wood), heat: 100, ..Default::default() };
         let next = apply_heat(&cell, 30, false);
         assert_eq!(next.heat, 130);
         assert_ne!(next.gas, Some(Gas::Fire)); // 130 < 180
@@ -141,11 +124,7 @@ mod tests {
 
     #[test]
     fn test_water_to_steam_at_200() {
-        let cell = Cell {
-            liquid: Some(Liquid::Water),
-            heat: 201,
-            ..Default::default()
-        };
+        let cell = Cell { liquid: Some(Liquid::Water), heat: 201, ..Default::default() };
         let next = apply_transitions(&cell, &[Cell::default(); 8]);
         assert_eq!(next.liquid, None);
         assert_eq!(next.gas, Some(Gas::Steam));
@@ -153,22 +132,14 @@ mod tests {
 
     #[test]
     fn test_steam_stays_steam_at_185() {
-        let cell = Cell {
-            gas: Some(Gas::Steam),
-            heat: 185,
-            ..Default::default()
-        };
+        let cell = Cell { gas: Some(Gas::Steam), heat: 185, ..Default::default() };
         let next = apply_transitions(&cell, &[Cell::default(); 8]);
         assert_eq!(next.gas, Some(Gas::Steam));
     }
 
     #[test]
     fn test_steam_to_water_at_179() {
-        let cell = Cell {
-            gas: Some(Gas::Steam),
-            heat: 179,
-            ..Default::default()
-        };
+        let cell = Cell { gas: Some(Gas::Steam), heat: 179, ..Default::default() };
         let next = apply_transitions(&cell, &[Cell::default(); 8]);
         assert_eq!(next.gas, None);
         assert_eq!(next.liquid, Some(Liquid::Water));
@@ -176,11 +147,7 @@ mod tests {
 
     #[test]
     fn test_waterlogged_blocks_ignition() {
-        let cell = Cell {
-            solid: Some(Solid::Grass),
-            wet: 255,
-            ..Default::default()
-        };
+        let cell = Cell { solid: Some(Solid::Grass), wet: 255, ..Default::default() };
         let next = apply_heat(&cell, 255, true);
         assert_ne!(next.gas, Some(Gas::Fire));
     }
