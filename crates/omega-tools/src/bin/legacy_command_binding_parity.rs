@@ -125,9 +125,8 @@ fn run_rust_binding_check(
     let prompt = active_talk_direction_prompt(&state).unwrap_or_default();
     let turn_delta = out.turn as i64 - before_turn;
     let minute_delta = out.minutes as i64 - before_minute;
-    let prompt_ok = prompt
-        .to_ascii_lowercase()
-        .contains(&expected_prompt_fragment.to_ascii_lowercase());
+    let prompt_ok =
+        prompt.to_ascii_lowercase().contains(&expected_prompt_fragment.to_ascii_lowercase());
     let pass = pending == Some(expected)
         && prompt_ok
         && state.pending_site_interaction.is_none()
@@ -224,7 +223,8 @@ fn main() -> Result<()> {
     }
     fs::write(
         "target/legacy-command-contract.json",
-        serde_json::to_string_pretty(&report.legacy_contract).context("serialize legacy contract")?,
+        serde_json::to_string_pretty(&report.legacy_contract)
+            .context("serialize legacy contract")?,
     )
     .context("write target/legacy-command-contract.json")?;
     fs::write(

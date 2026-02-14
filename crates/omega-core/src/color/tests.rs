@@ -37,71 +37,167 @@ mod color_tests {
                 light_gray: Some(crate::color::HexColor::from_hex("#C0C0C0").unwrap()),
             },
             semantic: SemanticColors {
-                danger: ColorRef::Reference {
-                    ref_path: "base.red".to_string(),
-                },
-                success: ColorRef::Reference {
-                    ref_path: "base.green".to_string(),
-                },
-                info: ColorRef::Reference {
-                    ref_path: "base.blue".to_string(),
-                },
-                warning: ColorRef::Reference {
-                    ref_path: "base.yellow".to_string(),
-                },
-                magic: ColorRef::Reference {
-                    ref_path: "base.purple".to_string(),
-                },
-                neutral: ColorRef::Reference {
-                    ref_path: "base.gray".to_string(),
-                },
+                danger: ColorRef::Reference { ref_path: "base.red".to_string() },
+                success: ColorRef::Reference { ref_path: "base.green".to_string() },
+                info: ColorRef::Reference { ref_path: "base.blue".to_string() },
+                warning: ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                magic: ColorRef::Reference { ref_path: "base.purple".to_string() },
+                neutral: ColorRef::Reference { ref_path: "base.gray".to_string() },
             },
             entity: {
                 let mut map = std::collections::HashMap::new();
-                map.insert("player".to_string(), ColorRef::Reference { ref_path: "base.cyan".to_string() });
-                map.insert("monster.hostileundead".to_string(), ColorRef::Reference { ref_path: "base.gray".to_string() });
-                map.insert("monster.hostilebeast".to_string(), ColorRef::Reference { ref_path: "base.brown".to_string() });
-                map.insert("monster.hostilehumanoid".to_string(), ColorRef::Reference { ref_path: "base.red".to_string() });
-                map.insert("monster.hostilemagical".to_string(), ColorRef::Reference { ref_path: "base.purple".to_string() });
-                map.insert("monster.hostileconstruct".to_string(), ColorRef::Reference { ref_path: "base.dark_gray".to_string() });
-                map.insert("monster.hostiledragon".to_string(), ColorRef::Reference { ref_path: "base.orange".to_string() });
-                map.insert("monster.neutral".to_string(), ColorRef::Reference { ref_path: "base.light_gray".to_string() });
-                map.insert("monster.friendly".to_string(), ColorRef::Reference { ref_path: "base.green".to_string() });
-                map.insert("item.common".to_string(), ColorRef::Reference { ref_path: "base.white".to_string() });
-                map.insert("item.uncommon".to_string(), ColorRef::Reference { ref_path: "base.green".to_string() });
-                map.insert("item.rare".to_string(), ColorRef::Reference { ref_path: "base.blue".to_string() });
-                map.insert("item.epic".to_string(), ColorRef::Reference { ref_path: "base.purple".to_string() });
-                map.insert("item.legendary".to_string(), ColorRef::Reference { ref_path: "base.yellow".to_string() });
-                map.insert("terrain.wallstone".to_string(), ColorRef::Reference { ref_path: "base.gray".to_string() });
-                map.insert("terrain.floorstone".to_string(), ColorRef::Reference { ref_path: "base.dark_gray".to_string() });
-                map.insert("terrain.water".to_string(), ColorRef::Reference { ref_path: "base.blue".to_string() });
-                map.insert("terrain.lava".to_string(), ColorRef::Reference { ref_path: "base.orange".to_string() });
-                map.insert("terrain.door".to_string(), ColorRef::Reference { ref_path: "base.brown".to_string() });
-                map.insert("terrain.stairsup".to_string(), ColorRef::Reference { ref_path: "base.white".to_string() });
+                map.insert(
+                    "player".to_string(),
+                    ColorRef::Reference { ref_path: "base.cyan".to_string() },
+                );
+                map.insert(
+                    "monster.hostileundead".to_string(),
+                    ColorRef::Reference { ref_path: "base.gray".to_string() },
+                );
+                map.insert(
+                    "monster.hostilebeast".to_string(),
+                    ColorRef::Reference { ref_path: "base.brown".to_string() },
+                );
+                map.insert(
+                    "monster.hostilehumanoid".to_string(),
+                    ColorRef::Reference { ref_path: "base.red".to_string() },
+                );
+                map.insert(
+                    "monster.hostilemagical".to_string(),
+                    ColorRef::Reference { ref_path: "base.purple".to_string() },
+                );
+                map.insert(
+                    "monster.hostileconstruct".to_string(),
+                    ColorRef::Reference { ref_path: "base.dark_gray".to_string() },
+                );
+                map.insert(
+                    "monster.hostiledragon".to_string(),
+                    ColorRef::Reference { ref_path: "base.orange".to_string() },
+                );
+                map.insert(
+                    "monster.neutral".to_string(),
+                    ColorRef::Reference { ref_path: "base.light_gray".to_string() },
+                );
+                map.insert(
+                    "monster.friendly".to_string(),
+                    ColorRef::Reference { ref_path: "base.green".to_string() },
+                );
+                map.insert(
+                    "item.common".to_string(),
+                    ColorRef::Reference { ref_path: "base.white".to_string() },
+                );
+                map.insert(
+                    "item.uncommon".to_string(),
+                    ColorRef::Reference { ref_path: "base.green".to_string() },
+                );
+                map.insert(
+                    "item.rare".to_string(),
+                    ColorRef::Reference { ref_path: "base.blue".to_string() },
+                );
+                map.insert(
+                    "item.epic".to_string(),
+                    ColorRef::Reference { ref_path: "base.purple".to_string() },
+                );
+                map.insert(
+                    "item.legendary".to_string(),
+                    ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                );
+                map.insert(
+                    "terrain.wallstone".to_string(),
+                    ColorRef::Reference { ref_path: "base.gray".to_string() },
+                );
+                map.insert(
+                    "terrain.floorstone".to_string(),
+                    ColorRef::Reference { ref_path: "base.dark_gray".to_string() },
+                );
+                map.insert(
+                    "terrain.water".to_string(),
+                    ColorRef::Reference { ref_path: "base.blue".to_string() },
+                );
+                map.insert(
+                    "terrain.lava".to_string(),
+                    ColorRef::Reference { ref_path: "base.orange".to_string() },
+                );
+                map.insert(
+                    "terrain.door".to_string(),
+                    ColorRef::Reference { ref_path: "base.brown".to_string() },
+                );
+                map.insert(
+                    "terrain.stairsup".to_string(),
+                    ColorRef::Reference { ref_path: "base.white".to_string() },
+                );
                 map
             },
             ui: {
                 let mut map = std::collections::HashMap::new();
-                map.insert("healthhigh".to_string(), ColorRef::Reference { ref_path: "base.green".to_string() });
-                map.insert("healthmedium".to_string(), ColorRef::Reference { ref_path: "base.yellow".to_string() });
-                map.insert("healthlow".to_string(), ColorRef::Reference { ref_path: "base.red".to_string() });
-                map.insert("mana".to_string(), ColorRef::Reference { ref_path: "base.blue".to_string() });
-                map.insert("highlight".to_string(), ColorRef::Reference { ref_path: "base.yellow".to_string() });
-                map.insert("selection".to_string(), ColorRef::Reference { ref_path: "base.cyan".to_string() });
-                map.insert("textdefault".to_string(), ColorRef::Reference { ref_path: "base.white".to_string() });
-                map.insert("messageinfo".to_string(), ColorRef::Reference { ref_path: "base.blue".to_string() });
-                map.insert("messagewarning".to_string(), ColorRef::Reference { ref_path: "base.yellow".to_string() });
-                map.insert("messagedanger".to_string(), ColorRef::Reference { ref_path: "base.red".to_string() });
+                map.insert(
+                    "healthhigh".to_string(),
+                    ColorRef::Reference { ref_path: "base.green".to_string() },
+                );
+                map.insert(
+                    "healthmedium".to_string(),
+                    ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                );
+                map.insert(
+                    "healthlow".to_string(),
+                    ColorRef::Reference { ref_path: "base.red".to_string() },
+                );
+                map.insert(
+                    "mana".to_string(),
+                    ColorRef::Reference { ref_path: "base.blue".to_string() },
+                );
+                map.insert(
+                    "highlight".to_string(),
+                    ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                );
+                map.insert(
+                    "selection".to_string(),
+                    ColorRef::Reference { ref_path: "base.cyan".to_string() },
+                );
+                map.insert(
+                    "textdefault".to_string(),
+                    ColorRef::Reference { ref_path: "base.white".to_string() },
+                );
+                map.insert(
+                    "messageinfo".to_string(),
+                    ColorRef::Reference { ref_path: "base.blue".to_string() },
+                );
+                map.insert(
+                    "messagewarning".to_string(),
+                    ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                );
+                map.insert(
+                    "messagedanger".to_string(),
+                    ColorRef::Reference { ref_path: "base.red".to_string() },
+                );
                 map
             },
             effect: {
                 let mut map = std::collections::HashMap::new();
-                map.insert("fire".to_string(), ColorRef::Reference { ref_path: "base.red".to_string() });
-                map.insert("ice".to_string(), ColorRef::Reference { ref_path: "base.cyan".to_string() });
-                map.insert("lightning".to_string(), ColorRef::Reference { ref_path: "base.yellow".to_string() });
-                map.insert("poison".to_string(), ColorRef::Reference { ref_path: "base.green".to_string() });
-                map.insert("magicarcane".to_string(), ColorRef::Reference { ref_path: "base.purple".to_string() });
-                map.insert("blood".to_string(), ColorRef::Reference { ref_path: "base.red".to_string() });
+                map.insert(
+                    "fire".to_string(),
+                    ColorRef::Reference { ref_path: "base.red".to_string() },
+                );
+                map.insert(
+                    "ice".to_string(),
+                    ColorRef::Reference { ref_path: "base.cyan".to_string() },
+                );
+                map.insert(
+                    "lightning".to_string(),
+                    ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                );
+                map.insert(
+                    "poison".to_string(),
+                    ColorRef::Reference { ref_path: "base.green".to_string() },
+                );
+                map.insert(
+                    "magicarcane".to_string(),
+                    ColorRef::Reference { ref_path: "base.purple".to_string() },
+                );
+                map.insert(
+                    "blood".to_string(),
+                    ColorRef::Reference { ref_path: "base.red".to_string() },
+                );
                 map
             },
             animations: std::collections::HashMap::new(),

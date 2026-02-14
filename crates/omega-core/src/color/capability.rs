@@ -28,12 +28,11 @@
 //! let adapted = capability.adapt(&true_color);
 //! ```
 
-use std::sync::OnceLock;
 use super::color_spec::ColorSpec;
+use std::sync::OnceLock;
 
 /// Represents the color capability level of a terminal.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default)]
 pub enum ColorCapability {
     /// No color support (monochrome).
     None,
@@ -66,12 +65,9 @@ impl ColorCapability {
         if std::env::var("NO_COLOR").is_ok() {
             return ColorCapability::None;
         }
-        
+
         // Use termprofile for accurate detection
-        let profile = termprofile::TermProfile::detect(
-            &std::io::stdout(),
-            Default::default()
-        );
+        let profile = termprofile::TermProfile::detect(&std::io::stdout(), Default::default());
 
         // Map TermProfile variants to ColorCapability
         match profile {
@@ -85,15 +81,16 @@ impl ColorCapability {
             }
         }
     }
-    
+
     /// Detect capability from environment variables (fallback method).
     fn detect_from_env() -> Self {
         // Check COLORTERM for TrueColor indication
         if let Ok(ct) = std::env::var("COLORTERM")
-            && (ct.contains("truecolor") || ct.contains("24bit")) {
-                return ColorCapability::TrueColor;
-            }
-        
+            && (ct.contains("truecolor") || ct.contains("24bit"))
+        {
+            return ColorCapability::TrueColor;
+        }
+
         // Check TERM for color capability
         if let Ok(term) = std::env::var("TERM") {
             if term.contains("256color") {
@@ -102,11 +99,11 @@ impl ColorCapability {
                 return ColorCapability::Ansi16;
             }
         }
-        
+
         // Default to Ansi16 as a safe fallback
         ColorCapability::Ansi16
     }
-    
+
     /// Adapts a color specification to this capability level.
     ///
     /// Converts the input color to the best representation supported
@@ -118,7 +115,7 @@ impl ColorCapability {
     /// use omega_core::color::{ColorSpec, ColorCapability};
     ///
     /// let true_color = ColorSpec::Rgb { r: 255, g: 128, b: 64 };
-    /// 
+    ///
     // Convert to 256-color palette
     /// let adapted = ColorCapability::Ansi256.adapt(&true_color);
     /// assert!(matches!(adapted, ColorSpec::Indexed(_)));
@@ -131,7 +128,7 @@ impl ColorCapability {
             ColorCapability::None => ColorSpec::Rgb { r: 255, g: 255, b: 255 },
         }
     }
-    
+
     /// Returns the maximum number of colors supported.
     ///
     /// # Examples
@@ -152,23 +149,25 @@ impl ColorCapability {
             ColorCapability::TrueColor => 16_777_216, // 2^24
         }
     }
-    
+
     /// Returns true if this capability supports RGB colors.
     pub const fn supports_rgb(&self) -> bool {
         matches!(self, ColorCapability::TrueColor)
     }
-    
+
     /// Returns true if this capability supports indexed colors (256-color palette).
     pub const fn supports_indexed(&self) -> bool {
         matches!(self, ColorCapability::Ansi256 | ColorCapability::TrueColor)
     }
-    
+
     /// Returns true if this capability supports ANSI 16 colors.
     pub const fn supports_ansi(&self) -> bool {
-        matches!(self, ColorCapability::Ansi16 | ColorCapability::Ansi256 | ColorCapability::TrueColor)
+        matches!(
+            self,
+            ColorCapability::Ansi16 | ColorCapability::Ansi256 | ColorCapability::TrueColor
+        )
     }
 }
-
 
 // Cached detection - only runs once
 static CAPABILITY: OnceLock<ColorCapability> = OnceLock::new();
@@ -296,7 +295,7 @@ mod tests {
         let cap = ColorCapability::TrueColor;
         let cap2 = cap;
         assert_eq!(cap, cap2); // Copy trait allows this
-        
+
         let cap3 = cap;
         assert_eq!(cap, cap3);
     }
@@ -317,12 +316,15 @@ mod tests {
         // but we can test the fallback detection logic exists
         let capability = ColorCapability::detect_from_env();
         // Should return one of the valid variants
-        assert!([
-            ColorCapability::None,
-            ColorCapability::Ansi16,
-            ColorCapability::Ansi256,
-            ColorCapability::TrueColor,
-        ].contains(&capability));
+        assert!(
+            [
+                ColorCapability::None,
+                ColorCapability::Ansi16,
+                ColorCapability::Ansi256,
+                ColorCapability::TrueColor,
+            ]
+            .contains(&capability)
+        );
     }
 
     #[test]

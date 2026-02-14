@@ -1,12 +1,12 @@
 use anyhow::{Context, Result};
 use clap::Parser;
 use omega_content::bootstrap_game_state_with_mode;
+use omega_core::color::ColorTheme;
 use omega_core::{
     Alignment, CharacterCreation, GameMode, GameState, LegacyQuestionnaireAnswers,
     LegacyQuestionnaireProfile, apply_character_creation, apply_legacy_questionnaire_profile,
     default_character_archetypes, derive_legacy_questionnaire_creation,
 };
-use omega_core::color::ColorTheme;
 use omega_save::decode_state_json_for_mode;
 use omega_tui::{color_adapter, default_save_slot_path_for_mode, run_ratatui_app_themed};
 use std::fs;
@@ -436,8 +436,13 @@ fn main() -> Result<()> {
                     apply_legacy_questionnaire_profile(&mut bootstrap, profile);
                 }
                 let initial = bootstrap.clone();
-                let final_state =
-                    run_ratatui_app_themed(seed, initial, bootstrap, save_slot.clone(), theme.clone())?;
+                let final_state = run_ratatui_app_themed(
+                    seed,
+                    initial,
+                    bootstrap,
+                    save_slot.clone(),
+                    theme.clone(),
+                )?;
                 println!(
                     "Session ended: status={:?}, turn={}, hp={}/{}",
                     final_state.status,

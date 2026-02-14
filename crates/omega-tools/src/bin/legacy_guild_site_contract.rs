@@ -284,14 +284,16 @@ fn extract_arena_roster(path: &Path) -> Result<Vec<ArenaRosterEntry>> {
 
 fn main() -> Result<()> {
     let root = PathBuf::from("archive/legacy-c-runtime/2026-02-06");
-    let files = [root.join("guild1.c"),
+    let files = [
+        root.join("guild1.c"),
         root.join("guild2.c"),
         root.join("priest.c"),
         root.join("move.c"),
         root.join("inv.c"),
         root.join("command1.c"),
         root.join("command2.c"),
-        root.join("defs.h")];
+        root.join("defs.h"),
+    ];
 
     let mut contracts = Vec::new();
     for path in [&files[0], &files[1], &files[2]] {

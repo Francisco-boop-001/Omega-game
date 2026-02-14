@@ -108,7 +108,14 @@ fn main() -> Result<()> {
     bump_attack_state.spawn_monster(
         "rat",
         bump_target,
-        omega_core::Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
+        omega_core::Stats {
+            hp: 8,
+            max_hp: 8,
+            attack_min: 1,
+            attack_max: 1,
+            defense: 0,
+            weight: 60,
+        },
     );
     let bump_out =
         step(&mut bump_attack_state, Command::Move(omega_core::Direction::East), &mut rng);
@@ -420,7 +427,14 @@ fn main() -> Result<()> {
             x: spell_flow_state.player.position.x + 1,
             y: spell_flow_state.player.position.y,
         },
-        omega_core::Stats { hp: 7, max_hp: 7, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
+        omega_core::Stats {
+            hp: 7,
+            max_hp: 7,
+            attack_min: 1,
+            attack_max: 1,
+            defense: 0,
+            weight: 60,
+        },
     );
     let open_spell =
         step(&mut spell_flow_state, Command::Legacy { token: "m".to_string() }, &mut rng);

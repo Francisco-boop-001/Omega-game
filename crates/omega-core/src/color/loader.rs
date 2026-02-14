@@ -3,9 +3,9 @@
 //! Provides functionality for discovering and loading themes from the
 //! filesystem, including platform-specific user configuration directories.
 
+use crate::color::theme::{ColorTheme, ThemeError};
 use std::fs;
 use std::path::{Path, PathBuf};
-use crate::color::theme::{ColorTheme, ThemeError};
 
 /// Handles discovery and loading of color themes from the filesystem.
 pub struct ThemeLoader;
@@ -28,14 +28,15 @@ impl ThemeLoader {
     pub fn find_user_themes() -> Vec<PathBuf> {
         let mut themes = Vec::new();
         if let Some(dir) = Self::user_theme_dir()
-            && let Ok(entries) = fs::read_dir(dir) {
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    if path.is_file() && path.extension().is_some_and(|ext| ext == "toml") {
-                        themes.push(path);
-                    }
+            && let Ok(entries) = fs::read_dir(dir)
+        {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_file() && path.extension().is_some_and(|ext| ext == "toml") {
+                    themes.push(path);
                 }
             }
+        }
         themes
     }
 
@@ -60,9 +61,10 @@ impl ThemeLoader {
     /// Ensures the user theme directory exists.
     pub fn ensure_user_dir() -> std::io::Result<()> {
         if let Some(dir) = Self::user_theme_dir()
-            && !dir.exists() {
-                fs::create_dir_all(dir)?;
-            }
+            && !dir.exists()
+        {
+            fs::create_dir_all(dir)?;
+        }
         Ok(())
     }
 }

@@ -1,6 +1,6 @@
 use super::cell::Cell;
-use super::state::{Gas};
-use super::transitions::{apply_transitions, apply_decay};
+use super::state::Gas;
+use super::transitions::{apply_decay, apply_transitions};
 
 pub fn count_burning_neighbors(neighbors: &[Cell; 8]) -> u8 {
     neighbors.iter().filter(|n| matches!(n.gas, Some(Gas::Fire))).count() as u8

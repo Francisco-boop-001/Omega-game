@@ -1,4 +1,4 @@
-use super::state::{Solid, Liquid, Gas};
+use super::state::{Gas, Liquid, Solid};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct Cell {
@@ -16,7 +16,7 @@ impl Cell {
     }
 
     pub fn is_waterlogged(&self) -> bool {
-        self.wet >= 255
+        self.wet == 255
     }
 
     pub fn can_ignite(&self) -> bool {
