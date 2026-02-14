@@ -1,12 +1,9 @@
-use bevy::prelude::*;
-use super::projectiles::Projectile;
 use super::particles::{Particle, ParticleKind, VisualCascade};
+use super::projectiles::Projectile;
+use bevy::prelude::*;
 use omega_core::simulation::displacement::DisplacementEvent;
 
-pub fn trail_emitter_system(
-    mut commands: Commands,
-    query: Query<&Projectile>,
-) {
+pub fn trail_emitter_system(mut commands: Commands, query: Query<&Projectile>) {
     for projectile in query.iter() {
         // Spawn trail particles along the path (simplified to just current pos)
         commands.spawn((
@@ -39,8 +36,9 @@ pub fn explosion_emitter_system(
         for _ in 0..20 {
             let angle = rand::random::<f32>() * std::f32::consts::TAU;
             let speed = rand::random::<f32>() * 5.0 + 2.0;
-            let velocity = Vec3::new(angle.cos() * speed, angle.sin() * speed, rand::random::<f32>() * 5.0);
-            
+            let velocity =
+                Vec3::new(angle.cos() * speed, angle.sin() * speed, rand::random::<f32>() * 5.0);
+
             commands.spawn((
                 Particle {
                     logical_pos: origin,
@@ -52,7 +50,11 @@ pub fn explosion_emitter_system(
                 },
                 VisualCascade {
                     glyphs: vec!['@', '*', '.', ' '],
-                    colors: vec![Color::srgba(1.0, 1.0, 1.0, 1.0), Color::srgba(1.0, 0.5, 0.0, 1.0), Color::srgba(0.5, 0.0, 0.0, 0.0)],
+                    colors: vec![
+                        Color::srgba(1.0, 1.0, 1.0, 1.0),
+                        Color::srgba(1.0, 0.5, 0.0, 1.0),
+                        Color::srgba(0.5, 0.0, 0.0, 0.0),
+                    ],
                     rotate: true,
                     initial_scale: 1.0,
                 },

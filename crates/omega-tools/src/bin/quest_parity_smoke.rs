@@ -39,9 +39,10 @@ fn run_choice(
         _ => 0,
     };
     if site_aux != 0
-        && let Some(site) = state.tile_site_at_mut(state.player.position) {
-            site.aux = site_aux;
-        }
+        && let Some(site) = state.tile_site_at_mut(state.player.position)
+    {
+        site.aux = site_aux;
+    }
     state.pending_site_interaction = Some(kind);
     let _ = step(state, Command::Legacy { token: choice.to_string() }, rng);
 }

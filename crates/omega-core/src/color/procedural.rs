@@ -29,7 +29,7 @@ impl ProceduralPalette {
     pub fn next_color(&mut self) -> ColorSpec {
         const GOLDEN_RATIO_CONJUGATE: f32 = 0.618_034;
         self.hue = (self.hue + GOLDEN_RATIO_CONJUGATE) % 1.0;
-        
+
         let (r, g, b) = hsl_to_rgb(self.hue, self.saturation, self.lightness);
         ColorSpec::Rgb { r, g, b }
     }
@@ -47,22 +47,28 @@ fn hsl_to_rgb(h: f32, s: f32, l: f32) -> (u8, u8, u8) {
     } else {
         let q = if l < 0.5 { l * (1.0 + s) } else { l + s - l * s };
         let p = 2.0 * l - q;
-        (
-            hue_to_rgb(p, q, h + 1.0 / 3.0),
-            hue_to_rgb(p, q, h),
-            hue_to_rgb(p, q, h - 1.0 / 3.0),
-        )
+        (hue_to_rgb(p, q, h + 1.0 / 3.0), hue_to_rgb(p, q, h), hue_to_rgb(p, q, h - 1.0 / 3.0))
     };
 
     ((r * 255.0).round() as u8, (g * 255.0).round() as u8, (b * 255.0).round() as u8)
 }
 
 fn hue_to_rgb(p: f32, q: f32, mut t: f32) -> f32 {
-    if t < 0.0 { t += 1.0; }
-    if t > 1.0 { t -= 1.0; }
-    if t < 1.0 / 6.0 { return p + (q - p) * 6.0 * t; }
-    if t < 1.0 / 2.0 { return q; }
-    if t < 2.0 / 3.0 { return p + (q - p) * (2.0 / 3.0 - t) * 6.0; }
+    if t < 0.0 {
+        t += 1.0;
+    }
+    if t > 1.0 {
+        t -= 1.0;
+    }
+    if t < 1.0 / 6.0 {
+        return p + (q - p) * 6.0 * t;
+    }
+    if t < 1.0 / 2.0 {
+        return q;
+    }
+    if t < 2.0 / 3.0 {
+        return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
+    }
     p
 }
 
@@ -74,7 +80,7 @@ mod tests {
     fn test_procedural_generation() {
         let mut palette = ProceduralPalette::new(0.0, 0.5, 0.5);
         let colors = palette.generate_n(5);
-        
+
         assert_eq!(colors.len(), 5);
         // Verify they are distinct (at least not all same)
         assert_ne!(colors[0], colors[1]);

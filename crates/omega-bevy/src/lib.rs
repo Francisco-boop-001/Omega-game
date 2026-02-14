@@ -14,9 +14,9 @@ use omega_core::{
     active_inventory_interaction_help_hint, active_inventory_interaction_prompt,
     active_item_prompt, active_item_prompt_help_hint, active_objective_snapshot,
     active_quit_interaction_help_hint, active_quit_interaction_prompt,
-    active_talk_direction_help_hint, active_talk_direction_prompt,
     active_site_interaction_help_hint, active_site_interaction_prompt,
     active_spell_interaction_help_hint, active_spell_interaction_prompt,
+    active_talk_direction_help_hint, active_talk_direction_prompt,
     active_targeting_interaction_help_hint, active_targeting_interaction_prompt,
     active_wizard_interaction_help_hint, active_wizard_interaction_prompt, modal_input_profile,
     objective_journal, objective_map_hints, renderable_timeline_lines,
@@ -120,7 +120,9 @@ impl TileKind {
             TileKind::Fire => ColorId::Effect(EffectColorId::Fire),
             TileKind::Feature => ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Door)),
             TileKind::Player => ColorId::Entity(EntityColorId::Player),
-            TileKind::Monster => ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid)),
+            TileKind::Monster => {
+                ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid))
+            }
             TileKind::GroundItem => ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Common)),
             // UI Overlays
             TileKind::TargetCursor => ColorId::Ui(UiColorId::Cursor),
@@ -369,8 +371,8 @@ impl BevyFrontend {
                 self.app_state = AppState::InGame;
             }
             InputAction::StartWizardArena => {
-                let (state, _) = omega_content::bootstrap_wizard_arena()
-                    .expect("Wizard Arena bootstrap failed");
+                let (state, _) =
+                    omega_content::bootstrap_wizard_arena().expect("Wizard Arena bootstrap failed");
                 self.restart_count = self.restart_count.wrapping_add(1);
                 let seed = self.session_seed.wrapping_add(self.restart_count);
                 self.session = Some(GameSession::from_state(seed, state));
@@ -418,13 +420,14 @@ impl BevyFrontend {
                 AppState::Pause => self.app_state = AppState::InGame,
                 _ => {}
             },
-                                    InputAction::Dispatch(command) => {
-                                        if self.app_state != AppState::InGame && self.app_state != AppState::WizardArena {
-                                            return;
-                                        }
-                                        if let Some(session) = self.session.as_mut() {
-                                            let was_in_progress = session.state.status == SessionStatus::InProgress;
-                                            session.dispatch(command);                    if session.state.status != SessionStatus::InProgress {
+            InputAction::Dispatch(command) => {
+                if self.app_state != AppState::InGame && self.app_state != AppState::WizardArena {
+                    return;
+                }
+                if let Some(session) = self.session.as_mut() {
+                    let was_in_progress = session.state.status == SessionStatus::InProgress;
+                    session.dispatch(command);
+                    if session.state.status != SessionStatus::InProgress {
                         if was_in_progress {
                             let prompt = match session.state.status {
                                 SessionStatus::Lost => {
@@ -697,14 +700,15 @@ pub fn project_to_frame(
                 glyph: Some(glyph),
             });
             if let Some(cell) = state.tile_site_at(position)
-                && (cell.flags & omega_core::TILE_FLAG_BURNING) != 0 {
-                    tiles.push(TileRender {
-                        position,
-                        kind: TileKind::Fire,
-                        sprite: atlas.fire.clone(),
-                        glyph: Some('*'), // Fire glyph
-                    });
-                }
+                && (cell.flags & omega_core::TILE_FLAG_BURNING) != 0
+            {
+                tiles.push(TileRender {
+                    position,
+                    kind: TileKind::Fire,
+                    sprite: atlas.fire.clone(),
+                    glyph: Some('*'), // Fire glyph
+                });
+            }
         }
     }
 
@@ -1131,7 +1135,7 @@ impl Plugin for OmegaBevyRuntimePlugin {
         let bootstrap =
             self.bootstrap_state.clone().unwrap_or_else(|| load_bootstrap_or_default(mode));
         let slot = self.save_slot.clone().unwrap_or_else(|| default_save_slot_path_for_mode(mode));
-        
+
         let color_theme = presentation::color_adapter::load_builtin_theme("classic")
             .expect("Failed to load classic theme");
         let bevy_theme = presentation::BevyTheme::new(color_theme);

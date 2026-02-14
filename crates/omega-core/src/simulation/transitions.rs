@@ -1,5 +1,5 @@
 use super::cell::Cell;
-use super::state::{Solid, Gas, Liquid};
+use super::state::{Gas, Liquid, Solid};
 
 pub fn apply_heat(cell: &Cell, amount: u8, is_violent: bool) -> Cell {
     let mut next = *cell;
@@ -7,25 +7,22 @@ pub fn apply_heat(cell: &Cell, amount: u8, is_violent: bool) -> Cell {
         return next;
     }
 
-    if is_violent {
-        if let Some(solid) = next.solid {
-            if let Some(flash) = solid.flash_point() {
-                if amount >= flash {
-                    next.gas = Some(Gas::Fire);
-                    next.heat = 255;
-                    return next;
-                }
-            }
-        }
+    if is_violent
+        && let Some(solid) = next.solid
+        && let Some(flash) = solid.flash_point()
+        && amount >= flash
+    {
+        next.gas = Some(Gas::Fire);
+        next.heat = 255;
+        return next;
     }
 
     next.heat = next.heat.saturating_add(amount);
-    if let Some(solid) = next.solid {
-        if let Some(flash) = solid.flash_point() {
-            if next.heat >= flash {
-                next.gas = Some(Gas::Fire);
-            }
-        }
+    if let Some(solid) = next.solid
+        && let Some(flash) = solid.flash_point()
+        && next.heat >= flash
+    {
+        next.gas = Some(Gas::Fire);
     }
     next
 }
@@ -55,13 +52,13 @@ pub fn apply_transitions(cell: &Cell, _neighbors: &[Cell; 8]) -> Cell {
     }
 
     // 5. Combustion completion: Fire + exhausted -> Ash
-    if matches!(next.gas, Some(Gas::Fire)) {
-        if let Some(solid) = next.solid {
-            if solid.is_combustible() && next.heat < 50 {
-                next.gas = None;
-                next.solid = Some(Solid::Ash);
-            }
-        }
+    if matches!(next.gas, Some(Gas::Fire))
+        && let Some(solid) = next.solid
+        && solid.is_combustible()
+        && next.heat < 50
+    {
+        next.gas = None;
+        next.solid = Some(Solid::Ash);
     }
 
     // 6. Fire extinguish: Fire + Wet >= 200 -> Out
@@ -85,7 +82,7 @@ pub fn apply_decay(cell: &Cell, decay_rate: u8) -> Cell {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::simulation::state::{Solid, Gas, Liquid};
+    use crate::simulation::state::{Gas, Liquid, Solid};
 
     #[test]
     fn test_fireball_ignites_grass() {
@@ -179,5 +176,50 @@ mod tests {
         let next = apply_transitions(&cell, &[Cell::default(); 8]);
         assert_eq!(next.gas, None);
         assert_eq!(next.solid, Some(Solid::Ash));
+    }
+
+    #[test]
+    fn test_decay_decreases_values() {
+        let mut cell = Cell::default();
+        cell.heat = 100;
+        cell.wet = 100;
+        cell.pressure = 100;
+        let next = apply_decay(&cell, 10);
+        assert_eq!(next.heat, 90);
+        assert_eq!(next.wet, 95); // 100 - (10 / 2)
+        assert_eq!(next.pressure, 90);
+    }
+
+    #[test]
+    fn test_decay_saturates_at_zero() {
+        let mut cell = Cell::default();
+        cell.heat = 5;
+        cell.wet = 2;
+        cell.pressure = 5;
+        let next = apply_decay(&cell, 10);
+        assert_eq!(next.heat, 0);
+        assert_eq!(next.wet, 0);
+        assert_eq!(next.pressure, 0);
+    }
+
+    #[test]
+    fn test_decay_partial_wet() {
+        let mut cell = Cell::default();
+        cell.wet = 100;
+        // Decay rate of 1 means wet decreases by 1/2 = 0
+        let next = apply_decay(&cell, 1);
+        assert_eq!(next.wet, 100);
+    }
+
+    #[test]
+    fn test_decay_zero_rate() {
+        let mut cell = Cell::default();
+        cell.heat = 100;
+        cell.wet = 100;
+        cell.pressure = 100;
+        let next = apply_decay(&cell, 0);
+        assert_eq!(next.heat, 100);
+        assert_eq!(next.wet, 100);
+        assert_eq!(next.pressure, 100);
     }
 }

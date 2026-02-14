@@ -1,5 +1,5 @@
-use bevy_ecs::prelude::Resource;
 use super::cell::Cell;
+use bevy_ecs::prelude::Resource;
 
 #[derive(Resource)]
 pub struct CaGrid {
@@ -34,11 +34,7 @@ impl CaGrid {
     }
 
     pub fn get_checked(&self, x: usize, y: usize) -> Option<&Cell> {
-        if x < self.width && y < self.height {
-            Some(&self.front[y * self.width + x])
-        } else {
-            None
-        }
+        if x < self.width && y < self.height { Some(&self.front[y * self.width + x]) } else { None }
     }
 
     pub fn set(&mut self, x: usize, y: usize, cell: Cell) {

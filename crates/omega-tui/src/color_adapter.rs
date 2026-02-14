@@ -28,8 +28,7 @@ pub fn load_builtin_theme(name: &str) -> Result<ColorTheme, String> {
         _ => return Err(format!("Unknown theme '{}'. Available: classic, accessible", name)),
     };
 
-    ColorTheme::from_toml(toml_str)
-        .map_err(|e| format!("Failed to parse {} theme: {}", name, e))
+    ColorTheme::from_toml(toml_str).map_err(|e| format!("Failed to parse {} theme: {}", name, e))
 }
 
 /// StyleCache holds precomputed ratatui styles for all ColorId variants.
@@ -323,14 +322,8 @@ fire = { fg = "#FF0000", bg = "#000000" }
         assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::Magenta)), Color::Magenta);
         assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::Cyan)), Color::Cyan);
         assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::White)), Color::White);
-        assert_eq!(
-            colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightBlack)),
-            Color::DarkGray
-        );
-        assert_eq!(
-            colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightRed)),
-            Color::LightRed
-        );
+        assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightBlack)), Color::DarkGray);
+        assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightRed)), Color::LightRed);
         assert_eq!(
             colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightGreen)),
             Color::LightGreen
@@ -339,22 +332,13 @@ fire = { fg = "#FF0000", bg = "#000000" }
             colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightYellow)),
             Color::LightYellow
         );
-        assert_eq!(
-            colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightBlue)),
-            Color::LightBlue
-        );
+        assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightBlue)), Color::LightBlue);
         assert_eq!(
             colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightMagenta)),
             Color::LightMagenta
         );
-        assert_eq!(
-            colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightCyan)),
-            Color::LightCyan
-        );
-        assert_eq!(
-            colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightWhite)),
-            Color::White
-        );
+        assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightCyan)), Color::LightCyan);
+        assert_eq!(colorspec_to_ratatui(&ColorSpec::Ansi(AnsiColor::BrightWhite)), Color::White);
     }
 
     #[test]

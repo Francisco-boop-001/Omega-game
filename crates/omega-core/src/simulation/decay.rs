@@ -3,23 +3,24 @@ use super::state::{Gas, Solid};
 
 pub fn apply_residual_decay(cell: &Cell) -> Cell {
     let mut next = *cell;
-    
+
     // Heat is Residual and decays slowly
     next.heat = next.heat.saturating_sub(1);
-    
+
     // Wet decays if no liquid layer
     if next.liquid.is_none() {
         next.wet = next.wet.saturating_sub(1);
     }
-    
+
     // Pressure decays
     next.pressure = next.pressure.saturating_sub(2);
-    
+
     // Smoke/Steam dissipation proxy
-    if matches!(next.gas, Some(Gas::Smoke) | Some(Gas::Steam)) {
-        if next.heat < 20 && next.pressure < 20 {
-            next.gas = None;
-        }
+    if matches!(next.gas, Some(Gas::Smoke) | Some(Gas::Steam))
+        && next.heat < 20
+        && next.pressure < 20
+    {
+        next.gas = None;
     }
 
     next
@@ -49,7 +50,10 @@ pub fn apply_nature_reclaims(cell: &Cell) -> Cell {
     }
 
     // Fire burnout: No fuel + cool -> None
-    if matches!(next.gas, Some(Gas::Fire)) && (next.solid.is_none() || !next.can_ignite()) && next.heat < 100 {
+    if matches!(next.gas, Some(Gas::Fire))
+        && (next.solid.is_none() || !next.can_ignite())
+        && next.heat < 100
+    {
         next.gas = None;
     }
 
@@ -93,10 +97,10 @@ mod tests {
         cell.solid = Some(Solid::Ash);
         cell.heat = 5;
         cell.wet = 60;
-        
+
         let next = apply_full_decay_cycle(&cell, false);
         assert_eq!(next.solid, Some(Solid::Ash));
-        
+
         let next = apply_full_decay_cycle(&cell, true);
         assert_eq!(next.solid, Some(Solid::Earth));
     }

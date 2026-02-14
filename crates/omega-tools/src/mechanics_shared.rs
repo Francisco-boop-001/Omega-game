@@ -629,9 +629,10 @@ pub fn canonical_key(entry_id: &str) -> String {
 
 pub fn is_help_token(token: &str) -> bool {
     if token.len() == 1
-        && let Some(ch) = token.chars().next() {
-            return ch.is_ascii_graphic() && ch != ':';
-        }
+        && let Some(ch) = token.chars().next()
+    {
+        return ch.is_ascii_graphic() && ch != ':';
+    }
     token.len() == 2 && token.starts_with('^')
 }
 
