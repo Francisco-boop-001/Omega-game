@@ -613,7 +613,7 @@ fn build_combat_matrix() -> Result<TrueMatrix> {
     state.spawn_monster(
         "raider",
         Position { x: state.player.position.x + 1, y: state.player.position.y },
-        Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 2, defense: 0 },
+        Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 2, defense: 0, weight: 60 },
     );
     let mut rng = DeterministicRng::seeded(0x5EED_0105);
     let attack = step(&mut state, Command::Attack(Direction::East), &mut rng);

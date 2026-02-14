@@ -27,6 +27,7 @@ use std::fs;
 use std::path::PathBuf;
 
 pub mod presentation;
+pub mod simulation;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppState {
@@ -1608,7 +1609,7 @@ mod tests {
             session.state.spawn_monster(
                 "rat",
                 target,
-                Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0 },
+                Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
             );
         }
 
@@ -1650,7 +1651,7 @@ mod tests {
             session.state.spawn_monster(
                 "rat",
                 target,
-                Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0 },
+                Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
             );
         }
 

@@ -146,7 +146,7 @@ fn run_tui_journey() -> Result<JourneyRun> {
         app.state.spawn_monster(
             "e2e-lethal",
             spawn,
-            Stats { hp: 6, max_hp: 6, attack_min: 4, attack_max: 4, defense: 0 },
+            Stats { hp: 6, max_hp: 6, attack_min: 4, attack_max: 4, defense: 0, weight: 60 },
         );
     }
     let hp_before = app.state.player.stats.hp;
@@ -338,7 +338,7 @@ fn run_bevy_journey() -> Result<JourneyRun> {
             session.state.spawn_monster(
                 "bevy-e2e-lethal",
                 spawn,
-                Stats { hp: 6, max_hp: 6, attack_min: 4, attack_max: 4, defense: 0 },
+                Stats { hp: 6, max_hp: 6, attack_min: 4, attack_max: 4, defense: 0, weight: 60 },
             );
         }
         session.state.player.stats.hp

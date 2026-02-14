@@ -415,6 +415,7 @@ mod tests {
                         attack_min,
                         attack_max: attack_min + attack_delta,
                         defense: 1,
+                        weight: 70,
                     };
                     state.player.inventory_capacity = capacity;
                     state.clock.turn = turn;

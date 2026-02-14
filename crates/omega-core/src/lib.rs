@@ -1,8 +1,10 @@
+use bevy_ecs::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::sync::OnceLock;
 
 pub mod color;
 pub mod core;
+pub mod simulation;
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
 pub struct MapBounds {
@@ -16,7 +18,7 @@ impl MapBounds {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Component)]
 pub struct Position {
     pub x: i32,
     pub y: i32,
@@ -37,13 +39,15 @@ impl Position {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, Component)]
 pub struct Stats {
     pub hp: i32,
     pub max_hp: i32,
     pub attack_min: i32,
     pub attack_max: i32,
     pub defense: i32,
+    #[serde(default)]
+    pub weight: i32,
 }
 
 impl Stats {
@@ -1389,28 +1393,28 @@ pub fn default_character_archetypes() -> Vec<CharacterArchetype> {
         CharacterArchetype {
             id: "fighter".to_string(),
             label: "Fighter".to_string(),
-            stats: Stats { hp: 26, max_hp: 26, attack_min: 3, attack_max: 7, defense: 2 },
+            stats: Stats { hp: 26, max_hp: 26, attack_min: 3, attack_max: 7, defense: 2, weight: 80 },
             starting_gold: 320,
             starting_mana: 80,
         },
         CharacterArchetype {
             id: "mage".to_string(),
             label: "Mage".to_string(),
-            stats: Stats { hp: 18, max_hp: 18, attack_min: 2, attack_max: 5, defense: 1 },
+            stats: Stats { hp: 18, max_hp: 18, attack_min: 2, attack_max: 5, defense: 1, weight: 65 },
             starting_gold: 220,
             starting_mana: 160,
         },
         CharacterArchetype {
             id: "rogue".to_string(),
             label: "Rogue".to_string(),
-            stats: Stats { hp: 22, max_hp: 22, attack_min: 2, attack_max: 6, defense: 1 },
+            stats: Stats { hp: 22, max_hp: 22, attack_min: 2, attack_max: 6, defense: 1, weight: 70 },
             starting_gold: 260,
             starting_mana: 110,
         },
         CharacterArchetype {
             id: "priest".to_string(),
             label: "Priest".to_string(),
-            stats: Stats { hp: 20, max_hp: 20, attack_min: 2, attack_max: 6, defense: 1 },
+            stats: Stats { hp: 20, max_hp: 20, attack_min: 2, attack_max: 6, defense: 1, weight: 75 },
             starting_gold: 240,
             starting_mana: 140,
         },
@@ -1801,7 +1805,7 @@ impl GameState {
             },
             player: Player {
                 position: start,
-                stats: Stats { hp: 20, max_hp: 20, attack_min: 2, attack_max: 6, defense: 1 },
+                stats: Stats { hp: 20, max_hp: 20, attack_min: 2, attack_max: 6, defense: 1, weight: 70 },
                 inventory: Vec::new(),
                 inventory_capacity: default_pack_capacity(),
                 pack_capacity: default_pack_capacity(),
@@ -3368,6 +3372,7 @@ fn arena_rival_profile(opponent: u8, arena_rank: i8) -> (String, Stats) {
                 attack_min: 2 + power / 3,
                 attack_max: 5 + power / 2,
                 defense: 1 + power / 4,
+                weight: 80,
             },
         );
     }
@@ -3375,12 +3380,12 @@ fn arena_rival_profile(opponent: u8, arena_rank: i8) -> (String, Stats) {
     if arena_rank > 0 {
         (
             "the arena champion".to_string(),
-            Stats { hp: 120, max_hp: 120, attack_min: 12, attack_max: 20, defense: 10 },
+            Stats { hp: 120, max_hp: 120, attack_min: 12, attack_max: 20, defense: 10, weight: 200 },
         )
     } else {
         (
             "a veteran challenger".to_string(),
-            Stats { hp: 72, max_hp: 72, attack_min: 8, attack_max: 13, defense: 7 },
+            Stats { hp: 72, max_hp: 72, attack_min: 8, attack_max: 13, defense: 7, weight: 150 },
         )
     }
 }
@@ -10557,7 +10562,7 @@ fn guard_marker_positions(rows: &[String], bounds: MapBounds) -> Vec<Position> {
 }
 
 fn guard_marker_stats() -> Stats {
-    Stats { hp: 14, max_hp: 14, attack_min: 2, attack_max: 5, defense: 2 }
+    Stats { hp: 14, max_hp: 14, attack_min: 2, attack_max: 5, defense: 2, weight: 60 }
 }
 
 fn tile_index(bounds: MapBounds, pos: Position) -> Option<usize> {
@@ -10675,21 +10680,21 @@ fn spawn_countryside_encounter<R: RandomSource>(
     let monster_name = pick_encounter_monster_name(state, rng, terrain);
     let stats = match terrain {
         CountryTerrainKind::Road | CountryTerrainKind::Plains => {
-            Stats { hp: 12, max_hp: 12, attack_min: 2, attack_max: 5, defense: 1 }
+            Stats { hp: 12, max_hp: 12, attack_min: 2, attack_max: 5, defense: 1, weight: 60 }
         }
         CountryTerrainKind::Forest | CountryTerrainKind::Jungle => {
-            Stats { hp: 14, max_hp: 14, attack_min: 3, attack_max: 6, defense: 2 }
+            Stats { hp: 14, max_hp: 14, attack_min: 3, attack_max: 6, defense: 2, weight: 70 }
         }
         CountryTerrainKind::Swamp | CountryTerrainKind::ChaosSea => {
-            Stats { hp: 16, max_hp: 16, attack_min: 3, attack_max: 7, defense: 2 }
+            Stats { hp: 16, max_hp: 16, attack_min: 3, attack_max: 7, defense: 2, weight: 75 }
         }
         CountryTerrainKind::Mountains
         | CountryTerrainKind::Pass
         | CountryTerrainKind::Tundra
         | CountryTerrainKind::Desert => {
-            Stats { hp: 18, max_hp: 18, attack_min: 4, attack_max: 8, defense: 3 }
+            Stats { hp: 18, max_hp: 18, attack_min: 4, attack_max: 8, defense: 3, weight: 80 }
         }
-        _ => Stats { hp: 12, max_hp: 12, attack_min: 2, attack_max: 5, defense: 1 },
+        _ => Stats { hp: 12, max_hp: 12, attack_min: 2, attack_max: 5, defense: 1, weight: 60 },
     };
     state.spawn_monster(monster_name, spawn_pos, stats);
     state.log.push(format!("A wandering threat emerges from the countryside ({terrain:?})."));
@@ -11468,6 +11473,7 @@ fn apply_wish_intent(
                         attack_min: 2,
                         attack_max: 6,
                         defense: 1,
+                        weight: 70,
                     },
                 );
                 "A being answers your call.".to_string()
@@ -12688,7 +12694,7 @@ fn spell_summon_guardian(state: &mut GameState) -> String {
         let guardian_id = state.spawn_monster(
             "summoned guardian",
             spawn,
-            Stats { hp: 14, max_hp: 14, attack_min: 3, attack_max: 7, defense: 2 },
+            Stats { hp: 14, max_hp: 14, attack_min: 3, attack_max: 7, defense: 2, weight: 70 },
         );
         if let Some(monster) = state.monsters.iter_mut().find(|monster| monster.id == guardian_id) {
             monster.faction = Faction::Law;
@@ -14981,7 +14987,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             Position { x: 3, y: 2 },
-            Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 2, defense: 1 },
+            Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 2, defense: 1, weight: 60 },
         );
         let mut rng = FixedRng::new(vec![4, 1, 4]);
 
@@ -15153,7 +15159,7 @@ mod tests {
         state.spawn_monster(
             "fang",
             Position { x: 4, y: 3 },
-            Stats { hp: 5, max_hp: 5, attack_min: 4, attack_max: 4, defense: 0 },
+            Stats { hp: 5, max_hp: 5, attack_min: 4, attack_max: 4, defense: 0, weight: 60 },
         );
         let mut rng = FixedRng::new(vec![4]);
 
@@ -15981,7 +15987,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             Position { x: 3, y: 2 },
-            Stats { hp: 9, max_hp: 9, attack_min: 1, attack_max: 2, defense: 0 },
+            Stats { hp: 9, max_hp: 9, attack_min: 1, attack_max: 2, defense: 0, weight: 60 },
         );
         let start_hp = state.player.stats.hp;
         let start_turn = state.clock.turn;
@@ -16670,7 +16676,7 @@ mod tests {
         state.spawn_monster(
             "arena goblin",
             Position { x: 5, y: 4 },
-            Stats { hp: 8, max_hp: 8, attack_min: 2, attack_max: 3, defense: 1 },
+            Stats { hp: 8, max_hp: 8, attack_min: 2, attack_max: 3, defense: 1, weight: 60 },
         );
         let monster_count_before = state.monsters.len();
         let mut events = Vec::new();
@@ -16722,7 +16728,7 @@ mod tests {
         state.spawn_monster(
             "sheep",
             Position { x: 2, y: 1 },
-            Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
         assert_eq!(state.monsters.len(), 1);
 
@@ -17127,7 +17133,7 @@ mod tests {
         state.spawn_monster(
             "imp-mage",
             Position { x: state.player.position.x + 2, y: state.player.position.y },
-            Stats { hp: 5, max_hp: 5, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 5, max_hp: 5, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
 
         let open = step(&mut state, Command::Legacy { token: "m".to_string() }, &mut rng);
@@ -17261,7 +17267,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             target,
-            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
 
         let out = step(&mut state, Command::Move(Direction::East), &mut rng);
@@ -17281,7 +17287,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             target,
-            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
 
         let _ = step(&mut state, Command::Move(Direction::East), &mut rng);
@@ -17297,7 +17303,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             target,
-            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
 
         let out = step(&mut state, Command::Move(Direction::East), &mut rng);
@@ -17315,7 +17321,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             target,
-            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
 
         let out = step(&mut state, Command::Move(Direction::East), &mut rng);
@@ -17333,7 +17339,7 @@ mod tests {
         state.spawn_monster(
             "oracle-priest",
             Position { x: state.player.position.x + 1, y: state.player.position.y },
-            Stats { hp: 8, max_hp: 8, attack_min: 2, attack_max: 2, defense: 1 },
+            Stats { hp: 8, max_hp: 8, attack_min: 2, attack_max: 2, defense: 1, weight: 60 },
         );
         let mut rng = FixedRng::new(vec![]);
         let hp_before = state.player.stats.hp;
@@ -17352,7 +17358,7 @@ mod tests {
         let monster_id = state.spawn_monster(
             "warlock",
             Position { x: 6, y: 2 },
-            Stats { hp: 10, max_hp: 10, attack_min: 6, attack_max: 6, defense: 0 },
+            Stats { hp: 10, max_hp: 10, attack_min: 6, attack_max: 6, defense: 0, weight: 60 },
         );
         if let Some(monster) = state.monsters.iter_mut().find(|monster| monster.id == monster_id) {
             monster.behavior = MonsterBehavior::Caster;
@@ -17377,7 +17383,7 @@ mod tests {
         let monster_id = state.spawn_monster(
             "warlock",
             Position { x: 6, y: 2 },
-            Stats { hp: 10, max_hp: 10, attack_min: 6, attack_max: 6, defense: 0 },
+            Stats { hp: 10, max_hp: 10, attack_min: 6, attack_max: 6, defense: 0, weight: 60 },
         );
         if let Some(monster) = state.monsters.iter_mut().find(|monster| monster.id == monster_id) {
             monster.behavior = MonsterBehavior::Caster;
@@ -17408,7 +17414,7 @@ mod tests {
         baseline.spawn_monster(
             "dummy",
             Position { x: 5, y: 4 },
-            Stats { hp: 30, max_hp: 30, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 30, max_hp: 30, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
         let mut rng = FixedRng::new(vec![4]);
         let out = step(&mut baseline, Command::Attack(Direction::East), &mut rng);
@@ -17431,7 +17437,7 @@ mod tests {
         armed.spawn_monster(
             "dummy",
             Position { x: 5, y: 4 },
-            Stats { hp: 80, max_hp: 80, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 80, max_hp: 80, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
         let mut rng_attack = FixedRng::new(vec![4]);
         let out_armed = step(&mut armed, Command::Attack(Direction::East), &mut rng_attack);
@@ -17456,7 +17462,7 @@ mod tests {
         baseline.spawn_monster(
             "dummy",
             Position { x: 5, y: 4 },
-            Stats { hp: 30, max_hp: 30, attack_min: 8, attack_max: 8, defense: 0 },
+            Stats { hp: 30, max_hp: 30, attack_min: 8, attack_max: 8, defense: 0, weight: 60 },
         );
         let mut rng = FixedRng::new(vec![8]);
         let _ = step(&mut baseline, Command::Wait, &mut rng);
@@ -17474,7 +17480,7 @@ mod tests {
         armored.spawn_monster(
             "dummy",
             Position { x: 5, y: 4 },
-            Stats { hp: 30, max_hp: 30, attack_min: 8, attack_max: 8, defense: 0 },
+            Stats { hp: 30, max_hp: 30, attack_min: 8, attack_max: 8, defense: 0, weight: 60 },
         );
         let mut rng_hit = FixedRng::new(vec![8]);
         let _ = step(&mut armored, Command::Wait, &mut rng_hit);
@@ -17571,7 +17577,7 @@ mod tests {
             state.spawn_monster(
                 "target dummy",
                 Position { x: 5, y: 4 },
-                Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+                Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
             );
             state.place_item("food ration", Position { x: 4, y: 5 });
             state.traps.push(Trap {

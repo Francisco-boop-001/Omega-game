@@ -107,7 +107,7 @@ fn scenario_quest_branch_persistence(iterations: usize) -> Result<IntegrityScena
     state.spawn_monster(
         "integrity-rat",
         omega_core::Position { x: state.player.position.x + 1, y: state.player.position.y },
-        omega_core::Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0 },
+        omega_core::Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let script = [
         Command::Legacy { token: "t".to_string() },

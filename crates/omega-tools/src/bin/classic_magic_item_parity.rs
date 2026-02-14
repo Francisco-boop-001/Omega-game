@@ -262,7 +262,7 @@ fn check_command_flow_uses_typed_families() -> MagicItemCheck {
     state.spawn_monster(
         "test foe",
         Position { x: p.x + 1, y: p.y },
-        Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
 
     let mut rng = DeterministicRng::seeded(0xC1A5_2002);

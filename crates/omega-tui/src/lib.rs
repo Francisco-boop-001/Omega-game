@@ -1587,7 +1587,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             target,
-            Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
         let slot = PathBuf::from("target/test-omega-tui-controls-attack.json");
         let mut app = App::with_options(19, state.clone(), state, slot);
@@ -1608,7 +1608,7 @@ mod tests {
         state.spawn_monster(
             "rat",
             target,
-            Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0 },
+            Stats { hp: 6, max_hp: 6, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
         );
         let slot = PathBuf::from("target/test-omega-tui-controls-bump-attack.json");
         let mut app = App::with_options(1901, state.clone(), state, slot);

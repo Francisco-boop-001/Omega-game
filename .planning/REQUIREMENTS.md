@@ -1,39 +1,52 @@
-# Requirements: Wizard's Arena
+# Requirements: Omega Elemental Systems
 
-## Functional Requirements
-### 1. Environment & Navigation
-- **REQ-ENV-01:** Implement a fixed 50x50 "Arena" map. (Phase 1)
-- **REQ-ENV-02:** Terrain must include `Grass` (flammable), `Stone` (stable), and `Water` (fire-resistant). (Phase 1)
-- **REQ-ENV-03:** Sparse `Wall` entities representing ruined buildings. (Phase 1)
+## v1 Requirements
 
-### 2. Spawning System
-- **REQ-SPW-01:** An egui side-panel menu to select entity types (Monster, Item, Hazard). (Phase 2)
-- **REQ-SPW-02:** Click-to-spawn: Left-clicking a tile in the arena spawns the selected entity. (Phase 2)
-- **REQ-SPW-03:** Right-clicking an entity opens its property inspector. (Phase 3)
+### Core Elemental Simulation (ELE)
+- **ELE-01:** Implement a double-buffered Cellular Automata (CA) grid for elemental states.
+- **ELE-02:** Support Core States: Heat (Temperature), Wet (Saturation), and Pressure (Density).
+- **ELE-03:** Implement state transition logic (e.g., solid -> liquid -> gas).
+- **ELE-04:** Implement reaction logic: Fire + Water = Steam, Water + Earth = Mud.
 
-### 3. Debug Tools
-- **REQ-DBG-01:** "Clear All" button to despawn all test entities. (Phase 3)
-- **REQ-DBG-02:** "Spawn Fire" brush to manually ignite tiles. (Phase 4)
-- **REQ-DBG-03:** Toggle for "AI Pause" to observe monsters without them attacking. (Phase 3)
+### Projectile Systems (PROJ)
+- **PROJ-01:** Implement ECS-based projectile entities with lifecycle management.
+- **PROJ-02:** Support Arc/Lob trajectories with visual Z-height (Y-offset).
+- **PROJ-03:** Support Beam/Instant trajectories using Bresenham's algorithm.
+- **PROJ-04:** Projectile-to-Grid interaction: Projectiles modify CA cell values on impact.
 
-## Non-Functional Requirements
-- **NFR-PERF-01:** Spawning 100+ entities should not drop FPS below 60. (Phase 4)
-- **NFR-ISOL-01:** No entities or state from the Arena should leak into the main `InGame` state. (Phase 1)
-- **NFR-UI-01:** The spawn menu must be responsive and not block the map view. (Phase 2)
+### Visual Effects (VFX)
+- **VFX-01:** Implement a glyph-based particle system for TUI rendering.
+- **VFX-02:** Implement particle trailing for moving projectiles.
+- **VFX-03:** Implement explosion/burst effects for elemental events.
+
+### Environmental Interaction (ENV)
+- **ENV-01:** Implement Fire Spread logic using CA rules.
+- **ENV-02:** Implement Liquid Flow (Water/Mud pooling) using CA rules.
+- **ENV-03:** Implement Gas Diffusion (Steam rising/dissipating).
+
+### Integration & Testing (TEST)
+- **TEST-01:** Create a "Wizard's Arena" test scene for sandbox interaction.
+- **TEST-02:** Implement performance monitoring for CA grid updates.
+- **TEST-03:** Stress test: 100+ projectiles and 128x128 grid at 60 FPS.
 
 ## Traceability
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REQ-ENV-01 | Phase 1 | Pending |
-| REQ-ENV-02 | Phase 1 | Pending |
-| REQ-ENV-03 | Phase 1 | Pending |
-| REQ-SPW-01 | Phase 2 | Pending |
-| REQ-SPW-02 | Phase 2 | Pending |
-| REQ-SPW-03 | Phase 3 | Pending |
-| REQ-DBG-01 | Phase 3 | Pending |
-| REQ-DBG-02 | Phase 4 | Pending |
-| REQ-DBG-03 | Phase 3 | Pending |
-| NFR-PERF-01 | Phase 4 | Pending |
-| NFR-ISOL-01 | Phase 1 | Pending |
-| NFR-UI-01 | Phase 2 | Pending |
+| ELE-01 | Phase 1 | Pending |
+| ELE-02 | Phase 1 | Pending |
+| ELE-03 | Phase 1 | Pending |
+| ELE-04 | Phase 1 | Pending |
+| PROJ-01 | Phase 2 | Pending |
+| PROJ-02 | Phase 2 | Pending |
+| PROJ-03 | Phase 2 | Pending |
+| PROJ-04 | Phase 2 | Pending |
+| VFX-01 | Phase 3 | Pending |
+| VFX-02 | Phase 3 | Pending |
+| VFX-03 | Phase 3 | Pending |
+| ENV-01 | Phase 4 | Pending |
+| ENV-02 | Phase 4 | Pending |
+| ENV-03 | Phase 4 | Pending |
+| TEST-01 | Phase 5 | Pending |
+| TEST-02 | Phase 5 | Pending |
+| TEST-03 | Phase 5 | Pending |

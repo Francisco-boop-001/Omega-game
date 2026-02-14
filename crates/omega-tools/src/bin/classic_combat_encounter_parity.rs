@@ -54,7 +54,7 @@ fn main() -> Result<()> {
     maneuver_state.spawn_monster(
         "brute",
         Position { x: 5, y: 4 },
-        Stats { hp: 6, max_hp: 6, attack_min: 2, attack_max: 2, defense: 1 },
+        Stats { hp: 6, max_hp: 6, attack_min: 2, attack_max: 2, defense: 1, weight: 60 },
     );
     let _ = step(&mut maneuver_state, Command::Legacy { token: "F".to_string() }, &mut rng);
     let sequence_mutated = maneuver_state.combat_sequence.len() > 1;
@@ -69,7 +69,7 @@ fn main() -> Result<()> {
     let id_social = behavior_state.spawn_monster(
         "oracle-priest",
         Position { x: 5, y: 4 },
-        Stats { hp: 8, max_hp: 8, attack_min: 2, attack_max: 2, defense: 1 },
+        Stats { hp: 8, max_hp: 8, attack_min: 2, attack_max: 2, defense: 1, weight: 60 },
     );
     if let Some(monster) =
         behavior_state.monsters.iter_mut().find(|monster| monster.id == id_social)
@@ -103,7 +103,7 @@ fn main() -> Result<()> {
     let law_id = faction_state.spawn_monster(
         "law-guardian",
         Position { x: 5, y: 4 },
-        Stats { hp: 3, max_hp: 3, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 3, max_hp: 3, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     if let Some(monster) = faction_state.monsters.iter_mut().find(|monster| monster.id == law_id) {
         monster.faction = Faction::Law;

@@ -51,16 +51,16 @@ fn markdown(matrix: &ProgressionBranchMatrix) -> String {
 fn persistence_probe() -> Result<(bool, String)> {
     let mut state = GameState::new(MapBounds { width: 9, height: 9 });
     state.player.position = Position { x: 4, y: 4 };
-    state.player.stats = Stats { hp: 24, max_hp: 24, attack_min: 7, attack_max: 7, defense: 1 };
+    state.player.stats = Stats { hp: 24, max_hp: 24, attack_min: 7, attack_max: 7, defense: 1, weight: 60 };
     state.spawn_monster(
         "probe-rat-a",
         Position { x: 5, y: 4 },
-        Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     state.spawn_monster(
         "probe-rat-b",
         Position { x: 3, y: 4 },
-        Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 4, max_hp: 4, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let mut rng = DeterministicRng::seeded(0x6006);
 

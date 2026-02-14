@@ -120,7 +120,7 @@ fn main() -> Result<()> {
     state.spawn_monster(
         "magic-smoke-foe",
         target,
-        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
 
     let turn_before_open = state.clock.turn;

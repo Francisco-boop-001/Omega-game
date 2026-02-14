@@ -191,7 +191,7 @@ fn main() -> Result<()> {
             x: spell_target_state.player.position.x + 2,
             y: spell_target_state.player.position.y,
         },
-        Stats { hp: 10, max_hp: 10, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 10, max_hp: 10, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let turn_before = spell_target_state.clock.turn;
     let minutes_before = spell_target_state.clock.minutes;
@@ -239,7 +239,7 @@ fn main() -> Result<()> {
     blocked_state.spawn_monster(
         "portcullis-dummy",
         Position { x: 4, y: 2 },
-        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let blocked_idx = 2 * 9 + 2;
     blocked_state.site_grid[blocked_idx].flags |= TILE_FLAG_PORTCULLIS | TILE_FLAG_BLOCK_MOVE;
@@ -270,7 +270,7 @@ fn main() -> Result<()> {
     let monster_id = monster_projectile_state.spawn_monster(
         "warlock",
         Position { x: 6, y: 2 },
-        Stats { hp: 12, max_hp: 12, attack_min: 6, attack_max: 6, defense: 0 },
+        Stats { hp: 12, max_hp: 12, attack_min: 6, attack_max: 6, defense: 0, weight: 60 },
     );
     if let Some(monster) =
         monster_projectile_state.monsters.iter_mut().find(|monster| monster.id == monster_id)
@@ -351,7 +351,7 @@ fn main() -> Result<()> {
         shot_state.spawn_monster(
             "bolt-dummy",
             Position { x: shot_state.player.position.x + 1, y: shot_state.player.position.y },
-            Stats { hp: 20, max_hp: 20, attack_min: 1, attack_max: 1, defense: -20 },
+            Stats { hp: 20, max_hp: 20, attack_min: 1, attack_max: 1, defense: -20, weight: 60 },
         );
         let mut seeded = DeterministicRng::seeded(seed);
         let _ = step(&mut shot_state, Command::Legacy { token: "f".to_string() }, &mut seeded);
@@ -393,7 +393,7 @@ fn main() -> Result<()> {
     arrow_state.spawn_monster(
         "arrow-dummy",
         Position { x: arrow_state.player.position.x + 1, y: arrow_state.player.position.y },
-        Stats { hp: 30, max_hp: 30, attack_min: 1, attack_max: 1, defense: -5 },
+        Stats { hp: 30, max_hp: 30, attack_min: 1, attack_max: 1, defense: -5, weight: 60 },
     );
     let _ = step(&mut arrow_state, Command::Legacy { token: "f".to_string() }, &mut rng);
     let arrow_key = choose_prompt_item_key(&mut arrow_state, &mut rng, "arrow")

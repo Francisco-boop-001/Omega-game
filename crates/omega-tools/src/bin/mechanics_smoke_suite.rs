@@ -65,7 +65,7 @@ fn main() -> Result<()> {
     state.spawn_monster(
         "training rat",
         Position { x: state.player.position.x + 1, y: state.player.position.y },
-        omega_core::Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+        omega_core::Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let attack = step(&mut state, Command::Move(Direction::East), &mut rng);
     checks.push(SmokeCheck {
@@ -85,7 +85,7 @@ fn main() -> Result<()> {
     magic_state.spawn_monster(
         "imp-mage",
         Position { x: magic_state.player.position.x + 2, y: magic_state.player.position.y },
-        omega_core::Stats { hp: 5, max_hp: 5, attack_min: 1, attack_max: 1, defense: 0 },
+        omega_core::Stats { hp: 5, max_hp: 5, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let mana_before = magic_state.spellbook.mana;
     let open_spell =

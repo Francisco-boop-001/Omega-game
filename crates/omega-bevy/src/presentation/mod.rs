@@ -47,9 +47,11 @@ pub mod spawner;
 pub mod theme;
 pub mod tilemap;
 pub mod timeline;
+pub mod targeting;
 
 // Re-export key types for convenience
 pub use bevy_theme::BevyTheme;
+pub use targeting::TargetingState;
 
 #[derive(Component)]
 pub struct MapPanelText;
@@ -157,6 +159,7 @@ impl Plugin for ArcaneCartographerPlugin {
             .insert_resource(ActiveThemeName::default())
             .insert_resource(TargetTheme(None))
             .insert_resource(ThemeTransitionProgress(0.0))
+            .insert_resource(TargetingState::default())
             .insert_resource(editor::ThemeEditorState::default())
             .insert_resource(spawner::SpawnerState::default())
             .insert_resource(inspector::InspectorState::default())
@@ -180,6 +183,8 @@ impl Plugin for ArcaneCartographerPlugin {
                     spawner::mouse_spawning_system,
                     inspector::mouse_inspector_system,
                     inspector::inspector_ui_system,
+                    targeting::update_targeting_visualization,
+                    targeting::update_projected_path,
                 )
                     .chain(),
             );

@@ -144,7 +144,7 @@ pub fn mouse_spawning_system(
                             session.state.spawn_monster(
                                 &state.selected_id,
                                 pos,
-                                Stats { hp: 10, max_hp: 10, attack_min: 1, attack_max: 3, defense: 0 },
+                                Stats { hp: 10, max_hp: 10, attack_min: 1, attack_max: 3, defense: 0, weight: 50 },
                             );
                         }
                         SpawnerCategory::Item => {

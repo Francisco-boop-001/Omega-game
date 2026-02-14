@@ -159,7 +159,7 @@ fn main() -> Result<()> {
     state.spawn_monster(
         "smoke-rat",
         target,
-        Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 8, max_hp: 8, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
 
     let mut rng = DeterministicRng::seeded(0xA771_0001);

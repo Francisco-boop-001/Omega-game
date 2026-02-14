@@ -147,7 +147,7 @@ fn main() -> Result<()> {
     arrow_state.spawn_monster(
         "arrow-dummy",
         Position { x: 2, y: 2 },
-        Stats { hp: 18, max_hp: 18, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 18, max_hp: 18, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let turn_before_fire = arrow_state.clock.turn;
     let minutes_before_fire = arrow_state.clock.minutes;
@@ -179,7 +179,7 @@ fn main() -> Result<()> {
     spell_state.spawn_monster(
         "spell-dummy",
         Position { x: 3, y: 2 },
-        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     let turn_before_spell = spell_state.clock.turn;
     let minutes_before_spell = spell_state.clock.minutes;
@@ -215,7 +215,7 @@ fn main() -> Result<()> {
     blocked_state.spawn_monster(
         "blocked-dummy",
         Position { x: 4, y: 2 },
-        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0 },
+        Stats { hp: 12, max_hp: 12, attack_min: 1, attack_max: 1, defense: 0, weight: 60 },
     );
     blocked_state.site_grid[2 * 9 + 2].flags |= TILE_FLAG_PORTCULLIS | TILE_FLAG_BLOCK_MOVE;
     blocked_state.city_site_grid = blocked_state.site_grid.clone();
