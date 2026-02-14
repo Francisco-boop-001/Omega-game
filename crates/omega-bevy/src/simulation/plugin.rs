@@ -1,7 +1,7 @@
+use super::systems::*;
 use bevy::prelude::*;
 use omega_core::simulation::grid::CaGrid;
 use omega_core::simulation::wind::WindGrid;
-use super::systems::*;
 
 use super::emitters::*;
 use omega_core::simulation::displacement::DisplacementEvent;
@@ -14,11 +14,7 @@ pub struct SimulationPlugin {
 
 impl SimulationPlugin {
     pub fn new(width: usize, height: usize) -> Self {
-        Self {
-            width,
-            height,
-            tick_rate_hz: 64.0,
-        }
+        Self { width, height, tick_rate_hz: 64.0 }
     }
 }
 
@@ -60,7 +56,7 @@ mod tests {
     fn test_plugin_registration() {
         let mut app = App::new();
         app.add_plugins(SimulationPlugin::new(32, 32));
-        
+
         assert!(app.world().get_resource::<CaGrid>().is_some());
         assert!(app.world().get_resource::<WindGrid>().is_some());
         assert!(app.world().get_resource::<SimulationTick>().is_some());

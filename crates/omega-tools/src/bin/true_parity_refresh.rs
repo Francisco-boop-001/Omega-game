@@ -1339,12 +1339,13 @@ fn main() -> Result<()> {
     } else {
         serde_json::json!({"pass": false, "passed": 0, "total": 1, "details": "missing guild-live-check artifact"})
     };
-    let legacy_command_binding_parity =
-        if Path::new("target/legacy-command-binding-parity.json").exists() {
-            read_json("target/legacy-command-binding-parity.json")?
-        } else {
-            serde_json::json!({"pass": false, "passed": 0, "total": 1, "details": "missing legacy-command-binding-parity artifact"})
-        };
+    let legacy_command_binding_parity = if Path::new("target/legacy-command-binding-parity.json")
+        .exists()
+    {
+        read_json("target/legacy-command-binding-parity.json")?
+    } else {
+        serde_json::json!({"pass": false, "passed": 0, "total": 1, "details": "missing legacy-command-binding-parity artifact"})
+    };
     let service_branch_blackbox = if Path::new("target/service-branch-blackbox-smoke.json").exists()
     {
         read_json("target/service-branch-blackbox-smoke.json")?
@@ -1423,12 +1424,15 @@ fn main() -> Result<()> {
     } else {
         serde_json::json!({"pass": false, "passed": 0, "total": 1, "details": "missing classic visual drift guard artifact"})
     };
-    let bevy_semantic_projection_parity =
-        if Path::new("target/bevy-semantic-projection-parity.json").exists() {
-            read_json("target/bevy-semantic-projection-parity.json")?
-        } else {
-            serde_json::json!({"pass": false, "passed": 0, "total": 1, "details": "missing bevy semantic projection parity artifact"})
-        };
+    let bevy_semantic_projection_parity = if Path::new(
+        "target/bevy-semantic-projection-parity.json",
+    )
+    .exists()
+    {
+        read_json("target/bevy-semantic-projection-parity.json")?
+    } else {
+        serde_json::json!({"pass": false, "passed": 0, "total": 1, "details": "missing bevy semantic projection parity artifact"})
+    };
     let mechanics = if Path::new("target/mechanics-parity-matrix.json").exists() {
         read_json("target/mechanics-parity-matrix.json")?
     } else {

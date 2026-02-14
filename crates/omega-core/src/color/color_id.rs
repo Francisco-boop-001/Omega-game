@@ -393,10 +393,7 @@ mod tests {
 
     #[test]
     fn color_id_equality() {
-        assert_eq!(
-            ColorId::Entity(EntityColorId::Player),
-            ColorId::Entity(EntityColorId::Player)
-        );
+        assert_eq!(ColorId::Entity(EntityColorId::Player), ColorId::Entity(EntityColorId::Player));
         assert_ne!(
             ColorId::Entity(EntityColorId::Player),
             ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileUndead))
@@ -420,11 +417,7 @@ mod tests {
             let serialized = serde_json::to_string(&original).expect("Failed to serialize");
             let deserialized: ColorId =
                 serde_json::from_str(&serialized).expect("Failed to deserialize");
-            assert_eq!(
-                original, deserialized,
-                "Roundtrip failed for {:?}",
-                original
-            );
+            assert_eq!(original, deserialized, "Roundtrip failed for {:?}", original);
         }
     }
 

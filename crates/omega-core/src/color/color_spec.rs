@@ -2,8 +2,8 @@
 //!
 //! Provides conversion between RGB, ANSI 256-color, and ANSI 16-color spaces.
 
-use serde::{Deserialize, Serialize};
 use super::hex_color::HexColor;
+use serde::{Deserialize, Serialize};
 
 /// A color specification that can represent colors in multiple color spaces.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
