@@ -1136,6 +1136,9 @@ impl Plugin for OmegaBevyRuntimePlugin {
             .expect("Failed to load classic theme");
         let bevy_theme = presentation::BevyTheme::new(color_theme);
 
+        let (grid_w, grid_h) =
+            (bootstrap.bounds.width as usize, bootstrap.bounds.height as usize);
+
         app.insert_resource(FrontendRuntime(BevyFrontend::with_seed_and_bootstrap(
             self.session_seed,
             bootstrap,
@@ -1146,6 +1149,7 @@ impl Plugin for OmegaBevyRuntimePlugin {
         .insert_resource(PendingInput::default())
         .insert_resource(RuntimeFrame::default())
         .insert_resource(RuntimeStatus { app_state: AppState::Boot, should_quit: false })
+        .add_plugins(simulation::SimulationPlugin::new(grid_w, grid_h))
         .add_event::<InputActionEvent>()
         .add_systems(
             Update,

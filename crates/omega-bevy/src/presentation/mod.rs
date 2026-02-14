@@ -136,8 +136,8 @@ fn env_flag(name: &str) -> bool {
 }
 
 #[derive(Resource, Default)]
-struct UiBootLatch {
-    started_session: bool,
+pub struct UiBootLatch {
+    pub started_session: bool,
 }
 
 pub struct ArcaneCartographerPlugin;
@@ -198,7 +198,9 @@ fn ensure_session_started(mut runtime: ResMut<FrontendRuntime>, mut boot: ResMut
     if boot.started_session {
         return;
     }
-    if runtime.0.app_state == AppState::Menu && runtime.0.session.is_none() {
+    if (runtime.0.app_state == AppState::Menu || runtime.0.app_state == AppState::WizardArena)
+        && runtime.0.session.is_none()
+    {
         runtime.0.apply_action(InputAction::StartGame);
         boot.started_session = true;
     }

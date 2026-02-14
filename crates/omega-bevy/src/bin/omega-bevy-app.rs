@@ -442,15 +442,22 @@ fn run_session(
 }
 
 fn main() -> Result<()> {
-    let mode = loop {
-        println!("Select game mode:");
-        println!("1. Classic (frozen parity)");
-        println!("2. Modern (isolated evolution)");
-        let value = read_line("Mode: ")?;
-        match value.as_str() {
-            "1" => break GameMode::Classic,
-            "2" => break GameMode::Modern,
-            _ => println!("Unknown mode option."),
+    let args = std::env::args().collect::<Vec<_>>();
+    let start_in_arena = args.iter().any(|arg| arg == "--arena");
+
+    let mode = if start_in_arena {
+        GameMode::Modern
+    } else {
+        loop {
+            println!("Select game mode:");
+            println!("1. Classic (frozen parity)");
+            println!("2. Modern (isolated evolution)");
+            let value = read_line("Mode: ")?;
+            match value.as_str() {
+                "1" => break GameMode::Classic,
+                "2" => break GameMode::Modern,
+                _ => println!("Unknown mode option."),
+            }
         }
     };
 
@@ -463,6 +470,14 @@ fn main() -> Result<()> {
     }
 
     let mut seed = 0xBEE5_0001u64;
+    if start_in_arena {
+        let (mut bootstrap, _) = omega_content::bootstrap_wizard_arena().expect("arena bootstrap");
+        bootstrap.mode = GameMode::Modern;
+        bootstrap.options.interactive_sites = true;
+        run_session(seed, mode, bootstrap.clone(), bootstrap, save_slot.clone())?;
+        return Ok(());
+    }
+
     loop {
         println!();
         println!("=== Omega Bevy Launcher ===");

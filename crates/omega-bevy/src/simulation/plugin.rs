@@ -40,6 +40,7 @@ impl Plugin for SimulationPlugin {
             .add_systems(
                 FixedUpdate,
                 (
+                    turret_mode_system,
                     fixed_timing_start,
                     increment_tick,
                     particle_physics_system,
@@ -51,7 +52,6 @@ impl Plugin for SimulationPlugin {
                     projectile_movement_system,
                     projectile_collision_system,
                     projectile_interception_system,
-                    turret_mode_system,
                     ca_timing_start,
                     update_ca_cells,
                     process_explosions,

@@ -113,7 +113,11 @@ where F: FnOnce(&mut App)
     setup(&mut app);
 
     // Warmup
-    for _ in 0..20 {
+    for _ in 0..100 {
+        {
+            let mut time = app.world_mut().resource_mut::<Time>();
+            time.advance_by(Duration::from_secs_f32(1.0 / 64.0));
+        }
         app.update();
     }
 
@@ -126,7 +130,8 @@ where F: FnOnce(&mut App)
         
         {
             let mut time = app.world_mut().resource_mut::<Time>();
-            time.advance_by(Duration::from_secs_f32(1.0 / 64.0));
+            let dt = Duration::from_secs_f32(1.0 / 64.0);
+            time.advance_by(dt);
         }
         
         app.update();
@@ -135,7 +140,7 @@ where F: FnOnce(&mut App)
 
         let diagnostics = app.world().resource::<DiagnosticsStore>();
         if let Some(diag) = diagnostics.get(&CA_UPDATE_TIME) {
-            if let Some(val) = diag.smoothed() {
+            if let Some(val) = diag.smoothed().or_else(|| diag.values().last().copied()) {
                 ca_times.push(val);
             }
         }
