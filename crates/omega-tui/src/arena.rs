@@ -1,12 +1,12 @@
+use crossterm::event::{KeyCode, MouseEvent, MouseEventKind};
+use omega_core::simulation::catastrophe::Catastrophe;
+use omega_core::simulation::grid::CaGrid;
+use omega_core::simulation::snapshot::{ArenaSnapshot, SnapshotManager};
+use omega_core::simulation::wind::WindGrid;
+use omega_core::{Position, Stats};
 use ratatui::prelude::*;
 use ratatui::widgets::{Block, Borders, List, Paragraph, Wrap};
-use omega_core::simulation::catastrophe::Catastrophe;
-use omega_core::simulation::snapshot::{SnapshotManager, ArenaSnapshot};
-use omega_core::simulation::grid::CaGrid;
-use omega_core::simulation::wind::WindGrid;
-use omega_core::{GameState, Position};
-use crossterm::event::{KeyCode, MouseEvent, MouseEventKind};
-use std::time::{Instant, Duration};
+use std::time::{Duration, Instant};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum BrushMode {
@@ -16,6 +16,13 @@ pub enum BrushMode {
     None,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SpawnerCategory {
+    Monster,
+    Item,
+    Hazard,
+}
+
 #[derive(Debug, Clone)]
 pub struct ArenaUi {
     pub brush_mode: BrushMode,
@@ -23,6 +30,11 @@ pub struct ArenaUi {
     pub show_logs: bool,
     pub spawner_selected: usize,
     pub spawner_catalog: Vec<String>,
+    pub item_catalog: Vec<String>,
+    pub hazard_catalog: Vec<String>,
+    pub spawner_category: SpawnerCategory,
+    pub item_selected: usize,
+    pub hazard_selected: usize,
     pub snapshot_manager: SnapshotManager,
     pub event_log: Vec<String>,
     pub fps: f64,
@@ -30,6 +42,7 @@ pub struct ArenaUi {
     pub projectile_count: usize,
     pub particle_count: usize,
     pub turret_active: bool,
+    pub tooling_enabled: bool,
     pub last_paint_time: Instant,
 }
 
@@ -41,6 +54,17 @@ impl Default for ArenaUi {
             show_logs: false,
             spawner_selected: 0,
             spawner_catalog: vec!["rat".to_string(), "goblin".to_string(), "ogre".to_string()],
+            item_catalog: vec![
+                "short sword".to_string(),
+                "buckler".to_string(),
+                "healing potion".to_string(),
+                "identify scroll".to_string(),
+                "fire".to_string(),
+            ],
+            hazard_catalog: vec!["poison trap".to_string(), "fire trap".to_string()],
+            spawner_category: SpawnerCategory::Monster,
+            item_selected: 0,
+            hazard_selected: 0,
             snapshot_manager: SnapshotManager::default(),
             event_log: Vec::new(),
             fps: 0.0,
@@ -48,6 +72,7 @@ impl Default for ArenaUi {
             projectile_count: 0,
             particle_count: 0,
             turret_active: false,
+            tooling_enabled: true,
             last_paint_time: Instant::now(),
         }
     }
@@ -55,7 +80,13 @@ impl Default for ArenaUi {
 
 #[derive(Debug)]
 pub enum ArenaAction {
-    SpawnMonster(String),
+    SpawnMonster { name: String, stats: Stats },
+    SpawnItem { name: String },
+    SpawnHazard { effect_id: String, damage: i32 },
+    ClearMonsters,
+    ClearItems,
+    ToggleAiPaused,
+    ResetArenaFixture,
     Consumed,
     None,
 }
@@ -79,6 +110,8 @@ impl ArenaUi {
             Line::from(vec![Span::styled("[5] DOOMSDAY", Style::default().fg(Color::Red))]),
             Line::from(vec![Span::raw("")]),
             Line::from(vec![Span::raw("[S] Snapshot      [R] Restore")]),
+            Line::from(vec![Span::raw("[M] Clear Monsters [I] Clear Items")]),
+            Line::from(vec![Span::raw("[P] Pause AI      [0] Reset Fixture")]),
             Line::from(vec![
                 Span::raw("[T] Turret: "),
                 if self.turret_active {
@@ -87,6 +120,10 @@ impl ArenaUi {
                     Span::styled("OFF", Style::default().fg(Color::Gray))
                 },
             ]),
+            Line::from(vec![Span::raw(format!(
+                "[`] Tooling: {}",
+                if self.tooling_enabled { "ON" } else { "OFF" }
+            ))]),
         ];
         let catastrophe = Paragraph::new(catastrophe_text)
             .block(Block::default().title("CATASTROPHE CONTROLS").borders(Borders::ALL));
@@ -106,28 +143,36 @@ impl ArenaUi {
             }
         };
 
-        let brush_text = vec![
-            Line::from(vec![
-                Span::raw("Brush: "),
-                Span::styled("[F]ire", brush_style(BrushMode::Fire)),
-                Span::raw(" "),
-                Span::styled("[W]ater", brush_style(BrushMode::Water)),
-                Span::raw(" "),
-                Span::styled("[A]sh", brush_style(BrushMode::Ash)),
-                Span::raw(" "),
-                Span::styled("[N]one", brush_style(BrushMode::None)),
-            ]),
-        ];
+        let brush_text = vec![Line::from(vec![
+            Span::raw("Brush: "),
+            Span::styled("[F]ire", brush_style(BrushMode::Fire)),
+            Span::raw(" "),
+            Span::styled("[W]ater", brush_style(BrushMode::Water)),
+            Span::raw(" "),
+            Span::styled("[A]sh", brush_style(BrushMode::Ash)),
+            Span::raw(" "),
+            Span::styled("[N]one", brush_style(BrushMode::None)),
+        ])];
         let brush = Paragraph::new(brush_text)
             .block(Block::default().title("ELEMENTAL BRUSH").borders(Borders::ALL));
         frame.render_widget(brush, chunks[1]);
 
         // c. Monster Spawner
-        let items: Vec<ratatui::widgets::ListItem> = self.spawner_catalog
+        let active_list = match self.spawner_category {
+            SpawnerCategory::Monster => &self.spawner_catalog,
+            SpawnerCategory::Item => &self.item_catalog,
+            SpawnerCategory::Hazard => &self.hazard_catalog,
+        };
+        let selected_idx = match self.spawner_category {
+            SpawnerCategory::Monster => self.spawner_selected,
+            SpawnerCategory::Item => self.item_selected,
+            SpawnerCategory::Hazard => self.hazard_selected,
+        };
+        let items: Vec<ratatui::widgets::ListItem> = active_list
             .iter()
             .enumerate()
             .map(|(i, name)| {
-                let style = if i == self.spawner_selected {
+                let style = if i == selected_idx {
                     Style::default().fg(Color::Yellow).add_modifier(Modifier::REVERSED)
                 } else {
                     Style::default()
@@ -135,8 +180,12 @@ impl ArenaUi {
                 ratatui::widgets::ListItem::new(name.as_str()).style(style)
             })
             .collect();
-        let spawner = List::new(items)
-            .block(Block::default().title("MONSTER SPAWNER").borders(Borders::ALL));
+        let title = match self.spawner_category {
+            SpawnerCategory::Monster => "MONSTER SPAWNER [TAB]",
+            SpawnerCategory::Item => "ITEM SPAWNER [TAB]",
+            SpawnerCategory::Hazard => "HAZARD SPAWNER [TAB]",
+        };
+        let spawner = List::new(items).block(Block::default().title(title).borders(Borders::ALL));
         frame.render_widget(spawner, chunks[2]);
 
         // d. Performance HUD
@@ -153,10 +202,10 @@ impl ArenaUi {
                 Span::styled("● ", Style::default().fg(traffic_light_color)),
                 Span::raw(format!("FPS: {:.1}  ", self.fps)),
             ]),
-            Line::from(vec![
-                Span::raw(format!("Proj: {}  Part: {}  CA: {:.1}ms", 
-                    self.projectile_count, self.particle_count, self.ca_update_ms)),
-            ]),
+            Line::from(vec![Span::raw(format!(
+                "Proj: {}  Part: {}  CA: {:.1}ms",
+                self.projectile_count, self.particle_count, self.ca_update_ms
+            ))]),
         ];
 
         if self.show_logs {
@@ -181,6 +230,18 @@ impl ArenaUi {
         wind_grid: &mut WindGrid,
         player_pos: Position,
     ) -> ArenaAction {
+        if key == KeyCode::Char('`') {
+            self.tooling_enabled = !self.tooling_enabled;
+            self.log_event(if self.tooling_enabled {
+                "Test Ground controls enabled."
+            } else {
+                "Test Ground controls disabled."
+            });
+            return ArenaAction::Consumed;
+        }
+        if !self.tooling_enabled {
+            return ArenaAction::None;
+        }
         match key {
             KeyCode::Char('1') => {
                 Catastrophe::great_flood(grid, (player_pos.x as usize, player_pos.y as usize));
@@ -208,7 +269,8 @@ impl ArenaUi {
                 ArenaAction::Consumed
             }
             KeyCode::Char('s') => {
-                self.snapshot_manager.push(ArenaSnapshot::capture(grid, "Manual Snapshot".to_string()));
+                self.snapshot_manager
+                    .push(ArenaSnapshot::capture(grid, "Manual Snapshot".to_string()));
                 self.log_event("Snapshot saved.");
                 ArenaAction::Consumed
             }
@@ -223,9 +285,16 @@ impl ArenaUi {
             }
             KeyCode::Char('t') => {
                 self.turret_active = !self.turret_active;
-                self.log_event(&format!("Turret mode: {}", if self.turret_active { "ON" } else { "OFF" }));
+                self.log_event(&format!(
+                    "Turret mode: {}",
+                    if self.turret_active { "ON" } else { "OFF" }
+                ));
                 ArenaAction::Consumed
             }
+            KeyCode::Char('m') => ArenaAction::ClearMonsters,
+            KeyCode::Char('i') => ArenaAction::ClearItems,
+            KeyCode::Char('p') => ArenaAction::ToggleAiPaused,
+            KeyCode::Char('0') => ArenaAction::ResetArenaFixture,
             KeyCode::Char('f') => {
                 self.brush_mode = BrushMode::Fire;
                 ArenaAction::Consumed
@@ -247,31 +316,112 @@ impl ArenaUi {
                 ArenaAction::Consumed
             }
             KeyCode::Up => {
-                if self.spawner_selected > 0 {
-                    self.spawner_selected -= 1;
+                match self.spawner_category {
+                    SpawnerCategory::Monster => {
+                        if self.spawner_selected > 0 {
+                            self.spawner_selected -= 1;
+                        }
+                    }
+                    SpawnerCategory::Item => {
+                        if self.item_selected > 0 {
+                            self.item_selected -= 1;
+                        }
+                    }
+                    SpawnerCategory::Hazard => {
+                        if self.hazard_selected > 0 {
+                            self.hazard_selected -= 1;
+                        }
+                    }
                 }
                 ArenaAction::Consumed
             }
             KeyCode::Down => {
-                if self.spawner_selected < self.spawner_catalog.len() - 1 {
-                    self.spawner_selected += 1;
+                match self.spawner_category {
+                    SpawnerCategory::Monster => {
+                        if self.spawner_selected + 1 < self.spawner_catalog.len() {
+                            self.spawner_selected += 1;
+                        }
+                    }
+                    SpawnerCategory::Item => {
+                        if self.item_selected + 1 < self.item_catalog.len() {
+                            self.item_selected += 1;
+                        }
+                    }
+                    SpawnerCategory::Hazard => {
+                        if self.hazard_selected + 1 < self.hazard_catalog.len() {
+                            self.hazard_selected += 1;
+                        }
+                    }
                 }
                 ArenaAction::Consumed
             }
-            KeyCode::Enter => {
-                ArenaAction::SpawnMonster(self.spawner_catalog[self.spawner_selected].clone())
+            KeyCode::Tab => {
+                self.spawner_category = match self.spawner_category {
+                    SpawnerCategory::Monster => SpawnerCategory::Item,
+                    SpawnerCategory::Item => SpawnerCategory::Hazard,
+                    SpawnerCategory::Hazard => SpawnerCategory::Monster,
+                };
+                ArenaAction::Consumed
             }
-            _ => ArenaAction::None
+            KeyCode::Enter => match self.spawner_category {
+                SpawnerCategory::Monster => {
+                    let name = self.spawner_catalog[self.spawner_selected].clone();
+                    let stats = match name.as_str() {
+                        "rat" => Stats {
+                            hp: 6,
+                            max_hp: 6,
+                            attack_min: 1,
+                            attack_max: 2,
+                            defense: 0,
+                            weight: 20,
+                        },
+                        "goblin" => Stats {
+                            hp: 12,
+                            max_hp: 12,
+                            attack_min: 2,
+                            attack_max: 4,
+                            defense: 1,
+                            weight: 50,
+                        },
+                        "ogre" => Stats {
+                            hp: 20,
+                            max_hp: 20,
+                            attack_min: 3,
+                            attack_max: 6,
+                            defense: 2,
+                            weight: 80,
+                        },
+                        _ => Stats {
+                            hp: 10,
+                            max_hp: 10,
+                            attack_min: 2,
+                            attack_max: 3,
+                            defense: 0,
+                            weight: 40,
+                        },
+                    };
+                    ArenaAction::SpawnMonster { name, stats }
+                }
+                SpawnerCategory::Item => {
+                    let name = self.item_catalog[self.item_selected].clone();
+                    ArenaAction::SpawnItem { name }
+                }
+                SpawnerCategory::Hazard => {
+                    let name = self.hazard_catalog[self.hazard_selected].as_str();
+                    let (effect_id, damage) = match name {
+                        "poison trap" => ("poison".to_string(), 6),
+                        "fire trap" => ("fire".to_string(), 8),
+                        _ => ("poison".to_string(), 4),
+                    };
+                    ArenaAction::SpawnHazard { effect_id, damage }
+                }
+            },
+            _ => ArenaAction::None,
         }
     }
 
-    pub fn handle_brush_paint(
-        &mut self,
-        mouse: MouseEvent,
-        map_area: Rect,
-        grid: &mut CaGrid,
-    ) {
-        if self.brush_mode == BrushMode::None {
+    pub fn handle_brush_paint(&mut self, mouse: MouseEvent, map_area: Rect, grid: &mut CaGrid) {
+        if !self.tooling_enabled || self.brush_mode == BrushMode::None {
             return;
         }
 

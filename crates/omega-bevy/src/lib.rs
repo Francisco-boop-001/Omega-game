@@ -1,5 +1,6 @@
 use anyhow::{Context, Result};
 use bevy::prelude::Color;
+use bevy::prelude::Time;
 use bevy_app::{App, Plugin, Update};
 use bevy_ecs::component::Component;
 use bevy_ecs::entity::Entity;
@@ -9,14 +10,14 @@ use bevy_ecs::schedule::IntoSystemConfigs;
 use omega_content::bootstrap_game_state_with_mode;
 use omega_core::{
     Command, DeterministicRng, Direction, GameMode, GameState, ModalInputProfile,
-    ObjectiveSnapshot, Outcome, Position, SessionStatus, SiteInteractionKind,
-    active_activation_interaction_help_hint, active_activation_interaction_prompt,
-    active_inventory_interaction_help_hint, active_inventory_interaction_prompt,
-    active_item_prompt, active_item_prompt_help_hint, active_objective_snapshot,
-    active_quit_interaction_help_hint, active_quit_interaction_prompt,
-    active_talk_direction_help_hint, active_talk_direction_prompt,
+    ObjectiveSnapshot, Outcome, Position, SessionStatus, SiteInteractionKind, TILE_FLAG_BLOCK_MOVE,
+    TILE_FLAG_BURNING, TILE_FLAG_BURNT, active_activation_interaction_help_hint,
+    active_activation_interaction_prompt, active_inventory_interaction_help_hint,
+    active_inventory_interaction_prompt, active_item_prompt, active_item_prompt_help_hint,
+    active_objective_snapshot, active_quit_interaction_help_hint, active_quit_interaction_prompt,
     active_site_interaction_help_hint, active_site_interaction_prompt,
     active_spell_interaction_help_hint, active_spell_interaction_prompt,
+    active_talk_direction_help_hint, active_talk_direction_prompt,
     active_targeting_interaction_help_hint, active_targeting_interaction_prompt,
     active_wizard_interaction_help_hint, active_wizard_interaction_prompt, modal_input_profile,
     objective_journal, objective_map_hints, renderable_timeline_lines,
@@ -120,7 +121,9 @@ impl TileKind {
             TileKind::Fire => ColorId::Effect(EffectColorId::Fire),
             TileKind::Feature => ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Door)),
             TileKind::Player => ColorId::Entity(EntityColorId::Player),
-            TileKind::Monster => ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid)),
+            TileKind::Monster => {
+                ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid))
+            }
             TileKind::GroundItem => ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Common)),
             // UI Overlays
             TileKind::TargetCursor => ColorId::Ui(UiColorId::Cursor),
@@ -369,8 +372,8 @@ impl BevyFrontend {
                 self.app_state = AppState::InGame;
             }
             InputAction::StartWizardArena => {
-                let (state, _) = omega_content::bootstrap_wizard_arena()
-                    .expect("Wizard Arena bootstrap failed");
+                let (state, _) =
+                    omega_content::bootstrap_wizard_arena().expect("Wizard Arena bootstrap failed");
                 self.restart_count = self.restart_count.wrapping_add(1);
                 let seed = self.session_seed.wrapping_add(self.restart_count);
                 self.session = Some(GameSession::from_state(seed, state));
@@ -418,13 +421,14 @@ impl BevyFrontend {
                 AppState::Pause => self.app_state = AppState::InGame,
                 _ => {}
             },
-                                    InputAction::Dispatch(command) => {
-                                        if self.app_state != AppState::InGame && self.app_state != AppState::WizardArena {
-                                            return;
-                                        }
-                                        if let Some(session) = self.session.as_mut() {
-                                            let was_in_progress = session.state.status == SessionStatus::InProgress;
-                                            session.dispatch(command);                    if session.state.status != SessionStatus::InProgress {
+            InputAction::Dispatch(command) => {
+                if self.app_state != AppState::InGame && self.app_state != AppState::WizardArena {
+                    return;
+                }
+                if let Some(session) = self.session.as_mut() {
+                    let was_in_progress = session.state.status == SessionStatus::InProgress;
+                    session.dispatch(command);
+                    if session.state.status != SessionStatus::InProgress {
                         if was_in_progress {
                             let prompt = match session.state.status {
                                 SessionStatus::Lost => {
@@ -697,14 +701,15 @@ pub fn project_to_frame(
                 glyph: Some(glyph),
             });
             if let Some(cell) = state.tile_site_at(position)
-                && (cell.flags & omega_core::TILE_FLAG_BURNING) != 0 {
-                    tiles.push(TileRender {
-                        position,
-                        kind: TileKind::Fire,
-                        sprite: atlas.fire.clone(),
-                        glyph: Some('*'), // Fire glyph
-                    });
-                }
+                && (cell.flags & omega_core::TILE_FLAG_BURNING) != 0
+            {
+                tiles.push(TileRender {
+                    position,
+                    kind: TileKind::Fire,
+                    sprite: atlas.fire.clone(),
+                    glyph: Some('*'), // Fire glyph
+                });
+            }
         }
     }
 
@@ -715,6 +720,17 @@ pub fn project_to_frame(
             sprite: atlas.ground_item.clone(),
             glyph: Some('!'),
         });
+    }
+
+    for trap in &state.traps {
+        if trap.armed {
+            tiles.push(TileRender {
+                position: trap.position,
+                kind: TileKind::Feature,
+                sprite: atlas.feature.clone(),
+                glyph: Some('^'),
+            });
+        }
     }
 
     for monster in &state.monsters {
@@ -1094,6 +1110,33 @@ pub struct RuntimeStatus {
     pub should_quit: bool,
 }
 
+#[derive(Debug, Clone, Resource)]
+struct ArenaHazardBridgeState {
+    damage_cooldown_s: f32,
+    fire_immunity_s: f32,
+    gas_damage_cooldown_s: f32,
+    monster_damage_cooldown_s: f32,
+    wind_push_cooldown_s: f32,
+    was_in_fire: bool,
+    was_in_water: bool,
+    was_in_gas: bool,
+}
+
+impl Default for ArenaHazardBridgeState {
+    fn default() -> Self {
+        Self {
+            damage_cooldown_s: 0.0,
+            fire_immunity_s: 0.0,
+            gas_damage_cooldown_s: 0.0,
+            monster_damage_cooldown_s: 0.0,
+            wind_push_cooldown_s: 0.0,
+            was_in_fire: false,
+            was_in_water: false,
+            was_in_gas: false,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Event)]
 pub struct InputActionEvent(pub InputAction);
 
@@ -1131,13 +1174,12 @@ impl Plugin for OmegaBevyRuntimePlugin {
         let bootstrap =
             self.bootstrap_state.clone().unwrap_or_else(|| load_bootstrap_or_default(mode));
         let slot = self.save_slot.clone().unwrap_or_else(|| default_save_slot_path_for_mode(mode));
-        
+
         let color_theme = presentation::color_adapter::load_builtin_theme("classic")
             .expect("Failed to load classic theme");
         let bevy_theme = presentation::BevyTheme::new(color_theme);
 
-        let (grid_w, grid_h) =
-            (bootstrap.bounds.width as usize, bootstrap.bounds.height as usize);
+        let (grid_w, grid_h) = (bootstrap.bounds.width as usize, bootstrap.bounds.height as usize);
 
         app.insert_resource(FrontendRuntime(BevyFrontend::with_seed_and_bootstrap(
             self.session_seed,
@@ -1149,7 +1191,8 @@ impl Plugin for OmegaBevyRuntimePlugin {
         .insert_resource(PendingInput::default())
         .insert_resource(RuntimeFrame::default())
         .insert_resource(RuntimeStatus { app_state: AppState::Boot, should_quit: false })
-        .add_plugins(simulation::SimulationPlugin::new(grid_w, grid_h))
+        .insert_resource(ArenaHazardBridgeState::default())
+        .add_plugins(simulation::SimulationPlugin::new(grid_w, grid_h, self.session_seed))
         .add_event::<InputActionEvent>()
         .add_systems(
             Update,
@@ -1158,6 +1201,8 @@ impl Plugin for OmegaBevyRuntimePlugin {
                 input_to_action_events_system,
                 apply_action_events_system,
                 project_frame_system,
+                apply_wizard_arena_ca_overlay_system,
+                apply_arena_hazard_bridge_system,
                 sync_tile_entities_system,
             )
                 .chain(),
@@ -1254,6 +1299,417 @@ fn project_frame_system(
     mut frame: ResMut<RuntimeFrame>,
 ) {
     frame.frame = runtime.0.render_frame(&atlas.0);
+}
+
+fn apply_wizard_arena_ca_overlay_system(
+    status: Res<RuntimeStatus>,
+    overlay_state: Option<Res<presentation::arena_controls::ArenaOverlayState>>,
+    grid: Res<omega_core::simulation::grid::CaGrid>,
+    wind: Res<omega_core::simulation::wind::WindGrid>,
+    atlas: Res<RuntimeSpriteAtlas>,
+    mut frame: ResMut<RuntimeFrame>,
+) {
+    if status.app_state != AppState::WizardArena {
+        return;
+    }
+    if overlay_state.as_ref().is_some_and(|state| !state.show_ca_overlay) {
+        return;
+    }
+    if let Some(rendered) = frame.frame.as_mut() {
+        append_ca_overlay_tiles(rendered, &grid, &wind, &atlas.0);
+    }
+}
+
+fn site_tile_is_flammable(site: &omega_core::TileSiteCell) -> bool {
+    if site.glyph == '"' {
+        return true;
+    }
+    if matches!(site.glyph, '#' | '=' | '~' | '.') {
+        return false;
+    }
+    (site.flags & TILE_FLAG_BLOCK_MOVE) != 0
+        || site.glyph.is_ascii_alphabetic()
+        || matches!(site.glyph, '+' | '-' | '/' | '\\' | '|' | 'P' | 'D' | 'J')
+}
+
+fn site_tile_solid_hint(
+    site: &omega_core::TileSiteCell,
+) -> Option<omega_core::simulation::state::Solid> {
+    use omega_core::simulation::state::Solid;
+
+    if site.glyph == '"' {
+        return Some(Solid::Grass);
+    }
+    if matches!(site.glyph, '#' | '=') {
+        return Some(Solid::Stone);
+    }
+    if site_tile_is_flammable(site) {
+        return Some(Solid::Wood);
+    }
+    None
+}
+
+fn sync_site_tile_with_ca(
+    site: &mut omega_core::TileSiteCell,
+    ca: &mut omega_core::simulation::cell::Cell,
+) -> bool {
+    use omega_core::simulation::state::{Gas, Liquid, Solid};
+
+    let previous_glyph = site.glyph;
+    if ca.solid.is_none() {
+        ca.solid = site_tile_solid_hint(site);
+    }
+
+    let ca_on_fire = ca.gas == Some(Gas::Fire) || ca.heat >= 185;
+    let ca_watered = ca.liquid == Some(Liquid::Water) || ca.wet >= 120;
+
+    if ca_on_fire && site_tile_is_flammable(site) {
+        site.flags |= TILE_FLAG_BURNING;
+    }
+    if ca_watered && (site.flags & TILE_FLAG_BURNING) != 0 {
+        site.flags &= !TILE_FLAG_BURNING;
+    }
+    if ca_on_fire && ca_watered {
+        ca.gas = Some(Gas::Steam);
+        ca.pressure = ca.pressure.max(40);
+        ca.heat = ca.heat.saturating_sub(35);
+    }
+
+    if (site.flags & TILE_FLAG_BURNING) != 0 {
+        ca.gas = Some(Gas::Fire);
+        ca.heat = ca.heat.max(190);
+        ca.pressure = ca.pressure.max(30);
+    } else if ca.gas == Some(Gas::Fire) && ca.heat < 95 {
+        ca.gas = Some(Gas::Smoke);
+        ca.pressure = ca.pressure.max(20);
+    }
+
+    if site_tile_is_flammable(site)
+        && (site.flags & TILE_FLAG_BURNING) != 0
+        && ca.gas != Some(Gas::Fire)
+        && ca.heat < 95
+    {
+        site.flags &= !TILE_FLAG_BURNING;
+        site.flags |= TILE_FLAG_BURNT;
+        if !matches!(site.glyph, '#' | '=') {
+            site.glyph = '.';
+            site.flags &= !TILE_FLAG_BLOCK_MOVE;
+        }
+        if ca.solid.is_some_and(|solid| solid != Solid::Stone) {
+            ca.solid = Some(Solid::Ash);
+        }
+    }
+
+    site.glyph != previous_glyph
+}
+
+fn can_push_actor_to(state: &GameState, target: Position) -> bool {
+    state.bounds.contains(target) && state.tile_is_walkable(target)
+}
+
+fn apply_arena_hazard_bridge_system(
+    time: Res<Time>,
+    mut status: ResMut<RuntimeStatus>,
+    mut grid: ResMut<omega_core::simulation::grid::CaGrid>,
+    wind: Res<omega_core::simulation::wind::WindGrid>,
+    mut runtime: ResMut<FrontendRuntime>,
+    mut bridge: ResMut<ArenaHazardBridgeState>,
+) {
+    use omega_core::simulation::state::{Gas, Liquid};
+
+    if status.app_state != AppState::WizardArena {
+        *bridge = ArenaHazardBridgeState::default();
+        return;
+    }
+    if bridge.damage_cooldown_s > 0.0 {
+        bridge.damage_cooldown_s = (bridge.damage_cooldown_s - time.delta_secs()).max(0.0);
+    }
+    if bridge.fire_immunity_s > 0.0 {
+        bridge.fire_immunity_s = (bridge.fire_immunity_s - time.delta_secs()).max(0.0);
+    }
+    if bridge.gas_damage_cooldown_s > 0.0 {
+        bridge.gas_damage_cooldown_s = (bridge.gas_damage_cooldown_s - time.delta_secs()).max(0.0);
+    }
+    if bridge.monster_damage_cooldown_s > 0.0 {
+        bridge.monster_damage_cooldown_s =
+            (bridge.monster_damage_cooldown_s - time.delta_secs()).max(0.0);
+    }
+    if bridge.wind_push_cooldown_s > 0.0 {
+        bridge.wind_push_cooldown_s = (bridge.wind_push_cooldown_s - time.delta_secs()).max(0.0);
+    }
+
+    let mut should_game_over = false;
+    {
+        let Some(session) = runtime.0.session.as_mut() else {
+            *bridge = ArenaHazardBridgeState::default();
+            return;
+        };
+
+        let map_width = usize::try_from(session.state.bounds.width.max(0)).unwrap_or(0);
+        let map_height = usize::try_from(session.state.bounds.height.max(0)).unwrap_or(0);
+        let mut glyph_updates: Vec<(Position, char)> = Vec::new();
+
+        for y in 0..map_height {
+            for x in 0..map_width {
+                if !grid.in_bounds(x as isize, y as isize) {
+                    continue;
+                }
+                let idx = y.saturating_mul(map_width).saturating_add(x);
+                if idx >= session.state.site_grid.len() {
+                    continue;
+                }
+                let site = &mut session.state.site_grid[idx];
+                let mut ca_cell = *grid.get(x, y);
+                let previous_ca = ca_cell;
+                let glyph_changed = sync_site_tile_with_ca(site, &mut ca_cell);
+                if ca_cell != previous_ca {
+                    grid.set_immediate(x, y, ca_cell);
+                }
+                if glyph_changed {
+                    glyph_updates.push((Position { x: x as i32, y: y as i32 }, site.glyph));
+                }
+            }
+        }
+        for (pos, glyph) in glyph_updates {
+            let _ = session.state.set_map_glyph_at(pos, glyph);
+        }
+
+        if bridge.monster_damage_cooldown_s <= 0.0 && !session.state.monsters.is_empty() {
+            let mut defeated_indices: Vec<usize> = Vec::new();
+            for (idx, monster) in session.state.monsters.iter_mut().enumerate() {
+                if !grid.in_bounds(monster.position.x as isize, monster.position.y as isize) {
+                    continue;
+                }
+                let cell = *grid.get(monster.position.x as usize, monster.position.y as usize);
+                let damage = if cell.gas == Some(Gas::Fire) || cell.heat >= 180 {
+                    2
+                } else if matches!(cell.gas, Some(Gas::Smoke) | Some(Gas::Steam)) {
+                    1
+                } else {
+                    0
+                };
+                if damage > 0 {
+                    monster.stats.hp = (monster.stats.hp - damage).max(0);
+                    if monster.stats.hp <= 0 {
+                        defeated_indices.push(idx);
+                    }
+                }
+            }
+            for idx in defeated_indices.into_iter().rev() {
+                let name = session.state.monsters[idx].name.clone();
+                session.state.monsters.swap_remove(idx);
+                session.state.log.push(format!("{name} is consumed by arena hazards."));
+            }
+            bridge.monster_damage_cooldown_s = 0.75;
+        }
+
+        if bridge.wind_push_cooldown_s <= 0.0 {
+            let mut player_pushed = false;
+            let mut pushed_monsters = 0usize;
+
+            let player_pos = session.state.player.position;
+            if wind.in_bounds(player_pos.x as isize, player_pos.y as isize) {
+                let vector = wind.get(player_pos.x as usize, player_pos.y as usize);
+                if vector.strength >= 100 && (vector.dx != 0 || vector.dy != 0) {
+                    let target = Position {
+                        x: player_pos.x + i32::from(vector.dx),
+                        y: player_pos.y + i32::from(vector.dy),
+                    };
+                    let blocked_by_monster =
+                        session.state.monsters.iter().any(|monster| monster.position == target);
+                    if !blocked_by_monster && can_push_actor_to(&session.state, target) {
+                        session.state.player.position = target;
+                        player_pushed = true;
+                    }
+                }
+            }
+
+            let mut monster_positions: Vec<Position> =
+                session.state.monsters.iter().map(|monster| monster.position).collect();
+            for idx in 0..monster_positions.len() {
+                let pos = monster_positions[idx];
+                if !wind.in_bounds(pos.x as isize, pos.y as isize) {
+                    continue;
+                }
+                let vector = wind.get(pos.x as usize, pos.y as usize);
+                if vector.strength < 130 || (vector.dx == 0 && vector.dy == 0) {
+                    continue;
+                }
+                let target =
+                    Position { x: pos.x + i32::from(vector.dx), y: pos.y + i32::from(vector.dy) };
+                if target == session.state.player.position {
+                    continue;
+                }
+                if !can_push_actor_to(&session.state, target) {
+                    continue;
+                }
+                if monster_positions
+                    .iter()
+                    .enumerate()
+                    .any(|(other_idx, other_pos)| other_idx != idx && *other_pos == target)
+                {
+                    continue;
+                }
+                monster_positions[idx] = target;
+                pushed_monsters = pushed_monsters.saturating_add(1);
+            }
+            for (monster, new_pos) in
+                session.state.monsters.iter_mut().zip(monster_positions.into_iter())
+            {
+                monster.position = new_pos;
+            }
+
+            if player_pushed || pushed_monsters > 0 {
+                bridge.wind_push_cooldown_s = 0.2;
+                if player_pushed {
+                    session
+                        .state
+                        .log
+                        .push("A strong gust shoves you across the arena.".to_string());
+                }
+                if pushed_monsters > 0 {
+                    session.state.log.push(format!("Wind pushes {pushed_monsters} monster(s)."));
+                }
+            }
+        }
+
+        let player_pos = session.state.player.position;
+        if !grid.in_bounds(player_pos.x as isize, player_pos.y as isize) {
+            bridge.was_in_fire = false;
+            bridge.was_in_water = false;
+            bridge.was_in_gas = false;
+            return;
+        }
+        let cell = *grid.get(player_pos.x as usize, player_pos.y as usize);
+        let in_fire = cell.gas == Some(Gas::Fire) || cell.heat >= 160;
+        let in_water = cell.liquid == Some(Liquid::Water) || cell.wet >= 100;
+        let in_gas = matches!(cell.gas, Some(Gas::Smoke) | Some(Gas::Steam));
+
+        if in_water {
+            bridge.fire_immunity_s = bridge.fire_immunity_s.max(1.25);
+            if !bridge.was_in_water {
+                session.state.log.push("Arena water cools the flames around you.".to_string());
+            }
+        }
+
+        if in_fire && bridge.fire_immunity_s <= 0.0 && bridge.damage_cooldown_s <= 0.0 {
+            let hp_before = session.state.player.stats.hp.max(0);
+            let next_hp = (hp_before - 2).max(0);
+            let applied = hp_before - next_hp;
+            session.state.player.stats.hp = next_hp;
+            bridge.damage_cooldown_s = 0.5;
+            if applied > 0 {
+                session.state.log.push(format!("Arena fire scorches you for {applied} damage."));
+                if session.state.player.stats.hp <= 0 {
+                    should_game_over = true;
+                }
+            }
+        }
+        if in_gas && bridge.gas_damage_cooldown_s <= 0.0 {
+            let hp_before = session.state.player.stats.hp.max(0);
+            let next_hp = (hp_before - 1).max(0);
+            let applied = hp_before - next_hp;
+            session.state.player.stats.hp = next_hp;
+            bridge.gas_damage_cooldown_s = 0.8;
+            if applied > 0 {
+                if cell.gas == Some(Gas::Smoke) {
+                    session.state.log.push("Smoke burns your lungs for 1 damage.".to_string());
+                } else {
+                    session.state.log.push("Steam scalds you for 1 damage.".to_string());
+                }
+                if session.state.player.stats.hp <= 0 {
+                    should_game_over = true;
+                }
+            }
+        }
+
+        if !in_fire && bridge.was_in_fire {
+            session.state.log.push("You step clear of the worst heat.".to_string());
+        }
+        if !in_gas && bridge.was_in_gas {
+            session.state.log.push("The air clears enough to breathe again.".to_string());
+        }
+
+        bridge.was_in_fire = in_fire;
+        bridge.was_in_water = in_water;
+        bridge.was_in_gas = in_gas;
+    }
+
+    if should_game_over {
+        runtime.0.app_state = AppState::GameOver;
+        status.app_state = AppState::GameOver;
+    }
+}
+
+fn append_ca_overlay_tiles(
+    rendered: &mut RenderFrame,
+    grid: &omega_core::simulation::grid::CaGrid,
+    wind: &omega_core::simulation::wind::WindGrid,
+    atlas: &SpriteAtlas,
+) {
+    use omega_core::simulation::cell::Cell;
+    use omega_core::simulation::state::{Gas, Liquid, Solid};
+
+    fn wind_glyph(vector: omega_core::simulation::wind::WindVector) -> char {
+        match (vector.dx, vector.dy) {
+            (1, 0) => '>',
+            (-1, 0) => '<',
+            (0, 1) => 'v',
+            (0, -1) => '^',
+            (1, 1) => '\\',
+            (1, -1) => '/',
+            (-1, 1) => '/',
+            (-1, -1) => '\\',
+            _ => '~',
+        }
+    }
+
+    fn overlay_for_cell(
+        cell: &Cell,
+        wind_vec: omega_core::simulation::wind::WindVector,
+        x: usize,
+        y: usize,
+    ) -> Option<(TileKind, char)> {
+        if cell.gas == Some(Gas::Fire) || cell.heat >= 180 {
+            return Some((TileKind::Fire, '*'));
+        }
+        if cell.gas == Some(Gas::Steam) {
+            return Some((TileKind::Water, ':'));
+        }
+        if cell.gas == Some(Gas::Smoke) {
+            return Some((TileKind::Feature, ';'));
+        }
+        if cell.liquid == Some(Liquid::Water) || cell.wet >= 100 {
+            return Some((TileKind::Water, '~'));
+        }
+        if matches!(cell.solid, Some(Solid::Wood)) && x.is_multiple_of(2) && y.is_multiple_of(2) {
+            return Some((TileKind::Grass, '"'));
+        }
+        if wind_vec.strength >= 80 && x.is_multiple_of(3) && y.is_multiple_of(2) {
+            return Some((TileKind::Feature, wind_glyph(wind_vec)));
+        }
+        None
+    }
+
+    let width = rendered.bounds.0.max(0) as usize;
+    let height = rendered.bounds.1.max(0) as usize;
+    let overlay_w = width.min(grid.width()).min(wind.width());
+    let overlay_h = height.min(grid.height()).min(wind.height());
+    for y in 0..overlay_h {
+        for x in 0..overlay_w {
+            let cell = grid.get(x, y);
+            let wind_vec = wind.get(x, y);
+            if let Some((kind, glyph)) = overlay_for_cell(cell, wind_vec, x, y) {
+                let position = Position { x: x as i32, y: y as i32 };
+                rendered.tiles.push(TileRender {
+                    position,
+                    kind,
+                    sprite: sprite_for_tile_kind(atlas, kind),
+                    glyph: Some(glyph),
+                });
+            }
+        }
+    }
 }
 
 fn sync_tile_entities_system(
@@ -1792,5 +2248,75 @@ mod tests {
                 .iter()
                 .any(|line| line.contains("Activate -- item [i] or artifact [a]"))
         );
+    }
+
+    #[test]
+    fn sync_site_tile_with_ca_marks_flammable_structure_as_burning() {
+        use omega_core::simulation::cell::Cell;
+        use omega_core::simulation::state::Gas;
+
+        let mut site = omega_core::TileSiteCell {
+            glyph: 'h',
+            flags: TILE_FLAG_BLOCK_MOVE,
+            ..Default::default()
+        };
+        let mut ca = Cell { gas: Some(Gas::Fire), heat: 210, ..Cell::default() };
+
+        let glyph_changed = sync_site_tile_with_ca(&mut site, &mut ca);
+
+        assert!(!glyph_changed);
+        assert!((site.flags & TILE_FLAG_BURNING) != 0);
+        assert_eq!(ca.gas, Some(Gas::Fire));
+    }
+
+    #[test]
+    fn sync_site_tile_with_ca_water_creates_steam_and_extinguishes() {
+        use omega_core::simulation::cell::Cell;
+        use omega_core::simulation::state::{Gas, Liquid};
+
+        let mut site =
+            omega_core::TileSiteCell { glyph: '"', flags: TILE_FLAG_BURNING, ..Default::default() };
+        let mut ca = Cell {
+            gas: Some(Gas::Fire),
+            liquid: Some(Liquid::Water),
+            heat: 220,
+            wet: 220,
+            ..Cell::default()
+        };
+
+        let _ = sync_site_tile_with_ca(&mut site, &mut ca);
+
+        assert_eq!(ca.gas, Some(Gas::Steam));
+        assert_eq!(site.flags & TILE_FLAG_BURNING, 0);
+    }
+
+    #[test]
+    fn ca_overlay_renders_fire_steam_and_smoke_glyphs() {
+        use omega_core::simulation::cell::Cell;
+        use omega_core::simulation::grid::CaGrid;
+        use omega_core::simulation::state::Gas;
+        use omega_core::simulation::wind::WindGrid;
+
+        let mut frame = RenderFrame {
+            mode: GameMode::Classic,
+            bounds: (3, 1),
+            tiles: Vec::new(),
+            hud_lines: Vec::new(),
+            interaction_lines: Vec::new(),
+            timeline_lines: Vec::new(),
+            event_lines: Vec::new(),
+        };
+        let mut grid = CaGrid::new(3, 1);
+        let wind = WindGrid::new(3, 1);
+
+        grid.set_immediate(0, 0, Cell { gas: Some(Gas::Steam), ..Cell::default() });
+        grid.set_immediate(1, 0, Cell { gas: Some(Gas::Smoke), ..Cell::default() });
+        grid.set_immediate(2, 0, Cell { gas: Some(Gas::Fire), ..Cell::default() });
+
+        append_ca_overlay_tiles(&mut frame, &grid, &wind, &SpriteAtlas::default());
+
+        assert!(frame.tiles.iter().any(|tile| tile.glyph == Some(':')));
+        assert!(frame.tiles.iter().any(|tile| tile.glyph == Some(';')));
+        assert!(frame.tiles.iter().any(|tile| tile.glyph == Some('*')));
     }
 }

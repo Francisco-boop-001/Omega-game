@@ -1,14 +1,14 @@
-use std::time::{Instant, Duration};
-use bevy::prelude::*;
 use bevy::diagnostic::DiagnosticsStore;
-use omega_bevy::simulation::plugin::SimulationPlugin;
+use bevy::prelude::*;
 use omega_bevy::simulation::diagnostics::CA_UPDATE_TIME;
-use omega_bevy::simulation::turret::TurretMode;
-use omega_bevy::simulation::safety::SafetyConfig;
+use omega_bevy::simulation::plugin::SimulationPlugin;
 use omega_bevy::simulation::projectiles::Projectile;
+use omega_bevy::simulation::safety::SafetyConfig;
+use omega_bevy::simulation::turret::TurretMode;
 use omega_core::simulation::catastrophe::Catastrophe;
 use omega_core::simulation::grid::CaGrid;
 use omega_core::simulation::wind::WindGrid;
+use std::time::{Duration, Instant};
 
 #[derive(Default)]
 struct ScenarioResult {
@@ -84,7 +84,10 @@ fn main() {
     let mut all_passed = true;
     for res in &results {
         println!("Scenario: {}", res.name);
-        println!("  CA Update: avg={:.2}ms  p95={:.2}ms  max={:.2}ms", res.ca_avg, res.ca_p95, res.ca_max);
+        println!(
+            "  CA Update: avg={:.2}ms  p95={:.2}ms  max={:.2}ms",
+            res.ca_avg, res.ca_p95, res.ca_max
+        );
         if res.peak_projectiles > 0 || res.frame_avg > 0.0 {
             println!("  Peak Projectile Count: {}", res.peak_projectiles);
             println!("  Frame Time: avg={:.2}ms  p95={:.2}ms", res.frame_avg, res.frame_p95);
@@ -103,13 +106,14 @@ fn main() {
     }
 }
 
-fn run_scenario<F>(name: &str, ticks: usize, setup: F) -> ScenarioResult 
-where F: FnOnce(&mut App) 
+fn run_scenario<F>(name: &str, ticks: usize, setup: F) -> ScenarioResult
+where
+    F: FnOnce(&mut App),
 {
     let mut app = App::new();
     app.add_plugins(MinimalPlugins);
-    app.add_plugins(SimulationPlugin::new(128, 128));
-    
+    app.add_plugins(SimulationPlugin::new(128, 128, 0xA11C_E001));
+
     setup(&mut app);
 
     // Warmup
@@ -127,22 +131,22 @@ where F: FnOnce(&mut App)
 
     for _ in 0..ticks {
         let start = Instant::now();
-        
+
         {
             let mut time = app.world_mut().resource_mut::<Time>();
             let dt = Duration::from_secs_f32(1.0 / 64.0);
             time.advance_by(dt);
         }
-        
+
         app.update();
         let elapsed = start.elapsed().as_secs_f64() * 1000.0;
         frame_times.push(elapsed);
 
         let diagnostics = app.world().resource::<DiagnosticsStore>();
-        if let Some(diag) = diagnostics.get(&CA_UPDATE_TIME) {
-            if let Some(val) = diag.smoothed().or_else(|| diag.values().last().copied()) {
-                ca_times.push(val);
-            }
+        if let Some(diag) = diagnostics.get(&CA_UPDATE_TIME)
+            && let Some(val) = diag.smoothed().or_else(|| diag.values().last().copied())
+        {
+            ca_times.push(val);
         }
 
         let mut query = app.world_mut().query::<&Projectile>();
@@ -153,25 +157,22 @@ where F: FnOnce(&mut App)
     }
 
     if ca_times.is_empty() {
-        return ScenarioResult {
-            name: name.to_string(),
-            passed: false,
-            ..Default::default()
-        };
+        return ScenarioResult { name: name.to_string(), passed: false, ..Default::default() };
     }
 
     ca_times.sort_by(|a, b| a.total_cmp(b));
     frame_times.sort_by(|a, b| a.total_cmp(b));
 
     let ca_avg = ca_times.iter().sum::<f64>() / ca_times.len() as f64;
-    let ca_p95 = ca_times[((ca_times.len() as f64 * 0.95) as usize).min(ca_times.len()-1)];
+    let ca_p95 = ca_times[((ca_times.len() as f64 * 0.95) as usize).min(ca_times.len() - 1)];
     let ca_max = *ca_times.last().unwrap_or(&0.0);
 
     let frame_avg = frame_times.iter().sum::<f64>() / frame_times.len() as f64;
-    let frame_p95 = frame_times[((frame_times.len() as f64 * 0.95) as usize).min(frame_times.len()-1)];
+    let frame_p95 =
+        frame_times[((frame_times.len() as f64 * 0.95) as usize).min(frame_times.len() - 1)];
 
     let mut passed = ca_avg < 2.0;
-    
+
     if name == "100+ Projectiles" {
         if peak_projectiles < 100 {
             passed = false;

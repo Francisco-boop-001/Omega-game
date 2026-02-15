@@ -30,12 +30,12 @@ pub mod capability;
 pub mod color_id;
 pub mod color_spec;
 pub mod hex_color;
+pub mod loader;
+pub mod procedural;
+pub mod registry;
 pub mod theme;
 pub mod validation;
-pub mod loader;
-pub mod registry;
 pub mod watcher;
-pub mod procedural;
 
 #[cfg(test)]
 mod tests;
@@ -44,13 +44,13 @@ mod tests;
 pub use animation::{AnimationKind, lerp_color_spec};
 pub use capability::{ColorCapability, get_capability, reset_capability};
 pub use color_id::{
-    ColorId, EffectColorId, EntityColorId, EnvironmentColorId, ItemRarityColorId,
-    MonsterColorId, TerrainColorId, UiColorId,
+    ColorId, EffectColorId, EntityColorId, EnvironmentColorId, ItemRarityColorId, MonsterColorId,
+    TerrainColorId, UiColorId,
 };
 pub use color_spec::{AnsiColor, ColorSpec};
 pub use hex_color::{HexColor, HexColorError};
+pub use loader::ThemeLoader;
+pub use registry::{RegisteredTheme, ThemeRegistry};
 pub use theme::{ColorPalette, ColorRef, ColorTheme, SemanticColors, ThemeError, ThemeMetadata};
 pub use validation::ValidationReport;
-pub use loader::ThemeLoader;
-pub use registry::{ThemeRegistry, RegisteredTheme};
-pub use watcher::{ThemeWatcher, ThemeEvent};
+pub use watcher::{ThemeEvent, ThemeWatcher};

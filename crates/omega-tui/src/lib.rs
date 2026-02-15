@@ -5,20 +5,20 @@ use crossterm::terminal::{
 };
 use crossterm::{ExecutableCommand, execute};
 use omega_content::bootstrap_game_state_with_mode;
+use omega_core::color::AnimationKind;
 use omega_core::{
     Command, DeterministicRng, Direction, Event, GameMode, GameState, ModalInputProfile, Outcome,
     Position, SessionStatus, SiteInteractionKind, active_activation_interaction_help_hint,
     active_activation_interaction_prompt, active_inventory_interaction_help_hint,
     active_inventory_interaction_prompt, active_item_prompt, active_item_prompt_help_hint,
     active_objective_snapshot, active_quit_interaction_help_hint, active_quit_interaction_prompt,
-    active_talk_direction_help_hint, active_talk_direction_prompt,
     active_site_interaction_help_hint, active_site_interaction_prompt,
     active_spell_interaction_help_hint, active_spell_interaction_prompt,
+    active_talk_direction_help_hint, active_talk_direction_prompt,
     active_targeting_interaction_help_hint, active_targeting_interaction_prompt,
     active_wizard_interaction_help_hint, active_wizard_interaction_prompt, modal_input_profile,
     objective_map_hints, renderable_timeline_lines, sanitize_legacy_prompt_noise, step,
 };
-use omega_core::color::AnimationKind;
 use omega_save::{decode_state_json_for_mode, encode_json};
 use ratatui::backend::{CrosstermBackend, TestBackend};
 use ratatui::layout::{Constraint, Direction as LayoutDirection, Layout};
@@ -31,8 +31,8 @@ use std::io::{Stdout, stdout};
 use std::path::{Path, PathBuf};
 use std::time::Duration;
 
-pub mod color_adapter;
 pub mod arena;
+pub mod color_adapter;
 pub use color_adapter::{StyleCache, colorspec_to_ratatui};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -128,38 +128,56 @@ impl App {
 
         // Add default animations
         let mut theme = theme;
-        let (hp_low_fg, _) = theme.resolve(&omega_core::color::ColorId::Ui(omega_core::color::UiColorId::HealthLow))
-            .unwrap_or((omega_core::color::HexColor::from_hex("#FF0000").unwrap(), omega_core::color::HexColor::from_hex("#000000").unwrap()));
-        
-        theme.animations.insert("ui.healthlow".to_string(), AnimationKind::Flash {
-            colors: (
-                hp_low_fg.into(),
-                omega_core::color::ColorSpec::Rgb { r: 0, g: 0, b: 0 }
-            ),
-            frequency: 2.0,
-        });
+        let (hp_low_fg, _) = theme
+            .resolve(&omega_core::color::ColorId::Ui(omega_core::color::UiColorId::HealthLow))
+            .unwrap_or((
+                omega_core::color::HexColor::from_hex("#FF0000").unwrap(),
+                omega_core::color::HexColor::from_hex("#000000").unwrap(),
+            ));
 
-        let (highlight_fg, _) = theme.resolve(&omega_core::color::ColorId::Ui(omega_core::color::UiColorId::Highlight))
-            .unwrap_or((omega_core::color::HexColor::from_hex("#FFFF00").unwrap(), omega_core::color::HexColor::from_hex("#000000").unwrap()));
+        theme.animations.insert(
+            "ui.healthlow".to_string(),
+            AnimationKind::Flash {
+                colors: (hp_low_fg.into(), omega_core::color::ColorSpec::Rgb { r: 0, g: 0, b: 0 }),
+                frequency: 2.0,
+            },
+        );
 
-        theme.animations.insert("ui.highlight".to_string(), AnimationKind::Pulse {
-            base: highlight_fg.into(),
-            target: omega_core::color::ColorSpec::Rgb { r: 255, g: 255, b: 255 },
-            frequency: 1.0,
-        });
+        let (highlight_fg, _) = theme
+            .resolve(&omega_core::color::ColorId::Ui(omega_core::color::UiColorId::Highlight))
+            .unwrap_or((
+                omega_core::color::HexColor::from_hex("#FFFF00").unwrap(),
+                omega_core::color::HexColor::from_hex("#000000").unwrap(),
+            ));
+
+        theme.animations.insert(
+            "ui.highlight".to_string(),
+            AnimationKind::Pulse {
+                base: highlight_fg.into(),
+                target: omega_core::color::ColorSpec::Rgb { r: 255, g: 255, b: 255 },
+                frequency: 1.0,
+            },
+        );
 
         // Create style cache
         let style_cache = StyleCache::new(&theme, capability);
 
-        let (arena_ui, ca_grid, wind_grid) = if initial_state.environment == omega_core::LegacyEnvironment::Arena {
-            (
-                Some(arena::ArenaUi::default()),
-                Some(omega_core::simulation::CaGrid::new(initial_state.bounds.width as usize, initial_state.bounds.height as usize)),
-                Some(omega_core::simulation::WindGrid::new(initial_state.bounds.width as usize, initial_state.bounds.height as usize)),
-            )
-        } else {
-            (None, None, None)
-        };
+        let (arena_ui, ca_grid, wind_grid) =
+            if initial_state.environment == omega_core::LegacyEnvironment::Arena {
+                (
+                    Some(arena::ArenaUi::default()),
+                    Some(omega_core::simulation::CaGrid::new(
+                        initial_state.bounds.width as usize,
+                        initial_state.bounds.height as usize,
+                    )),
+                    Some(omega_core::simulation::WindGrid::new(
+                        initial_state.bounds.width as usize,
+                        initial_state.bounds.height as usize,
+                    )),
+                )
+            } else {
+                (None, None, None)
+            };
 
         Self {
             state: initial_state,
@@ -201,11 +219,8 @@ impl App {
 
     /// Cycles between built-in themes (classic <-> accessible).
     fn cycle_theme(&mut self) {
-        let next_theme_name = if self.theme.meta.name.contains("Classic") {
-            "accessible"
-        } else {
-            "classic"
-        };
+        let next_theme_name =
+            if self.theme.meta.name.contains("Classic") { "accessible" } else { "classic" };
 
         if let Ok(theme) = color_adapter::load_builtin_theme(next_theme_name) {
             let theme_name = theme.meta.name.clone();
@@ -296,32 +311,125 @@ impl App {
         }
 
         // Arena Controls
-        if let Some(arena_ui) = &mut self.arena_ui {
-            if let (Some(grid), Some(wind)) = (&mut self.ca_grid, &mut self.wind_grid) {
-                match key {
-                    UiKey::Mouse(mouse) => {
+        if let Some(arena_ui) = &mut self.arena_ui
+            && let (Some(grid), Some(wind)) = (&mut self.ca_grid, &mut self.wind_grid)
+        {
+            match key {
+                UiKey::Mouse(mouse) => {
+                    if arena_ui.tooling_enabled {
                         arena_ui.handle_brush_paint(mouse, self.last_map_area, grid);
                         return;
                     }
-                    _ => {
-                        let key_code = match key {
-                            UiKey::Char(c) => KeyCode::Char(c),
-                            UiKey::Up => KeyCode::Up,
-                            UiKey::Down => KeyCode::Down,
-                            UiKey::Enter => KeyCode::Enter,
-                            UiKey::Esc => KeyCode::Esc,
-                            UiKey::Backspace => KeyCode::Backspace,
-                            _ => KeyCode::Null,
-                        };
-                        let action = arena_ui.handle_arena_input(key_code, grid, wind, self.state.player.position);
-                        match action {
-                            arena::ArenaAction::Consumed => return,
-                            arena::ArenaAction::SpawnMonster(id) => {
-                                arena_ui.log_event(&format!("Spawn {} (not implemented)", id));
-                                return;
-                            }
-                            arena::ArenaAction::None => {}
+                }
+                _ => {
+                    let key_code = match key {
+                        UiKey::Char('\t') => KeyCode::Tab,
+                        UiKey::Char(c) => KeyCode::Char(c),
+                        UiKey::Up => KeyCode::Up,
+                        UiKey::Down => KeyCode::Down,
+                        UiKey::Enter => KeyCode::Enter,
+                        UiKey::Esc => KeyCode::Esc,
+                        UiKey::Backspace => KeyCode::Backspace,
+                        _ => KeyCode::Null,
+                    };
+                    let action = arena_ui.handle_arena_input(
+                        key_code,
+                        grid,
+                        wind,
+                        self.state.player.position,
+                    );
+                    match action {
+                        arena::ArenaAction::Consumed => return,
+                        arena::ArenaAction::SpawnMonster { name, stats } => {
+                            let spawn = [
+                                self.state.player.position.offset(Direction::East),
+                                self.state.player.position.offset(Direction::West),
+                                self.state.player.position.offset(Direction::North),
+                                self.state.player.position.offset(Direction::South),
+                            ]
+                            .into_iter()
+                            .find(|candidate| {
+                                self.state.bounds.contains(*candidate)
+                                    && self.state.tile_is_walkable(*candidate)
+                            })
+                            .unwrap_or(self.state.player.position);
+                            self.state.spawn_monster(name.clone(), spawn, stats);
+                            arena_ui.log_event(&format!(
+                                "Spawned {} at ({}, {}).",
+                                name, spawn.x, spawn.y
+                            ));
+                            return;
                         }
+                        arena::ArenaAction::SpawnItem { name } => {
+                            let pos = self.state.player.position;
+                            if name == "fire" {
+                                if let Some(cell) = self.state.tile_site_at_mut(pos) {
+                                    cell.flags |= omega_core::TILE_FLAG_BURNING;
+                                    arena_ui.log_event(&format!(
+                                        "Ignited tile at ({}, {}).",
+                                        pos.x, pos.y
+                                    ));
+                                } else {
+                                    arena_ui.log_event(&format!(
+                                        "Fire spawn failed at ({}, {}).",
+                                        pos.x, pos.y
+                                    ));
+                                }
+                            } else {
+                                self.state.place_item(name.clone(), pos);
+                                arena_ui.log_event(&format!(
+                                    "Spawned item {} at ({}, {}).",
+                                    name, pos.x, pos.y
+                                ));
+                            }
+                            return;
+                        }
+                        arena::ArenaAction::SpawnHazard { effect_id, damage } => {
+                            let pos = self.state.player.position;
+                            let trap_id = self.state.place_trap(pos, damage, effect_id.clone());
+                            arena_ui.log_event(&format!(
+                                "Spawned hazard {} (id {}) at ({}, {}).",
+                                effect_id, trap_id, pos.x, pos.y
+                            ));
+                            return;
+                        }
+                        arena::ArenaAction::ClearMonsters => {
+                            let removed = self.state.monsters.len();
+                            self.state.monsters.clear();
+                            arena_ui.log_event(&format!("Cleared {} monster(s).", removed));
+                            return;
+                        }
+                        arena::ArenaAction::ClearItems => {
+                            let removed = self.state.ground_items.len();
+                            self.state.ground_items.clear();
+                            arena_ui.log_event(&format!("Cleared {} item(s).", removed));
+                            return;
+                        }
+                        arena::ArenaAction::ToggleAiPaused => {
+                            self.state.ai_paused = !self.state.ai_paused;
+                            arena_ui.log_event(if self.state.ai_paused {
+                                "Monster turns paused."
+                            } else {
+                                "Monster turns resumed."
+                            });
+                            return;
+                        }
+                        arena::ArenaAction::ResetArenaFixture => {
+                            self.state = self.bootstrap_state.clone();
+                            self.last_outcome = None;
+                            *arena_ui = arena::ArenaUi::default();
+                            self.ca_grid = Some(omega_core::simulation::CaGrid::new(
+                                self.state.bounds.width.max(1) as usize,
+                                self.state.bounds.height.max(1) as usize,
+                            ));
+                            self.wind_grid = Some(omega_core::simulation::WindGrid::new(
+                                self.state.bounds.width.max(1) as usize,
+                                self.state.bounds.height.max(1) as usize,
+                            ));
+                            arena_ui.log_event("Arena fixture reset.");
+                            return;
+                        }
+                        arena::ArenaAction::None => {}
                     }
                 }
             }
@@ -376,11 +484,8 @@ impl App {
                         UiAction::None
                     }
                 }
-                UiKey::WizardToggle => {
-                    UiAction::Dispatch(Command::Legacy { token: "^g".to_string() })
-                }
-                UiKey::ThemeCycle => UiAction::None, // Handled before modal check
                 UiKey::Mouse(_) => UiAction::None,
+                UiKey::ThemeCycle | UiKey::WizardToggle => UiAction::None,
             };
             self.apply_action(action);
             return;
@@ -457,14 +562,16 @@ impl App {
                 let was_in_progress = self.state.status == SessionStatus::InProgress;
                 let old_env = self.state.environment;
                 let outcome = step(&mut self.state, command, &mut self.rng);
-                
+
                 // Check for environment change
                 if old_env != self.state.environment {
-                    let next_theme = omega_core::color::ColorTheme::name_for_environment(self.state.environment);
+                    let next_theme =
+                        omega_core::color::ColorTheme::name_for_environment(self.state.environment);
                     if self.theme.meta.name.to_lowercase() != next_theme
-                        && let Ok(theme) = color_adapter::load_builtin_theme(next_theme) {
-                            self.switch_theme(theme);
-                        }
+                        && let Ok(theme) = color_adapter::load_builtin_theme(next_theme)
+                    {
+                        self.switch_theme(theme);
+                    }
                 }
 
                 if was_in_progress && self.state.status != SessionStatus::InProgress {
@@ -607,7 +714,10 @@ pub fn run_ratatui_app_with_options(
             let maybe_key = read_ui_key()?;
             if let Some(key) = maybe_key {
                 let size = terminal.size()?;
-                app.last_map_area = calculate_map_area(Rect::new(0, 0, size.width, size.height), app.arena_ui.is_some());
+                app.last_map_area = calculate_map_area(
+                    Rect::new(0, 0, size.width, size.height),
+                    app.arena_ui.is_some(),
+                );
                 app.handle_key(key);
             }
         }
@@ -625,8 +735,8 @@ pub fn run_ratatui_app_themed(
     save_slot: PathBuf,
     theme: omega_core::color::ColorTheme,
 ) -> Result<GameState> {
-    let mut app = App::with_options(seed, initial_state, bootstrap_state, save_slot)
-        .with_theme(theme);
+    let mut app =
+        App::with_options(seed, initial_state, bootstrap_state, save_slot).with_theme(theme);
     let mut terminal = setup_terminal()?;
 
     while !app.quit {
@@ -637,7 +747,10 @@ pub fn run_ratatui_app_themed(
             let maybe_key = read_ui_key()?;
             if let Some(key) = maybe_key {
                 let size = terminal.size()?;
-                app.last_map_area = calculate_map_area(Rect::new(0, 0, size.width, size.height), app.arena_ui.is_some());
+                app.last_map_area = calculate_map_area(
+                    Rect::new(0, 0, size.width, size.height),
+                    app.arena_ui.is_some(),
+                );
                 app.handle_key(key);
             }
         }
@@ -697,7 +810,7 @@ pub fn calculate_map_area(total_area: Rect, arena_active: bool) -> Rect {
         .direction(LayoutDirection::Horizontal)
         .constraints([Constraint::Percentage(65), Constraint::Percentage(35)])
         .split(rows[0]);
-    
+
     // Account for Borders::ALL
     top[0].inner(Margin { vertical: 1, horizontal: 1 })
 }
@@ -709,9 +822,10 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
             SessionStatus::Won => "VICTORY",
             SessionStatus::InProgress => "SESSION",
         };
-        let terminal_panel = Paragraph::new(render_terminal_panel(&app.state, &app.style_cache, &app.save_slot))
-            .block(Block::default().title(title).borders(Borders::ALL))
-            .wrap(Wrap { trim: false });
+        let terminal_panel =
+            Paragraph::new(render_terminal_panel(&app.state, &app.style_cache, &app.save_slot))
+                .block(Block::default().title(title).borders(Borders::ALL))
+                .wrap(Wrap { trim: false });
         frame.render_widget(terminal_panel, frame.area());
         return;
     }
@@ -726,10 +840,10 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         (frame.area(), None)
     };
 
-    if let Some(arena_ui) = &app.arena_ui {
-        if let Some(area) = arena_area {
-            arena_ui.render_controls_panel(frame, area);
-        }
+    if let Some(arena_ui) = &app.arena_ui
+        && let Some(area) = arena_area
+    {
+        arena_ui.render_controls_panel(frame, area);
     }
 
     let rows = Layout::default()
@@ -749,13 +863,24 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
 
     let map_view_width = top[0].width.saturating_sub(2).max(1);
     let map_view_height = top[0].height.saturating_sub(2).max(1);
-    let map = Paragraph::new(render_map_panel(&app.state, &app.style_cache, map_view_width, map_view_height))
-        .block(Block::default().title("MAP").borders(Borders::ALL))
-        .wrap(Wrap { trim: false });
+    let map = Paragraph::new(render_map_panel(
+        &app.state,
+        &app.style_cache,
+        map_view_width,
+        map_view_height,
+    ))
+    .block(Block::default().title("MAP").borders(Borders::ALL))
+    .wrap(Wrap { trim: false });
 
-    let status = Paragraph::new(render_status_panel(&app.state, &app.style_cache, &app.save_slot, &app.theme, app.animation_time))
-        .block(Block::default().title("STATUS").borders(Borders::ALL))
-        .wrap(Wrap { trim: false });
+    let status = Paragraph::new(render_status_panel(
+        &app.state,
+        &app.style_cache,
+        &app.save_slot,
+        &app.theme,
+        app.animation_time,
+    ))
+    .block(Block::default().title("STATUS").borders(Borders::ALL))
+    .wrap(Wrap { trim: false });
 
     let inventory = Paragraph::new(render_inventory_panel(&app.state, &app.style_cache))
         .block(Block::default().title("INVENTORY").borders(Borders::ALL))
@@ -766,9 +891,14 @@ pub fn render_frame(frame: &mut Frame, app: &App) {
         .constraints([Constraint::Length(6), Constraint::Min(5)])
         .split(bottom[1]);
 
-    let interaction = Paragraph::new(render_interaction_panel(&app.state, &app.style_cache, &app.theme, app.animation_time))
-        .block(Block::default().title("INTERACTION").borders(Borders::ALL))
-        .wrap(Wrap { trim: false });
+    let interaction = Paragraph::new(render_interaction_panel(
+        &app.state,
+        &app.style_cache,
+        &app.theme,
+        app.animation_time,
+    ))
+    .block(Block::default().title("INTERACTION").borders(Borders::ALL))
+    .wrap(Wrap { trim: false });
 
     let log_lines = render_log_panel(&app.state, &app.style_cache, app.last_outcome.as_ref());
     let log_line_count = log_lines.len() as u16;
@@ -799,10 +929,7 @@ fn render_terminal_panel(
 
     let (headline, headline_color) = match state.status {
         SessionStatus::Lost => ("You died!", ColorId::Ui(UiColorId::MessageDanger)),
-        SessionStatus::Won => (
-            "You are victorious!",
-            ColorId::Ui(UiColorId::MessageSuccess),
-        ),
+        SessionStatus::Won => ("You are victorious!", ColorId::Ui(UiColorId::MessageSuccess)),
         SessionStatus::InProgress => ("Session in progress.", ColorId::Ui(UiColorId::TextDefault)),
     };
     let headline_style = style_cache.get_fg(&headline_color);
@@ -812,20 +939,11 @@ fn render_terminal_panel(
     if state.status == SessionStatus::Lost
         && let Some(source) = state.death_source.as_deref()
     {
-        lines.push(Line::from(Span::styled(
-            format!("Killed by {source}."),
-            text_default,
-        )));
+        lines.push(Line::from(Span::styled(format!("Killed by {source}."), text_default)));
     }
 
-    lines.push(Line::from(Span::styled(
-        format!("Name: {}", state.player_name),
-        text_default,
-    )));
-    lines.push(Line::from(Span::styled(
-        format!("Mode: {}", state.mode.as_str()),
-        text_default,
-    )));
+    lines.push(Line::from(Span::styled(format!("Name: {}", state.player_name), text_default)));
+    lines.push(Line::from(Span::styled(format!("Mode: {}", state.mode.as_str()), text_default)));
     lines.push(Line::from(Span::styled(
         format!(
             "Turn {}  Time {}m  HP {}/{}",
@@ -887,6 +1005,7 @@ fn read_ui_key() -> Result<Option<UiKey>> {
                 KeyCode::Down => Some(UiKey::Down),
                 KeyCode::Left => Some(UiKey::Left),
                 KeyCode::Right => Some(UiKey::Right),
+                KeyCode::Tab => Some(UiKey::Char('\t')),
                 KeyCode::F(10) => Some(UiKey::ThemeCycle),
                 KeyCode::F(12) => Some(UiKey::WizardToggle),
                 KeyCode::Char(ch)
@@ -912,7 +1031,10 @@ fn render_map_panel(
     view_width: u16,
     view_height: u16,
 ) -> Vec<Line<'static>> {
-    use omega_core::color::{ColorId, EffectColorId, EntityColorId, ItemRarityColorId, MonsterColorId, TerrainColorId, UiColorId};
+    use omega_core::color::{
+        ColorId, EffectColorId, EntityColorId, ItemRarityColorId, MonsterColorId, TerrainColorId,
+        UiColorId,
+    };
 
     let max_w = i32::from(view_width.max(1)).min(state.bounds.width.max(1));
     let max_h = i32::from(view_height.max(1)).min(state.bounds.height.max(1));
@@ -970,7 +1092,10 @@ fn render_map_panel(
             } else if state.player.position == pos {
                 ('@', Some(ColorId::Entity(EntityColorId::Player)))
             } else if state.monsters.iter().any(|m| m.position == pos) {
-                ('m', Some(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid))))
+                (
+                    'm',
+                    Some(ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileHumanoid))),
+                )
             } else if state.ground_items.iter().any(|g| g.position == pos) {
                 ('*', Some(ColorId::Entity(EntityColorId::Item(ItemRarityColorId::Common))))
             } else if objective_target == Some(pos) && state.map_glyph_at(pos) == '.' {
@@ -981,13 +1106,19 @@ fn render_map_panel(
                 let glyph = state.map_glyph_at(pos);
                 let terrain_color = match glyph {
                     '#' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::WallStone))),
-                    '.' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorStone))),
+                    '.' => {
+                        Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorStone)))
+                    }
                     '+' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Door))),
                     '<' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsUp))),
-                    '>' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsDown))),
+                    '>' => {
+                        Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::StairsDown)))
+                    }
                     '~' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Water))),
                     '^' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::Lava))),
-                    '"' | ',' => Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorGrass))),
+                    '"' | ',' => {
+                        Some(ColorId::Entity(EntityColorId::Terrain(TerrainColorId::FloorGrass)))
+                    }
                     ' ' => None,
                     _ => Some(ColorId::Ui(UiColorId::TextDefault)),
                 };
@@ -995,11 +1126,8 @@ fn render_map_panel(
             };
 
             // Get style for this character
-            let style = if let Some(cid) = color_id {
-                style_cache.get_fg(&cid)
-            } else {
-                Style::default()
-            };
+            let style =
+                if let Some(cid) = color_id { style_cache.get_fg(&cid) } else { Style::default() };
 
             // Batch consecutive characters with same style
             if style == current_style {
@@ -1087,7 +1215,8 @@ fn render_status_panel(
     let highlight = style_cache.get_fg(&ColorId::Ui(UiColorId::Highlight));
 
     // HP color based on percentage
-    let hp_percent = (state.player.stats.hp as f32 / state.player.stats.max_hp.max(1) as f32) * 100.0;
+    let hp_percent =
+        (state.player.stats.hp as f32 / state.player.stats.max_hp.max(1) as f32) * 100.0;
     let hp_color = if hp_percent > 66.0 {
         ColorId::Ui(UiColorId::HealthHigh)
     } else if hp_percent > 33.0 {
@@ -1111,11 +1240,7 @@ fn render_status_panel(
     let state_style = style_cache.get_fg(&state_color);
 
     // Interaction color
-    let interaction_style = if interaction == "none" {
-        text_dim
-    } else {
-        highlight
-    };
+    let interaction_style = if interaction == "none" { text_dim } else { highlight };
 
     let mut lines = vec![
         Line::from(Span::styled(format!("Name: {}", state.player_name), text_default)),
@@ -1141,7 +1266,11 @@ fn render_status_panel(
             ),
         ]),
         Line::from(Span::styled(
-            format!("Inventory: {}/{}", state.player.inventory.len(), state.player.inventory_capacity),
+            format!(
+                "Inventory: {}/{}",
+                state.player.inventory.len(),
+                state.player.inventory_capacity
+            ),
             text_default,
         )),
         Line::from(Span::styled(
@@ -1149,7 +1278,10 @@ fn render_status_panel(
             text_default,
         )),
         Line::from(Span::styled(format!("World: {:?}", state.world_mode), text_default)),
-        Line::from(Span::styled(format!("Quest: {:?}", state.progression.quest_state), text_default)),
+        Line::from(Span::styled(
+            format!("Quest: {:?}", state.progression.quest_state),
+            text_default,
+        )),
         Line::from(vec![
             Span::styled("State: ", text_default),
             Span::styled(format!("{:?}", state.status), state_style),
@@ -1189,10 +1321,7 @@ fn render_status_panel(
             let dx = target.x - state.player.position.x;
             let dy = target.y - state.player.position.y;
             lines.push(Line::from(Span::styled(
-                format!(
-                    "Objective marker: ({}, {})  Δx={} Δy={}",
-                    target.x, target.y, dx, dy
-                ),
+                format!("Objective marker: ({}, {})  Δx={} Δy={}", target.x, target.y, dx, dy),
                 text_default,
             )));
         }
@@ -1446,7 +1575,8 @@ fn render_log_panel(
                 || msg.contains("hit you")
             {
                 ColorId::Ui(UiColorId::MessageDanger)
-            } else if msg.contains("warning") || msg.contains("caution") || msg.contains("careful") {
+            } else if msg.contains("warning") || msg.contains("caution") || msg.contains("careful")
+            {
                 ColorId::Ui(UiColorId::MessageWarning)
             } else if msg.contains("victory")
                 || msg.contains("gained")
@@ -1804,7 +1934,10 @@ mod tests {
             },
         ];
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1827,7 +1960,10 @@ mod tests {
         let mut state = GameState::new(omega_core::MapBounds { width: 5, height: 5 });
         state.log = vec!["first".to_string(), "second".to_string(), "third".to_string()];
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1851,7 +1987,10 @@ mod tests {
             "Selected option 1. You make a tithe at the temple.".to_string(),
         ];
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1874,7 +2013,10 @@ mod tests {
         state.pending_site_interaction = Some(SiteInteractionKind::MercGuild);
         let slot = PathBuf::from("target/test-omega-tui-status-hint.json");
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1889,7 +2031,10 @@ mod tests {
         let state = GameState::new(omega_core::MapBounds { width: 5, height: 5 });
         let slot = PathBuf::from("target/test-omega-tui-status-mana.json");
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1905,7 +2050,10 @@ mod tests {
         state.progression.main_quest.objective = "Report to the Mercenary Guild.".to_string();
         let slot = PathBuf::from("target/test-omega-tui-status-objective.json");
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1926,7 +2074,10 @@ mod tests {
         let mut state = GameState::new(omega_core::MapBounds { width: 5, height: 5 });
         state.pending_activation_interaction = Some(omega_core::ActivationInteraction::ChooseKind);
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1939,12 +2090,7 @@ mod tests {
     fn lines_to_string(lines: Vec<Line>) -> String {
         lines
             .iter()
-            .map(|line| {
-                line.spans
-                    .iter()
-                    .map(|span| span.content.as_ref())
-                    .collect::<String>()
-            })
+            .map(|line| line.spans.iter().map(|span| span.content.as_ref()).collect::<String>())
             .collect::<Vec<String>>()
             .join("\n")
     }
@@ -1952,7 +2098,10 @@ mod tests {
     #[test]
     fn map_panel_scales_to_available_space() {
         let state = GameState::new(omega_core::MapBounds { width: 80, height: 80 });
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -1980,7 +2129,10 @@ mod tests {
         ];
         state.transient_projectile_impact = Some(Position { x: origin.x + 2, y: origin.y });
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 
@@ -2000,7 +2152,10 @@ mod tests {
         state.site_grid = vec![omega_core::TileSiteCell::default(); 400];
         state.site_grid[5 * 20 + 14].aux = omega_core::SITE_AUX_SERVICE_MERC_GUILD;
 
-        let theme = omega_core::color::ColorTheme::from_toml(include_str!("../../omega-content/themes/classic.toml")).unwrap();
+        let theme = omega_core::color::ColorTheme::from_toml(include_str!(
+            "../../omega-content/themes/classic.toml"
+        ))
+        .unwrap();
         let capability = omega_core::color::ColorCapability::TrueColor;
         let cache = StyleCache::new(&theme, capability);
 

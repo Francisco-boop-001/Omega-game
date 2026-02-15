@@ -1,10 +1,10 @@
 use crate::{Position, RenderFrame, TileKind, TileRender};
-use omega_core::color::ColorId;
 use omega_core::GameMode;
+use omega_core::color::ColorId;
 use std::collections::VecDeque;
 
-const MAP_VIEWPORT_WIDTH: usize = 58;
-const MAP_VIEWPORT_HEIGHT: usize = 30;
+pub(crate) const MAP_VIEWPORT_WIDTH: usize = 58;
+pub(crate) const MAP_VIEWPORT_HEIGHT: usize = 30;
 
 fn glyph_for_tile(kind: TileKind) -> char {
     match kind {
@@ -64,6 +64,19 @@ fn centered_view_window(
     let start_x = clamp_i32(raw_start_x, 0, max_start_x) as usize;
     let start_y = clamp_i32(raw_start_y, 0, max_start_y) as usize;
     (start_x, start_y, view_w, view_h)
+}
+
+pub(crate) fn visible_map_window(frame: &RenderFrame) -> (i32, i32, usize, usize) {
+    let width = frame.bounds.0.max(1) as usize;
+    let height = frame.bounds.1.max(1) as usize;
+    let focus = frame
+        .tiles
+        .iter()
+        .find(|tile| tile.kind == TileKind::Player)
+        .map(|tile| tile.position)
+        .unwrap_or(Position { x: (width / 2) as i32, y: (height / 2) as i32 });
+    let (start_x, start_y, view_w, view_h) = centered_view_window(width, height, focus);
+    (start_x as i32, start_y as i32, view_w, view_h)
 }
 
 fn in_bounds(pos: Position, width: usize, height: usize) -> bool {
@@ -168,7 +181,8 @@ pub fn compose_map_lines(frame: &RenderFrame, pulse_frame: u64) -> Vec<Vec<(char
     let modern_mode = frame.mode == GameMode::Modern;
     let width = frame.bounds.0.max(1) as usize;
     let height = frame.bounds.1.max(1) as usize;
-    let mut chars = vec![vec![(' ', ColorId::Ui(omega_core::color::UiColorId::TextDefault)); width]; height];
+    let mut chars =
+        vec![vec![(' ', ColorId::Ui(omega_core::color::UiColorId::TextDefault)); width]; height];
     let mut prio = vec![vec![0u8; width]; height];
     let mut terrain = vec![vec!['.'; width]; height];
     let mut player_pos = None;
@@ -189,7 +203,15 @@ pub fn compose_map_lines(frame: &RenderFrame, pulse_frame: u64) -> Vec<Vec<(char
             chars[y][x] = (glyph_for_rendered_tile(tile), tile.kind.to_color_id());
             prio[y][x] = p;
         }
-        if matches!(tile.kind, TileKind::Floor | TileKind::Wall | TileKind::Grass | TileKind::Water | TileKind::Fire | TileKind::Feature) {
+        if matches!(
+            tile.kind,
+            TileKind::Floor
+                | TileKind::Wall
+                | TileKind::Grass
+                | TileKind::Water
+                | TileKind::Fire
+                | TileKind::Feature
+        ) {
             terrain[y][x] = glyph_for_rendered_tile(tile);
         }
         if tile.kind == TileKind::Player {
@@ -253,32 +275,36 @@ pub fn compose_map_lines(frame: &RenderFrame, pulse_frame: u64) -> Vec<Vec<(char
         }
     }
 
-    if modern_mode && let (Some(player), Some(target)) = (player_pos, objective_pos)
+    if modern_mode
+        && let (Some(player), Some(target)) = (player_pos, objective_pos)
         && let Some(approach) = route_target_for_objective(player, target, &terrain)
-            && let Some(route) = bfs_path(player, approach, &terrain) {
-                let route_color = ColorId::Ui(omega_core::color::UiColorId::TextDim);
-                for (idx, point) in route.into_iter().enumerate() {
-                    if idx < 2 || point == player || point == target {
-                        continue;
-                    }
-                    if idx % 3 != 0 {
-                        continue;
-                    }
-                    if point.x < 0 || point.y < 0 {
-                        continue;
-                    }
-                    let (x, y) = (point.x as usize, point.y as usize);
-                    if y < height && x < width && chars[y][x].0 == '.' {
-                        chars[y][x] = (if pulse_phase { ':' } else { ';' }, route_color);
-                    }
-                }
+        && let Some(route) = bfs_path(player, approach, &terrain)
+    {
+        let route_color = ColorId::Ui(omega_core::color::UiColorId::TextDim);
+        for (idx, point) in route.into_iter().enumerate() {
+            if idx < 2 || point == player || point == target {
+                continue;
             }
+            if idx % 3 != 0 {
+                continue;
+            }
+            if point.x < 0 || point.y < 0 {
+                continue;
+            }
+            let (x, y) = (point.x as usize, point.y as usize);
+            if y < height && x < width && chars[y][x].0 == '.' {
+                chars[y][x] = (if pulse_phase { ':' } else { ';' }, route_color);
+            }
+        }
+    }
 
-    let focus = player_pos.unwrap_or(Position { x: (width / 2) as i32, y: (height / 2) as i32 });
-    let (start_x, start_y, view_w, view_h) = centered_view_window(width, height, focus);
+    let (start_x, start_y, view_w, view_h) = visible_map_window(frame);
+    let start_x = start_x as usize;
+    let start_y = start_y as usize;
     let mut view = Vec::with_capacity(view_h);
     for row in chars.iter().skip(start_y).take(view_h) {
-        let rendered: Vec<(char, ColorId)> = row.iter().skip(start_x).take(view_w).cloned().collect();
+        let rendered: Vec<(char, ColorId)> =
+            row.iter().skip(start_x).take(view_w).cloned().collect();
         view.push(rendered);
     }
     view

@@ -31,7 +31,7 @@ fn parse_args(args: &[String]) -> (GameMode, bool) {
 fn main() -> Result<()> {
     let args = std::env::args().collect::<Vec<_>>();
     let (mode, start_in_arena) = parse_args(&args);
-    
+
     let (mut bootstrap, diagnostics) = if start_in_arena {
         let (mut state, diag) = omega_content::bootstrap_wizard_arena().expect("arena bootstrap");
         state.mode = GameMode::Modern;
@@ -40,7 +40,7 @@ fn main() -> Result<()> {
         bootstrap_game_state_with_mode(mode)
             .with_context(|| format!("bootstrap runtime in {} mode", mode.as_str()))?
     };
-    
+
     bootstrap.options.interactive_sites = true;
     if start_in_arena {
         bootstrap.log.push("Visual bootstrap: Wizard's Arena mode enabled".to_string());
@@ -54,7 +54,10 @@ fn main() -> Result<()> {
     let mut app = App::new();
     app.add_plugins(DefaultPlugins.set(WindowPlugin {
         primary_window: Some(Window {
-            title: format!("Omega - Arcane Cartographer ({})", if start_in_arena { "Arena" } else { mode.as_str() }),
+            title: format!(
+                "Omega - Arcane Cartographer ({})",
+                if start_in_arena { "Arena" } else { mode.as_str() }
+            ),
             resolution: WindowResolution::new(1600.0, 960.0),
             resizable: true,
             ..default()
@@ -71,12 +74,15 @@ fn main() -> Result<()> {
 
     // If starting in arena, we need to ensure the session is started and state is set
     if start_in_arena {
-        app.add_systems(PostStartup, |mut runtime: ResMut<FrontendRuntime>, mut status: ResMut<RuntimeStatus>| {
-            runtime.0.apply_action(InputAction::StartGame);
-            runtime.0.app_state = AppState::WizardArena;
-            status.app_state = AppState::WizardArena;
-        });
-        
+        app.add_systems(
+            PostStartup,
+            |mut runtime: ResMut<FrontendRuntime>, mut status: ResMut<RuntimeStatus>| {
+                runtime.0.apply_action(InputAction::StartGame);
+                runtime.0.app_state = AppState::WizardArena;
+                status.app_state = AppState::WizardArena;
+            },
+        );
+
         // Ensure UI knows we've already started
         app.insert_resource(UiBootLatch { started_session: true });
     }

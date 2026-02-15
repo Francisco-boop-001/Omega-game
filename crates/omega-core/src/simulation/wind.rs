@@ -1,13 +1,13 @@
-use bevy_ecs::prelude::Resource;
 use super::cell::Cell;
 use super::grid::CaGrid;
-use super::state::Solid;
+use super::state::{Gas, Solid};
+use bevy_ecs::prelude::Resource;
 
 #[derive(Debug, Clone, Copy, Default)]
 pub struct WindVector {
-    pub dx: i8,        // -1, 0, 1 direction
-    pub dy: i8,        // -1, 0, 1 direction
-    pub strength: u8,  // 0-255 force magnitude
+    pub dx: i8,       // -1, 0, 1 direction
+    pub dy: i8,       // -1, 0, 1 direction
+    pub strength: u8, // 0-255 force magnitude
 }
 
 #[derive(Resource, Debug, Clone)]
@@ -19,11 +19,7 @@ pub struct WindGrid {
 
 impl WindGrid {
     pub fn new(width: usize, height: usize) -> Self {
-        Self {
-            width,
-            height,
-            vectors: vec![WindVector::default(); width * height],
-        }
+        Self { width, height, vectors: vec![WindVector::default(); width * height] }
     }
 
     pub fn get(&self, x: usize, y: usize) -> WindVector {
@@ -55,7 +51,13 @@ impl WindGrid {
     }
 }
 
-pub fn apply_wind(grid: &CaGrid, wind: &WindGrid, x: usize, y: usize, cell: &Cell) -> (Cell, Option<(usize, usize, Cell)>) {
+pub fn apply_wind(
+    grid: &CaGrid,
+    wind: &WindGrid,
+    x: usize,
+    y: usize,
+    cell: &Cell,
+) -> (Cell, Option<(usize, usize, Cell)>) {
     let vector = wind.get(x, y);
     if vector.strength == 0 {
         return (*cell, None);
@@ -73,22 +75,49 @@ pub fn apply_wind(grid: &CaGrid, wind: &WindGrid, x: usize, y: usize, cell: &Cel
         let mut target_part = Cell::default();
 
         // 1. Gas displacement
-        if current.gas.is_some() && vector.strength > 50 {
-            target_part.gas = current.gas;
+        if let Some(gas) = current.gas
+            && vector.strength > 35
+        {
+            target_part.gas = Some(gas);
             current.gas = None;
-            
-            // Strong wind disperses gas faster (simulated by not moving it all)
-            if vector.strength > 200 {
-                target_part.gas = None; 
+
+            // Extreme wind disperses flammable gas into smoke instead of deleting it.
+            if vector.strength > 220 {
+                target_part.gas = if gas == Gas::Fire { Some(Gas::Smoke) } else { None };
             }
         }
 
-        // 2. Heat push
-        let heat_to_move = (current.heat as u16 * vector.strength as u16 / 1024) as u8;
-        target_part.heat = heat_to_move;
-        current.heat = current.heat.saturating_sub(heat_to_move);
+        // 2. Liquid advection
+        if let Some(liquid) = current.liquid
+            && vector.strength > 125
+        {
+            target_part.liquid = Some(liquid);
+            let wet_transfer = (current.wet / 2).max(40);
+            target_part.wet = target_part.wet.max(wet_transfer);
+            current.wet = current.wet.saturating_sub((current.wet / 3).max(20));
+            if vector.strength > 180 {
+                current.liquid = None;
+            }
+        }
 
-        // 3. Debris interaction (Ash only)
+        // 3. Heat and pressure push
+        let mut heat_to_move = (current.heat as u16 * vector.strength as u16 / 640) as u8;
+        if heat_to_move == 0 && current.heat > 0 && vector.strength >= 120 {
+            heat_to_move = 1;
+        }
+        target_part.heat = target_part.heat.saturating_add(heat_to_move);
+        current.heat = current.heat.saturating_sub(heat_to_move);
+        let pressure_to_move = (current.pressure as u16 * vector.strength as u16 / 768) as u8;
+        target_part.pressure = target_part.pressure.saturating_add(pressure_to_move);
+        current.pressure = current.pressure.saturating_sub(pressure_to_move);
+
+        // 4. Fire fanning
+        if current.gas == Some(Gas::Fire) && vector.strength >= 120 {
+            current.heat = current.heat.saturating_add(8);
+            current.pressure = current.pressure.saturating_add(6);
+        }
+
+        // 5. Debris interaction (Ash only)
         if matches!(current.solid, Some(Solid::Ash)) && vector.strength > 100 {
             target_part.solid = current.solid;
             current.solid = None;
@@ -112,10 +141,9 @@ mod tests {
         let grid = CaGrid::new(3, 3);
         let mut wind = WindGrid::new(3, 3);
         wind.set_global(WindVector { dx: 1, dy: 0, strength: 100 });
-        
-        let mut cell = Cell::default();
-        cell.gas = Some(Gas::Smoke);
-        
+
+        let cell = Cell { gas: Some(Gas::Smoke), ..Cell::default() };
+
         let (current, displaced) = apply_wind(&grid, &wind, 1, 1, &cell);
         assert!(current.gas.is_none());
         let (tx, ty, d_cell) = displaced.unwrap();
@@ -129,15 +157,44 @@ mod tests {
         let grid = CaGrid::new(3, 3);
         let mut wind = WindGrid::new(3, 3);
         wind.set_global(WindVector { dx: 1, dy: 0, strength: 255 });
-        
-        let mut cell = Cell::default();
-        cell.solid = Some(Solid::Stone);
-        
+
+        let cell = Cell { solid: Some(Solid::Stone), ..Cell::default() };
+
         let (current, displaced) = apply_wind(&grid, &wind, 1, 1, &cell);
         assert_eq!(current.solid, Some(Solid::Stone));
         // Displaced might contain heat but not the solid
         if let Some((_, _, d_cell)) = displaced {
             assert_ne!(d_cell.solid, Some(Solid::Stone));
         }
+    }
+
+    #[test]
+    fn test_wind_advects_liquid_under_strong_gust() {
+        let grid = CaGrid::new(3, 3);
+        let mut wind = WindGrid::new(3, 3);
+        wind.set_global(WindVector { dx: 1, dy: 0, strength: 200 });
+
+        let cell = Cell {
+            liquid: Some(crate::simulation::state::Liquid::Water),
+            wet: 120,
+            ..Cell::default()
+        };
+
+        let (_current, displaced) = apply_wind(&grid, &wind, 1, 1, &cell);
+        let (_, _, d_cell) = displaced.expect("strong wind should displace content");
+        assert_eq!(d_cell.liquid, Some(crate::simulation::state::Liquid::Water));
+        assert!(d_cell.wet > 0);
+    }
+
+    #[test]
+    fn test_extreme_wind_turns_fire_into_smoke_downwind() {
+        let grid = CaGrid::new(3, 3);
+        let mut wind = WindGrid::new(3, 3);
+        wind.set_global(WindVector { dx: 1, dy: 0, strength: 230 });
+
+        let cell = Cell { gas: Some(Gas::Fire), ..Cell::default() };
+        let (_current, displaced) = apply_wind(&grid, &wind, 1, 1, &cell);
+        let (_, _, d_cell) = displaced.expect("extreme wind should displace gas");
+        assert_eq!(d_cell.gas, Some(Gas::Smoke));
     }
 }

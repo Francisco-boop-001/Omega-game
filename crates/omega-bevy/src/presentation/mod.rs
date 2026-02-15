@@ -1,6 +1,7 @@
 use bevy::input::ButtonInput;
 use bevy::input::keyboard::KeyCode;
 use bevy::prelude::*;
+use bevy_egui::EguiSet;
 
 use crate::{AppState, FrontendRuntime, InputAction, RenderFrame, RuntimeFrame, RuntimeStatus};
 use omega_core::GameMode;
@@ -37,6 +38,7 @@ pub mod animation;
 pub mod arena_controls;
 pub mod bevy_theme;
 pub mod color_adapter;
+pub mod cursor_grid;
 pub mod editor;
 pub mod hud;
 pub mod input;
@@ -45,10 +47,10 @@ pub mod interaction;
 pub mod overlays;
 pub mod scene;
 pub mod spawner;
+pub mod targeting;
 pub mod theme;
 pub mod tilemap;
 pub mod timeline;
-pub mod targeting;
 
 // Re-export key types for convenience
 pub use bevy_theme::BevyTheme;
@@ -165,6 +167,9 @@ impl Plugin for ArcaneCartographerPlugin {
             .insert_resource(spawner::SpawnerState::default())
             .insert_resource(inspector::InspectorState::default())
             .insert_resource(arena_controls::ArenaSnapshotState::default())
+            .insert_resource(arena_controls::ArenaOverlayState::default())
+            .insert_resource(arena_controls::ArenaToolingState::default())
+            .insert_resource(arena_controls::ArenaActionFeedback::default())
             .add_event::<ThemeChangeEvent>()
             .add_systems(Startup, scene::setup_arcane_scene)
             .add_systems(
@@ -186,10 +191,12 @@ impl Plugin for ArcaneCartographerPlugin {
                     inspector::mouse_inspector_system,
                     inspector::inspector_ui_system,
                     arena_controls::arena_controls_ui_system,
+                    arena_controls::apply_arena_tooling_requests_system,
                     targeting::update_targeting_visualization,
                     targeting::update_projected_path,
                 )
-                    .chain(),
+                    .chain()
+                    .after(EguiSet::InitContexts),
             );
     }
 }
@@ -249,17 +256,17 @@ fn update_ui_panels(
         }
 
         let mut needs_rebuild = true;
-        if let Some(children) = children {
-            if children.len() == expected_spans.len() {
-                needs_rebuild = false;
-                for (child, (text, color)) in children.iter().zip(expected_spans.iter()) {
-                    if let Ok((mut span, mut text_color)) = span_query.get_mut(*child) {
-                        if &span.0 != text {
-                            *span = TextSpan::new(text.clone());
-                        }
-                        if text_color.0 != *color {
-                            text_color.0 = *color;
-                        }
+        if let Some(children) = children
+            && children.len() == expected_spans.len()
+        {
+            needs_rebuild = false;
+            for (child, (text, color)) in children.iter().zip(expected_spans.iter()) {
+                if let Ok((mut span, mut text_color)) = span_query.get_mut(*child) {
+                    if &span.0 != text {
+                        *span = TextSpan::new(text.clone());
+                    }
+                    if text_color.0 != *color {
+                        text_color.0 = *color;
                     }
                 }
             }
@@ -269,10 +276,7 @@ fn update_ui_panels(
             commands.entity(map_entity).despawn_descendants();
             commands.entity(map_entity).with_children(|parent| {
                 for (text, color) in expected_spans {
-                    parent.spawn((
-                        TextSpan::new(text),
-                        TextColor(color),
-                    ));
+                    parent.spawn((TextSpan::new(text), TextColor(color)));
                 }
             });
         }
@@ -357,7 +361,8 @@ fn apply_focus_styles(
 ) {
     let pulse = if readability.reduced_motion { 0.0 } else { motion.pulse01 };
     let intensity = (0.45 + focus.urgency * 0.4 + pulse * 0.15).clamp(0.0, 1.0);
-    let base_border = if readability.high_contrast { chrome.text_focus } else { chrome.panel_border };
+    let base_border =
+        if readability.high_contrast { chrome.text_focus } else { chrome.panel_border };
     let highlight_color = bevy_theme.get_ui_highlight();
 
     if let Ok((mut background, mut border)) = card_queries.p0().get_single_mut() {
@@ -488,16 +493,19 @@ fn monitor_environment_changes(
     mut last_env: Local<Option<omega_core::LegacyEnvironment>>,
 ) {
     if let Some(session) = &runtime.0.session
-        && (last_env.is_none() || last_env.unwrap() != session.state.environment) {
-            let recommended = omega_core::color::ColorTheme::name_for_environment(session.state.environment);
-            if active_theme.0 != recommended {
-                info!("Environment change detected: {:?}, recommending theme: {}", session.state.environment, recommended);
-                theme_events.send(ThemeChangeEvent {
-                    theme_name: recommended.to_string(),
-                });
-            }
-            *last_env = Some(session.state.environment);
+        && (last_env.is_none() || last_env.unwrap() != session.state.environment)
+    {
+        let recommended =
+            omega_core::color::ColorTheme::name_for_environment(session.state.environment);
+        if active_theme.0 != recommended {
+            info!(
+                "Environment change detected: {:?}, recommending theme: {}",
+                session.state.environment, recommended
+            );
+            theme_events.send(ThemeChangeEvent { theme_name: recommended.to_string() });
         }
+        *last_env = Some(session.state.environment);
+    }
 }
 
 /// System that interpolates colors during a theme transition.
@@ -510,7 +518,7 @@ fn process_theme_transition(
     if let Some(target) = &target_theme.0 {
         progress.0 += time.delta_secs() * 2.0; // 0.5s transition
         info!("Transition progress: {:.2}", progress.0);
-        
+
         if progress.0 >= 1.0 {
             // Transition complete
             info!("Theme transition complete");
@@ -572,10 +580,7 @@ mod tests {
         app.add_plugins(ArcaneCartographerPlugin);
 
         // Verify all expected resources exist
-        assert!(
-            app.world().get_resource::<BevyTheme>().is_some(),
-            "BevyTheme should be inserted"
-        );
+        assert!(app.world().get_resource::<BevyTheme>().is_some(), "BevyTheme should be inserted");
         assert!(
             app.world().get_resource::<theme::UiLayoutTokens>().is_some(),
             "UiLayoutTokens should be inserted"

@@ -1,7 +1,7 @@
-use bevy::prelude::*;
-use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
-use omega_core::simulation::grid::CaGrid;
 use super::particles::Particle;
+use bevy::diagnostic::{DiagnosticsStore, FrameTimeDiagnosticsPlugin};
+use bevy::prelude::*;
+use omega_core::simulation::grid::CaGrid;
 
 #[derive(Resource)]
 pub struct SafetyConfig {
@@ -42,7 +42,7 @@ pub fn emergency_cleanup_system(
     if !config.in_emergency && fps < config.cleanup_threshold_fps {
         config.in_emergency = true;
         config.cooldown_timer = config.cooldown_secs;
-        
+
         warn!("Emergency cleanup triggered! FPS: {:.2}", fps);
 
         // Clear all gas and liquid from CaGrid

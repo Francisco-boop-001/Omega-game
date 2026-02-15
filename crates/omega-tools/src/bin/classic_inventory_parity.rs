@@ -49,9 +49,10 @@ fn extract_case_keys(block: &str) -> Vec<String> {
             };
             let mut key = ch.to_string();
             if ch == '\\'
-                && let Some(next) = chars.next() {
-                    key = format!("\\{next}");
-                }
+                && let Some(next) = chars.next()
+            {
+                key = format!("\\{next}");
+            }
             keys.insert(key);
             cursor = rest;
         }

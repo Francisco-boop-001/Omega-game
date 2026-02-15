@@ -3,10 +3,10 @@
 //! Provides a real-time debugging interface for modifying semantic colors
 //! and exporting them to user themes.
 
-use bevy::prelude::*;
-use bevy_egui::{egui, EguiContexts};
 use crate::presentation::bevy_theme::BevyTheme;
-use omega_core::color::{ColorId, EntityColorId, UiColorId, HexColor};
+use bevy::prelude::*;
+use bevy_egui::{EguiContexts, egui};
+use omega_core::color::{ColorId, EntityColorId, HexColor, UiColorId};
 
 /// Marker for the theme editor window visibility.
 #[derive(Resource, Default)]
@@ -28,42 +28,40 @@ pub fn theme_editor_ui(
         return;
     }
 
-    egui::Window::new("Omega Theme Editor (F6 to toggle)")
-        .default_width(400.0)
-        .show(contexts.ctx_mut(), |ui| {
-            ui.heading("Semantic Colors");
-            ui.separator();
+    let Some(ctx) = contexts.try_ctx_mut() else {
+        return;
+    };
 
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                // UI Colors
-                ui.collapsing("UI Elements", |ui| {
-                    color_picker(ui, "Health High", &mut theme, ColorId::Ui(UiColorId::HealthHigh));
-                    color_picker(ui, "Health Low", &mut theme, ColorId::Ui(UiColorId::HealthLow));
-                    color_picker(ui, "Mana", &mut theme, ColorId::Ui(UiColorId::Mana));
-                    color_picker(ui, "Text Default", &mut theme, ColorId::Ui(UiColorId::TextDefault));
-                });
+    egui::Window::new("Omega Theme Editor (F6 to toggle)").default_width(400.0).show(ctx, |ui| {
+        ui.heading("Semantic Colors");
+        ui.separator();
 
-                // Entity Colors
-                ui.collapsing("Entities", |ui| {
-                    color_picker(ui, "Player", &mut theme, ColorId::Entity(EntityColorId::Player));
-                });
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            // UI Colors
+            ui.collapsing("UI Elements", |ui| {
+                color_picker(ui, "Health High", &mut theme, ColorId::Ui(UiColorId::HealthHigh));
+                color_picker(ui, "Health Low", &mut theme, ColorId::Ui(UiColorId::HealthLow));
+                color_picker(ui, "Mana", &mut theme, ColorId::Ui(UiColorId::Mana));
+                color_picker(ui, "Text Default", &mut theme, ColorId::Ui(UiColorId::TextDefault));
             });
 
-            ui.separator();
-            if ui.button("Save to User Themes (WIP)").clicked() {
-                // Future: Implement saving to disk
-            }
+            // Entity Colors
+            ui.collapsing("Entities", |ui| {
+                color_picker(ui, "Player", &mut theme, ColorId::Entity(EntityColorId::Player));
+            });
         });
+
+        ui.separator();
+        if ui.button("Save to User Themes (WIP)").clicked() {
+            // Future: Implement saving to disk
+        }
+    });
 }
 
 fn color_picker(ui: &mut egui::Ui, label: &str, theme: &mut BevyTheme, id: ColorId) {
     let current = theme.resolve(&id);
     let rgba = current.to_srgba();
-    let mut color = [
-        rgba.red,
-        rgba.green,
-        rgba.blue,
-    ];
+    let mut color = [rgba.red, rgba.green, rgba.blue];
 
     ui.horizontal(|ui| {
         ui.label(label);

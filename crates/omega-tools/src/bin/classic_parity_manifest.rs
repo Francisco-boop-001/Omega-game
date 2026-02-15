@@ -396,9 +396,10 @@ fn legacy_macro_counts(defs_path: &Path, macros: &[&str]) -> Result<BTreeMap<Str
     for name in macros {
         let mut visiting = BTreeSet::new();
         if let Some(value) = eval_macro_value(name, &defs, &mut memo, &mut visiting)
-            && let Ok(parsed) = usize::try_from(value) {
-                result.insert((*name).to_string(), parsed);
-            }
+            && let Ok(parsed) = usize::try_from(value)
+        {
+            result.insert((*name).to_string(), parsed);
+        }
     }
 
     Ok(result)

@@ -21,7 +21,7 @@ pub struct Particle {
 
 #[derive(Component)]
 pub struct VisualCascade {
-    pub glyphs: Vec<char>, // e.g. ['@', '*', '.']
+    pub glyphs: Vec<char>,  // e.g. ['@', '*', '.']
     pub colors: Vec<Color>, // Color gradient
     pub rotate: bool,
     pub initial_scale: f32,

@@ -1,8 +1,8 @@
-use bevy::prelude::*;
-use omega_core::simulation::{TrajectoryMode, ProjectilePhysicalProps, Cell, Gas, Liquid};
-use omega_core::simulation::grid::CaGrid;
-use rand::Rng;
 use super::projectiles::Projectile;
+use super::random::SimulationRandom;
+use bevy::prelude::*;
+use omega_core::simulation::grid::CaGrid;
+use omega_core::simulation::{Cell, Gas, Liquid, ProjectilePhysicalProps, TrajectoryMode};
 
 #[derive(Resource)]
 pub struct TurretMode {
@@ -13,17 +13,14 @@ pub struct TurretMode {
 
 impl Default for TurretMode {
     fn default() -> Self {
-        Self {
-            active: false,
-            fire_rate_hz: 5.0,
-            accumulator: 0.0,
-        }
+        Self { active: false, fire_rate_hz: 5.0, accumulator: 0.0 }
     }
 }
 
 pub fn turret_mode_system(
     time: Res<Time<Fixed>>,
     grid: Res<CaGrid>,
+    mut sim_rng: ResMut<SimulationRandom>,
     mut turret: ResMut<TurretMode>,
     mut commands: Commands,
 ) {
@@ -37,37 +34,20 @@ pub fn turret_mode_system(
     while turret.accumulator >= interval {
         turret.accumulator -= interval;
 
-        let mut rng = rand::rng();
         let width = grid.width() as f32;
         let height = grid.height() as f32;
 
-        for _ in 0..100 { // Fire 100 at once per trigger
-            let origin_x = rng.random_range(0.0..width);
-            let origin_y = rng.random_range(0.0..height);
-            let target_x = rng.random_range(0.0..width);
-            let target_y = rng.random_range(0.0..height);
+        for _ in 0..100 {
+            // Fire 100 at once per trigger
+            let origin_x = sim_rng.range_f32(0.0, width);
+            let origin_y = sim_rng.range_f32(0.0, height);
+            let target_x = sim_rng.range_f32(0.0, width);
+            let target_y = sim_rng.range_f32(0.0, height);
 
-            let element_impact = match rng.random_range(0..3) {
-                0 => {
-                    // Fire
-                    let mut cell = Cell::default();
-                    cell.heat = 200;
-                    cell.gas = Some(Gas::Fire);
-                    Some(cell)
-                }
-                1 => {
-                    // Water
-                    let mut cell = Cell::default();
-                    cell.wet = 100;
-                    cell.liquid = Some(Liquid::Water);
-                    Some(cell)
-                }
-                _ => {
-                    // Explosive
-                    let mut cell = Cell::default();
-                    cell.pressure = 250;
-                    Some(cell)
-                }
+            let element_impact = match sim_rng.range_u32(0, 3) {
+                0 => Some(Cell { heat: 200, gas: Some(Gas::Fire), ..Cell::default() }), // Fire
+                1 => Some(Cell { wet: 100, liquid: Some(Liquid::Water), ..Cell::default() }), // Water
+                _ => Some(Cell { pressure: 250, ..Cell::default() }), // Explosive
             };
 
             let origin = Vec3::new(origin_x, origin_y, 20.0); // Start very high
@@ -81,11 +61,7 @@ pub fn turret_mode_system(
                     logical_pos: origin,
                     velocity: final_velocity,
                     mode: TrajectoryMode::HighArc,
-                    props: ProjectilePhysicalProps {
-                        mass: 1.0,
-                        volume: 1.0,
-                        intensity: 100,
-                    },
+                    props: ProjectilePhysicalProps { mass: 1.0, volume: 1.0, intensity: 100 },
                     element_impact,
                 },
                 Transform::from_translation(origin),

@@ -55,7 +55,7 @@ impl BevyTheme {
     /// If the ColorId cannot be resolved, returns white as a fallback.
     pub fn resolve(&self, id: &ColorId) -> Color {
         let base = resolve_to_bevy_color(&self.theme, id);
-        
+
         if let Some(interp) = &self.interpolation {
             let target = resolve_to_bevy_color(&interp.target, id);
             lerp_color(base, target, interp.progress)
@@ -393,10 +393,7 @@ impl BevyTheme {
 
     /// Sets the target theme and progress for interpolation.
     pub fn lerp_towards(&mut self, target: &BevyTheme, progress: f32) {
-        self.interpolation = Some(ThemeInterpolation {
-            target: target.theme.clone(),
-            progress,
-        });
+        self.interpolation = Some(ThemeInterpolation { target: target.theme.clone(), progress });
     }
 
     /// Overrides a color in the theme for the current session.
@@ -409,7 +406,10 @@ impl BevyTheme {
             _ => return, // Not supported for overrides yet
         };
 
-        let color_ref = ColorRef::Direct { fg: hex, bg: omega_core::color::HexColor::from_hex("#000000").unwrap() };
+        let color_ref = ColorRef::Direct {
+            fg: hex,
+            bg: omega_core::color::HexColor::from_hex("#000000").unwrap(),
+        };
 
         if let Some(stripped) = key.strip_prefix("entity.") {
             self.theme.entity.insert(stripped.to_string(), color_ref);

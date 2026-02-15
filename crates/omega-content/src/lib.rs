@@ -9,7 +9,7 @@ use omega_core::{
     COUNTRY_SITE_MAGIC_ISLE, COUNTRY_SITE_NONE, COUNTRY_SITE_PALACE, COUNTRY_SITE_STARPEAK,
     COUNTRY_SITE_TEMPLE, COUNTRY_SITE_VILLAGE, COUNTRY_SITE_VOLCANO, CountryCell, CountryGrid,
     CountryTerrainKind, GameMode, GameState, LegacyEnvironment, MapBinding, MapBounds,
-    MapSemanticKind, Position, SITE_AUX_ALTAR_ATHENA, SITE_AUX_ALTAR_DESTINY,
+    MapSemanticKind, Position, RandomSource, SITE_AUX_ALTAR_ATHENA, SITE_AUX_ALTAR_DESTINY,
     SITE_AUX_ALTAR_HECATE, SITE_AUX_ALTAR_ODIN, SITE_AUX_ALTAR_SET, SITE_AUX_EXIT_ARENA,
     SITE_AUX_EXIT_COUNTRYSIDE, SITE_AUX_SERVICE_ARENA, SITE_AUX_SERVICE_ARMORER,
     SITE_AUX_SERVICE_BANK, SITE_AUX_SERVICE_BROTHEL, SITE_AUX_SERVICE_CASINO,
@@ -1527,31 +1527,98 @@ pub fn bootstrap_game_state_from_pack_with_mode(
 pub fn bootstrap_wizard_arena() -> Result<(GameState, BootstrapDiagnostics)> {
     let bounds = MapBounds { width: 50, height: 50 };
     let mut state = GameState::with_mode(GameMode::Modern, bounds);
-    
+
     state.world_mode = omega_core::WorldMode::DungeonCity;
     state.environment = LegacyEnvironment::Arena;
-    
-    let mut rows = Vec::with_capacity(bounds.height as usize);
-    for y in 0..bounds.height {
-        let mut row = String::with_capacity(bounds.width as usize);
-        for x in 0..bounds.width {
-            let glyph = if x == 0 || y == 0 || x == bounds.width - 1 || y == bounds.height - 1 || (x + y) % 17 == 0 {
-                '#' // Perimeter or sparse walls
-            } else if (x * y) % 13 == 0 {
-                '~' // Water
-            } else if (x + y) % 5 == 0 {
-                '\"' // Grass
-            } else {
-                '.' // Stone/Floor
-            };
-            row.push(glyph);
-        }
-        rows.push(row);
+
+    let mut rng = omega_core::DeterministicRng::seeded(0x1234_5678);
+    let mut rows = vec![String::with_capacity(bounds.width as usize); bounds.height as usize];
+
+    // Fill with base ground
+    for row in rows.iter_mut() {
+        *row = ".".repeat(bounds.width as usize);
     }
-    
+
+    // Helper to set char
+    let mut set_char = |x: i32, y: i32, ch: char| {
+        if x >= 0 && x < bounds.width && y >= 0 && y < bounds.height {
+            let row = &mut rows[y as usize];
+            let mut chars: Vec<char> = row.chars().collect();
+            chars[x as usize] = ch;
+            *row = chars.into_iter().collect();
+        }
+    };
+
+    // Draw River
+    let mut river_y = 10.0;
+    for x in 0..bounds.width {
+        let y = river_y as i32;
+        for dy in -1..=1 {
+            set_char(x, y + dy, '~');
+        }
+        river_y += (rng.range_inclusive_i32(0, 2) - 1) as f32 * 0.5;
+        // Keep river roughly in middle third
+        river_y = river_y.clamp(10.0, 40.0);
+    }
+
+    // Draw Woods (Patches of grass/vegetation)
+    for _ in 0..20 {
+        let cx = rng.range_inclusive_i32(0, bounds.width - 1);
+        let cy = rng.range_inclusive_i32(0, bounds.height - 1);
+        let r = rng.range_inclusive_i32(2, 5);
+        for y in cy - r..=cy + r {
+            for x in cx - r..=cx + r {
+                if ((x - cx).pow(2) + (y - cy).pow(2)) as f32 <= (r as f32).powi(2) {
+                    set_char(x, y, '"');
+                }
+            }
+        }
+    }
+
+    // Draw Buildings (Rectangles of walls)
+    for _ in 0..5 {
+        let w = rng.range_inclusive_i32(4, 8);
+        let h = rng.range_inclusive_i32(4, 8);
+        let x0 = rng.range_inclusive_i32(5, bounds.width - w - 5);
+        let y0 = rng.range_inclusive_i32(5, bounds.height - h - 5);
+
+        // Walls
+        for y in y0..y0 + h {
+            for x in x0..x0 + w {
+                if x == x0 || x == x0 + w - 1 || y == y0 || y == y0 + h - 1 {
+                    set_char(x, y, '#');
+                } else {
+                    set_char(x, y, '.'); // Floor inside
+                }
+            }
+        }
+        // Door
+        if rng.range_inclusive_i32(0, 1) == 0 {
+            set_char(x0 + w / 2, y0 + h - 1, '.');
+        } else {
+            set_char(x0 + w / 2, y0, '.');
+        }
+    }
+
+    // Scattered cover (Rocks/Barrels)
+    for _ in 0..50 {
+        let x = rng.range_inclusive_i32(0, bounds.width - 1);
+        let y = rng.range_inclusive_i32(0, bounds.height - 1);
+        set_char(x, y, '#');
+    }
+
+    // Ensure player spawn is clear
+    let start_x = 25;
+    let start_y = 25;
+    for dy in -1..=1 {
+        for dx in -1..=1 {
+            set_char(start_x + dx, start_y + dy, '.');
+        }
+    }
+
     state.set_map_rows(rows.clone());
     state.city_map_rows = rows.clone();
-    
+
     // Initialize site grid with basic walkable/blocking flags
     let mut site_grid = Vec::with_capacity((bounds.width * bounds.height) as usize);
     for row in &rows {
@@ -1565,9 +1632,9 @@ pub fn bootstrap_wizard_arena() -> Result<(GameState, BootstrapDiagnostics)> {
     }
     state.site_grid = site_grid.clone();
     state.city_site_grid = site_grid;
-    
-    state.player.position = Position { x: 25, y: 25 };
-    
+
+    state.player.position = Position { x: start_x, y: start_y };
+
     let diagnostics = BootstrapDiagnostics {
         map_source: "wizard_arena_generator".to_string(),
         player_spawn_source: "fixed_center".to_string(),

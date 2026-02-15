@@ -42,9 +42,7 @@ use std::fs;
 use std::path::Path;
 use thiserror::Error;
 
-use super::color_id::{
-    ColorId, EntityColorId,
-};
+use super::color_id::{ColorId, EntityColorId};
 use super::hex_color::HexColor;
 
 /// Errors that can occur when working with color themes.
@@ -268,7 +266,7 @@ impl ColorTheme {
     /// Resolves an animated color for a specific ColorId at a given time.
     pub fn resolve_animated(&self, color_id: &ColorId, time: f32) -> super::color_spec::ColorSpec {
         let key = color_id_to_key(color_id);
-        
+
         // 1. Check if there's a specific animation for this key
         if let Some(animation) = self.animations.get(&key) {
             return animation.resolve_at(time);
@@ -276,10 +274,10 @@ impl ColorTheme {
 
         // 2. Resolve to static colors first
         if let Some((fg, _bg)) = self.resolve(color_id) {
-            return super::color_spec::ColorSpec::Rgb { 
-                r: fg.to_rgb().0, 
-                g: fg.to_rgb().1, 
-                b: fg.to_rgb().2 
+            return super::color_spec::ColorSpec::Rgb {
+                r: fg.to_rgb().0,
+                g: fg.to_rgb().1,
+                b: fg.to_rgb().2,
             };
         }
 
@@ -444,9 +442,8 @@ impl ColorTheme {
         // Check UI references
         for (key, color_ref) in &self.ui {
             if let ColorRef::Reference { ref_path } = color_ref {
-                self.resolve_ref_check(ref_path, &mut visited).map_err(|e| {
-                    ThemeError::UnresolvedReference(format!("ui.{}: {}", key, e))
-                })?;
+                self.resolve_ref_check(ref_path, &mut visited)
+                    .map_err(|e| ThemeError::UnresolvedReference(format!("ui.{}: {}", key, e)))?;
             }
         }
 
@@ -513,7 +510,7 @@ impl ColorTheme {
                     "effect" => &self.effect,
                     _ => unreachable!(),
                 };
-                
+
                 if let Some(color_ref) = map.get(parts[1]) {
                     if let ColorRef::Reference { ref_path: next_ref } = color_ref {
                         self.resolve_ref_check(next_ref, visited)?;
@@ -570,7 +567,9 @@ impl ColorTheme {
     pub fn name_for_environment(env: LegacyEnvironment) -> &'static str {
         match env {
             LegacyEnvironment::City | LegacyEnvironment::Village => "classic",
-            LegacyEnvironment::Sewers | LegacyEnvironment::Caves | LegacyEnvironment::Castle => "classic", // Could be a dark theme
+            LegacyEnvironment::Sewers | LegacyEnvironment::Caves | LegacyEnvironment::Castle => {
+                "classic"
+            } // Could be a dark theme
             LegacyEnvironment::Abyss | LegacyEnvironment::Volcano => "classic", // Could be a hell theme
             _ => "classic",
         }
@@ -593,10 +592,10 @@ fn entity_to_key(entity: &EntityColorId) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::color_id::{
-        MonsterColorId, ItemRarityColorId, UiColorId, TerrainColorId, EffectColorId,
+        EffectColorId, ItemRarityColorId, MonsterColorId, TerrainColorId, UiColorId,
     };
+    use super::*;
 
     /// Creates a minimal valid theme for testing.
     fn create_test_theme() -> ColorTheme {
@@ -626,38 +625,22 @@ mod tests {
                 light_gray: Some(HexColor::from_hex("#C0C0C0").unwrap()),
             },
             semantic: SemanticColors {
-                danger: ColorRef::Reference {
-                    ref_path: "base.red".to_string(),
-                },
-                success: ColorRef::Reference {
-                    ref_path: "base.green".to_string(),
-                },
-                info: ColorRef::Reference {
-                    ref_path: "base.blue".to_string(),
-                },
-                warning: ColorRef::Reference {
-                    ref_path: "base.yellow".to_string(),
-                },
-                magic: ColorRef::Reference {
-                    ref_path: "base.purple".to_string(),
-                },
-                neutral: ColorRef::Reference {
-                    ref_path: "base.gray".to_string(),
-                },
+                danger: ColorRef::Reference { ref_path: "base.red".to_string() },
+                success: ColorRef::Reference { ref_path: "base.green".to_string() },
+                info: ColorRef::Reference { ref_path: "base.blue".to_string() },
+                warning: ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                magic: ColorRef::Reference { ref_path: "base.purple".to_string() },
+                neutral: ColorRef::Reference { ref_path: "base.gray".to_string() },
             },
             entity: {
                 let mut map = HashMap::new();
                 map.insert(
                     "player".to_string(),
-                    ColorRef::Reference {
-                        ref_path: "base.white".to_string(),
-                    },
+                    ColorRef::Reference { ref_path: "base.white".to_string() },
                 );
                 map.insert(
                     "monster.hostileundead".to_string(),
-                    ColorRef::Reference {
-                        ref_path: "semantic.danger".to_string(),
-                    },
+                    ColorRef::Reference { ref_path: "semantic.danger".to_string() },
                 );
                 map.insert(
                     "item.legendary".to_string(),
@@ -672,15 +655,11 @@ mod tests {
                 let mut map = HashMap::new();
                 map.insert(
                     "healthhigh".to_string(),
-                    ColorRef::Reference {
-                        ref_path: "semantic.success".to_string(),
-                    },
+                    ColorRef::Reference { ref_path: "semantic.success".to_string() },
                 );
                 map.insert(
                     "messagedanger".to_string(),
-                    ColorRef::Reference {
-                        ref_path: "semantic.danger".to_string(),
-                    },
+                    ColorRef::Reference { ref_path: "semantic.danger".to_string() },
                 );
                 map
             },
@@ -743,8 +722,7 @@ mod tests {
     #[test]
     fn resolve_semantic_reference() {
         let theme = create_test_theme();
-        let color_id =
-            ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileUndead));
+        let color_id = ColorId::Entity(EntityColorId::Monster(MonsterColorId::HostileUndead));
 
         let result = theme.resolve(&color_id);
         assert!(result.is_some());
@@ -829,9 +807,7 @@ mod tests {
 
     #[test]
     fn color_ref_reference_serde() {
-        let color_ref = ColorRef::Reference {
-            ref_path: "base.red".to_string(),
-        };
+        let color_ref = ColorRef::Reference { ref_path: "base.red".to_string() };
 
         let json = serde_json::to_string(&color_ref).unwrap();
         // Note: serde renames "ref_path" to "ref" in serialization

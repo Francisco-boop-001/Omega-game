@@ -46,14 +46,17 @@ pub fn apply_liquid_flow(grid: &mut CaGrid) {
                     if grid.in_bounds(tx, ty) {
                         let tx = tx as usize;
                         let ty = ty as usize;
-                        
+
                         // Check if path is blocked by solid diagonally or horizontally
                         let side_x = x as isize + dx;
                         let side_y = y as isize;
                         let side_cell = grid.get(side_x as usize, side_y as usize);
                         let dest_cell = grid.get(tx, ty);
 
-                        if dest_cell.solid.is_none() && dest_cell.liquid.is_none() && side_cell.solid.is_none() {
+                        if dest_cell.solid.is_none()
+                            && dest_cell.liquid.is_none()
+                            && side_cell.solid.is_none()
+                        {
                             let mut new_source = cell;
                             new_source.liquid = None;
                             new_source.wet = 0;
@@ -69,7 +72,9 @@ pub fn apply_liquid_flow(grid: &mut CaGrid) {
                         }
                     }
                 }
-                if moved { continue; }
+                if moved {
+                    continue;
+                }
             }
 
             // 3. Horizontal spread (pooling)
@@ -143,7 +148,9 @@ pub fn apply_gas_rise(grid: &mut CaGrid) {
                 }
             }
 
-            if moved { continue; }
+            if moved {
+                continue;
+            }
 
             // 2. Try diagonal up
             if y > 0 {
@@ -177,7 +184,9 @@ pub fn apply_gas_rise(grid: &mut CaGrid) {
                 }
             }
 
-            if moved { continue; }
+            if moved {
+                continue;
+            }
 
             // 3. Horizontal spread if ceiling-blocked
             let is_at_top = y == 0;
@@ -217,7 +226,9 @@ pub fn apply_gas_rise(grid: &mut CaGrid) {
                 }
             }
 
-            if moved { continue; }
+            if moved {
+                continue;
+            }
 
             // 4. Dissipation if trapped
             let mut new_cell = cell;
@@ -279,23 +290,22 @@ pub fn apply_fire_spread_bias(grid: &mut CaGrid) {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use super::super::state::{Liquid, Solid};
     use super::super::cell::Cell;
+    use super::super::state::{Liquid, Solid};
+    use super::*;
 
     #[test]
     fn test_liquid_falls_down() {
         let mut grid = CaGrid::new(3, 3);
-        let mut water_cell = Cell::default();
-        water_cell.liquid = Some(Liquid::Water);
-        
+        let water_cell = Cell { liquid: Some(Liquid::Water), ..Cell::default() };
+
         // Place water at (1, 1)
         grid.set(1, 1, water_cell);
         grid.swap_buffers();
-        
+
         apply_liquid_flow(&mut grid);
         grid.swap_buffers();
-        
+
         // Should have moved to (1, 2)
         assert!(grid.get(1, 1).liquid.is_none());
         assert_eq!(grid.get(1, 2).liquid, Some(Liquid::Water));
@@ -304,21 +314,19 @@ mod tests {
     #[test]
     fn test_liquid_flows_diagonally() {
         let mut grid = CaGrid::new(3, 3);
-        
+
         // Solid at (1, 2) blocking direct fall from (1, 1)
-        let mut stone = Cell::default();
-        stone.solid = Some(Solid::Stone);
+        let stone = Cell { solid: Some(Solid::Stone), ..Cell::default() };
         grid.set(1, 2, stone);
-        
-        let mut water = Cell::default();
-        water.liquid = Some(Liquid::Water);
+
+        let water = Cell { liquid: Some(Liquid::Water), ..Cell::default() };
         grid.set(1, 1, water);
-        
+
         grid.swap_buffers();
-        
+
         apply_liquid_flow(&mut grid);
         grid.swap_buffers();
-        
+
         // Should have moved to (0, 2) or (2, 2)
         assert!(grid.get(1, 1).liquid.is_none());
         let moved = grid.get(0, 2).liquid.is_some() || grid.get(2, 2).liquid.is_some();
@@ -328,23 +336,21 @@ mod tests {
     #[test]
     fn test_liquid_spreads_horizontally() {
         let mut grid = CaGrid::new(3, 3);
-        
+
         // Floor at y=2
-        let mut stone = Cell::default();
-        stone.solid = Some(Solid::Stone);
+        let stone = Cell { solid: Some(Solid::Stone), ..Cell::default() };
         grid.set(0, 2, stone);
         grid.set(1, 2, stone);
         grid.set(2, 2, stone);
-        
-        let mut water = Cell::default();
-        water.liquid = Some(Liquid::Water);
+
+        let water = Cell { liquid: Some(Liquid::Water), ..Cell::default() };
         grid.set(1, 1, water);
-        
+
         grid.swap_buffers();
-        
+
         apply_liquid_flow(&mut grid);
         grid.swap_buffers();
-        
+
         // Should have spread to (0, 1) or (2, 1)
         // Note: horizontal spread in the plan says "Source keeps its liquid, destination gets liquid"
         // so it should be at (1, 1) AND either (0, 1) or (2, 1)
@@ -356,24 +362,22 @@ mod tests {
     #[test]
     fn test_liquid_respects_solids() {
         let mut grid = CaGrid::new(3, 3);
-        
-        let mut stone = Cell::default();
-        stone.solid = Some(Solid::Stone);
+
+        let stone = Cell { solid: Some(Solid::Stone), ..Cell::default() };
         grid.set(1, 2, stone); // Directly below
         grid.set(0, 2, stone); // Diagonal down left
         grid.set(2, 2, stone); // Diagonal down right
         grid.set(0, 1, stone); // Left
         grid.set(2, 1, stone); // Right
-        
-        let mut water = Cell::default();
-        water.liquid = Some(Liquid::Water);
+
+        let water = Cell { liquid: Some(Liquid::Water), ..Cell::default() };
         grid.set(1, 1, water);
-        
+
         grid.swap_buffers();
-        
+
         apply_liquid_flow(&mut grid);
         grid.swap_buffers();
-        
+
         // Should still be at (1, 1) and nowhere else
         assert_eq!(grid.get(1, 1).liquid, Some(Liquid::Water));
         assert!(grid.get(1, 2).solid.is_some());
@@ -382,40 +386,36 @@ mod tests {
 
     #[test]
     fn test_liquid_does_not_overwrite_liquid() {
-         let mut grid = CaGrid::new(3, 3);
-         
-         let mut oil = Cell::default();
-         oil.liquid = Some(Liquid::Oil);
-         grid.set(1, 2, oil);
-         
-         let mut water = Cell::default();
-         water.liquid = Some(Liquid::Water);
-         grid.set(1, 1, water);
-         
-         grid.swap_buffers();
-         
-         apply_liquid_flow(&mut grid);
-         grid.swap_buffers();
-         
-         // Water at (1,1) should not move to (1,2) because oil is there.
-         // It might try to move diagonally though.
-         assert_eq!(grid.get(1, 2).liquid, Some(Liquid::Oil));
+        let mut grid = CaGrid::new(3, 3);
+
+        let oil = Cell { liquid: Some(Liquid::Oil), ..Cell::default() };
+        grid.set(1, 2, oil);
+
+        let water = Cell { liquid: Some(Liquid::Water), ..Cell::default() };
+        grid.set(1, 1, water);
+
+        grid.swap_buffers();
+
+        apply_liquid_flow(&mut grid);
+        grid.swap_buffers();
+
+        // Water at (1,1) should not move to (1,2) because oil is there.
+        // It might try to move diagonally though.
+        assert_eq!(grid.get(1, 2).liquid, Some(Liquid::Oil));
     }
 
     #[test]
     fn test_gas_rises_up() {
         let mut grid = CaGrid::new(3, 3);
-        let mut steam = Cell::default();
-        steam.gas = Some(Gas::Steam);
-        steam.pressure = 50;
-        
+        let steam = Cell { gas: Some(Gas::Steam), pressure: 50, ..Cell::default() };
+
         // Place steam at (1, 1)
         grid.set(1, 1, steam);
         grid.swap_buffers();
-        
+
         apply_gas_rise(&mut grid);
         grid.swap_buffers();
-        
+
         // Should have moved to (1, 0)
         assert!(grid.get(1, 1).gas.is_none());
         assert_eq!(grid.get(1, 0).gas, Some(Gas::Steam));
@@ -425,16 +425,14 @@ mod tests {
     #[test]
     fn test_fire_does_not_rise() {
         let mut grid = CaGrid::new(3, 3);
-        let mut fire = Cell::default();
-        fire.gas = Some(Gas::Fire);
-        fire.pressure = 50;
-        
+        let fire = Cell { gas: Some(Gas::Fire), pressure: 50, ..Cell::default() };
+
         grid.set(1, 1, fire);
         grid.swap_buffers();
-        
+
         apply_gas_rise(&mut grid);
         grid.swap_buffers();
-        
+
         // Fire should stay put
         assert_eq!(grid.get(1, 1).gas, Some(Gas::Fire));
         assert!(grid.get(1, 0).gas.is_none());
@@ -443,10 +441,9 @@ mod tests {
     #[test]
     fn test_gas_dissipates_when_trapped() {
         let mut grid = CaGrid::new(3, 3);
-        
+
         // Surround (1, 1) with stone
-        let mut stone = Cell::default();
-        stone.solid = Some(Solid::Stone);
+        let stone = Cell { solid: Some(Solid::Stone), ..Cell::default() };
         grid.set(1, 0, stone);
         grid.set(1, 2, stone);
         grid.set(0, 1, stone);
@@ -455,20 +452,18 @@ mod tests {
         grid.set(2, 0, stone);
         grid.set(0, 2, stone);
         grid.set(2, 2, stone);
-        
-        let mut smoke = Cell::default();
-        smoke.gas = Some(Gas::Smoke);
-        smoke.pressure = 20;
+
+        let smoke = Cell { gas: Some(Gas::Smoke), pressure: 20, ..Cell::default() };
         grid.set(1, 1, smoke);
-        
+
         grid.swap_buffers();
-        
+
         apply_gas_rise(&mut grid);
         grid.swap_buffers();
-        
+
         // Pressure should drop by 5
         assert_eq!(grid.get(1, 1).pressure, 15);
-        
+
         // After few more calls it should disappear
         for _ in 0..2 {
             apply_gas_rise(&mut grid);
@@ -477,7 +472,7 @@ mod tests {
         // 15 -> 10 -> 0 (because 5 < 10)
         assert_eq!(grid.get(1, 1).pressure, 0);
         assert!(grid.get(1, 1).gas.is_none());
-        
+
         apply_gas_rise(&mut grid);
         grid.swap_buffers();
         // 5 < 10, should be None
@@ -487,34 +482,31 @@ mod tests {
     #[test]
     fn test_fire_spread_bias() {
         let mut grid = CaGrid::new(3, 3);
-        
+
         // Combustible wood at (1, 1)
-        let mut wood = Cell::default();
-        wood.solid = Some(Solid::Wood);
-        wood.heat = 0;
+        let wood = Cell { solid: Some(Solid::Wood), ..Cell::default() };
         grid.set(1, 1, wood);
-        
+
         // Fire below at (1, 2)
-        let mut fire = Cell::default();
-        fire.gas = Some(Gas::Fire);
+        let fire = Cell { gas: Some(Gas::Fire), ..Cell::default() };
         grid.set(1, 2, fire);
-        
+
         grid.swap_buffers();
         apply_fire_spread_bias(&mut grid);
         grid.swap_buffers();
-        
+
         // Fire below should add 30 heat
         assert_eq!(grid.get(1, 1).heat, 30);
-        
+
         // Reset and test fire above
         let mut grid = CaGrid::new(3, 3);
         grid.set(1, 1, wood);
         grid.set(1, 0, fire); // Fire above at (1, 0)
-        
+
         grid.swap_buffers();
         apply_fire_spread_bias(&mut grid);
         grid.swap_buffers();
-        
+
         // Fire above should add 10 heat
         assert_eq!(grid.get(1, 1).heat, 10);
     }

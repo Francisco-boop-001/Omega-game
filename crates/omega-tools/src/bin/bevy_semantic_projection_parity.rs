@@ -77,12 +77,14 @@ fn main() -> Result<()> {
 
     let modern_lines = omega_bevy::presentation::tilemap::compose_map_lines(&modern, 0);
     let classic_lines = omega_bevy::presentation::tilemap::compose_map_lines(&classic, 0);
-    
-    let modern_blob: String = modern_lines.iter()
+
+    let modern_blob: String = modern_lines
+        .iter()
         .map(|row| row.iter().map(|(ch, _)| *ch).collect::<String>())
         .collect::<Vec<_>>()
         .join("\n");
-    let classic_blob: String = classic_lines.iter()
+    let classic_blob: String = classic_lines
+        .iter()
         .map(|row| row.iter().map(|(ch, _)| *ch).collect::<String>())
         .collect::<Vec<_>>()
         .join("\n");

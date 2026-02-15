@@ -1,6 +1,6 @@
 use super::grid::CaGrid;
+use super::state::{Gas, Liquid, Solid};
 use super::wind::{WindGrid, WindVector};
-use super::state::{Solid, Liquid, Gas};
 
 #[derive(Debug, Clone, Copy)]
 pub struct TurretModeConfig {
@@ -79,12 +79,12 @@ impl Catastrophe {
     pub fn doomsday(grid: &mut CaGrid, wind_grid: &mut WindGrid) -> TurretModeConfig {
         let width = grid.width();
         let height = grid.height();
-        
+
         Self::great_flood(grid, (width / 2, height / 2));
         Self::forest_fire_jump(grid, (width / 4, height / 4));
         Self::massive_windstorm(wind_grid);
         Self::fuel_field(grid);
-        
+
         Self::interception_chaos()
     }
 }

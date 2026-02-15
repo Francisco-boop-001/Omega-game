@@ -1,5 +1,5 @@
 use bevy::prelude::*;
-use omega_core::simulation::{TrajectoryMode, ProjectilePhysicalProps, Cell};
+use omega_core::simulation::{Cell, ProjectilePhysicalProps, TrajectoryMode};
 
 #[derive(Component)]
 pub struct Projectile {

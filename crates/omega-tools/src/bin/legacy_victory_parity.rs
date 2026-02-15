@@ -149,10 +149,7 @@ fn main() -> Result<()> {
         && !wizard_quit_state.progression.high_score_eligible
         && wizard_quit_state.progression.victory_trigger == Some(VictoryTrigger::QuitConfirmed);
 
-    let mut arena_state = GameState {
-        environment: LegacyEnvironment::Arena,
-        ..Default::default()
-    };
+    let mut arena_state = GameState { environment: LegacyEnvironment::Arena, ..Default::default() };
     arena_state.progression.arena_match_active = true;
     arena_state.monsters.clear();
     let arena_out = step(&mut arena_state, Command::Wait, &mut rng);

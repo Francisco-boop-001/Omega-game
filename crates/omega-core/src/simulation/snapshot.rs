@@ -1,5 +1,5 @@
-use super::grid::CaGrid;
 use super::cell::Cell;
+use super::grid::CaGrid;
 
 #[derive(Debug, Clone)]
 pub struct ArenaSnapshot {
@@ -34,10 +34,7 @@ pub struct SnapshotManager {
 
 impl Default for SnapshotManager {
     fn default() -> Self {
-        Self {
-            snapshots: Vec::new(),
-            max_snapshots: 5,
-        }
+        Self { snapshots: Vec::new(), max_snapshots: 5 }
     }
 }
 
@@ -65,15 +62,14 @@ mod tests {
     #[test]
     fn test_capture_restore_roundtrip() {
         let mut grid = CaGrid::new(10, 10);
-        let mut cell = Cell::default();
-        cell.heat = 123;
+        let cell = Cell { heat: 123, ..Cell::default() };
         grid.set_immediate(5, 5, cell);
 
         let snapshot = ArenaSnapshot::capture(&grid, "test".to_string());
-        
+
         let mut new_grid = CaGrid::new(10, 10);
         snapshot.restore(&mut new_grid);
-        
+
         assert_eq!(new_grid.get(5, 5).heat, 123);
     }
 
@@ -81,11 +77,11 @@ mod tests {
     fn test_snapshot_manager_limit() {
         let mut manager = SnapshotManager::default();
         let grid = CaGrid::new(2, 2);
-        
+
         for i in 0..10 {
             manager.push(ArenaSnapshot::capture(&grid, format!("snap_{}", i)));
         }
-        
+
         assert_eq!(manager.list().len(), 5);
         assert_eq!(manager.list()[0].label, "snap_5");
         assert_eq!(manager.list()[4].label, "snap_9");

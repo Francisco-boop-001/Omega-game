@@ -41,10 +41,7 @@ pub struct ValidationReport {
 impl ValidationReport {
     /// Creates a new empty validation report.
     pub fn new() -> Self {
-        Self {
-            errors: Vec::new(),
-            warnings: Vec::new(),
-        }
+        Self { errors: Vec::new(), warnings: Vec::new() }
     }
 
     /// Returns true if the report contains no errors.
@@ -189,11 +186,7 @@ impl ColorTheme {
             let _ = key; // Acknowledge we inspected the key
         }
 
-        if errors.is_empty() {
-            Ok(())
-        } else {
-            Err(errors)
-        }
+        if errors.is_empty() { Ok(()) } else { Err(errors) }
     }
 
     /// Validates the theme and returns a detailed report.
@@ -314,24 +307,12 @@ mod tests {
                 light_gray: Some(HexColor::from_hex("#C0C0C0").unwrap()),
             },
             semantic: SemanticColors {
-                danger: ColorRef::Reference {
-                    ref_path: "base.red".to_string(),
-                },
-                success: ColorRef::Reference {
-                    ref_path: "base.green".to_string(),
-                },
-                info: ColorRef::Reference {
-                    ref_path: "base.blue".to_string(),
-                },
-                warning: ColorRef::Reference {
-                    ref_path: "base.yellow".to_string(),
-                },
-                magic: ColorRef::Reference {
-                    ref_path: "base.magenta".to_string(),
-                },
-                neutral: ColorRef::Reference {
-                    ref_path: "base.gray".to_string(),
-                },
+                danger: ColorRef::Reference { ref_path: "base.red".to_string() },
+                success: ColorRef::Reference { ref_path: "base.green".to_string() },
+                info: ColorRef::Reference { ref_path: "base.blue".to_string() },
+                warning: ColorRef::Reference { ref_path: "base.yellow".to_string() },
+                magic: ColorRef::Reference { ref_path: "base.magenta".to_string() },
+                neutral: ColorRef::Reference { ref_path: "base.gray".to_string() },
             },
             entity: create_complete_entity_map(),
             ui: create_complete_ui_map(),
@@ -346,85 +327,59 @@ mod tests {
         // Player
         map.insert(
             "player".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.white".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.white".to_string() },
         );
 
         // Monsters
         map.insert(
             "monster.hostileundead".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.danger".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.danger".to_string() },
         );
         map.insert(
             "monster.hostilebeast".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.red".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.red".to_string() },
         );
         map.insert(
             "monster.hostilehumanoid".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.orange".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.orange".to_string() },
         );
         map.insert(
             "monster.hostilemagical".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.magic".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.magic".to_string() },
         );
         map.insert(
             "monster.hostileconstruct".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.gray".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.gray".to_string() },
         );
         map.insert(
             "monster.hostiledragon".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.purple".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.purple".to_string() },
         );
         map.insert(
             "monster.neutral".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.neutral".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.neutral".to_string() },
         );
         map.insert(
             "monster.friendly".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.cyan".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.cyan".to_string() },
         );
 
         // Items
         map.insert(
             "item.common".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.white".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.white".to_string() },
         );
         map.insert(
             "item.uncommon".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.green".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.green".to_string() },
         );
         map.insert(
             "item.rare".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.blue".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.blue".to_string() },
         );
         map.insert(
             "item.epic".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.purple".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.purple".to_string() },
         );
         map.insert(
             "item.legendary".to_string(),
@@ -437,39 +392,27 @@ mod tests {
         // Terrain
         map.insert(
             "terrain.wallstone".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.gray".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.gray".to_string() },
         );
         map.insert(
             "terrain.floorstone".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.dark_gray".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.dark_gray".to_string() },
         );
         map.insert(
             "terrain.water".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.blue".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.blue".to_string() },
         );
         map.insert(
             "terrain.lava".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.red".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.red".to_string() },
         );
         map.insert(
             "terrain.door".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.brown".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.brown".to_string() },
         );
         map.insert(
             "terrain.stairsup".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.white".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.white".to_string() },
         );
 
         map
@@ -480,63 +423,40 @@ mod tests {
 
         map.insert(
             "healthhigh".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.success".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.success".to_string() },
         );
         map.insert(
             "healthmedium".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.warning".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.warning".to_string() },
         );
         map.insert(
             "healthlow".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.danger".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.danger".to_string() },
         );
-        map.insert(
-            "mana".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.blue".to_string(),
-            },
-        );
+        map.insert("mana".to_string(), ColorRef::Reference { ref_path: "base.blue".to_string() });
         map.insert(
             "highlight".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.yellow".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.yellow".to_string() },
         );
         map.insert(
             "selection".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.cyan".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.cyan".to_string() },
         );
         map.insert(
             "textdefault".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.white".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.white".to_string() },
         );
         map.insert(
             "messageinfo".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.info".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.info".to_string() },
         );
         map.insert(
             "messagewarning".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.warning".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.warning".to_string() },
         );
         map.insert(
             "messagedanger".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.danger".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.danger".to_string() },
         );
 
         map
@@ -545,42 +465,21 @@ mod tests {
     fn create_complete_effect_map() -> HashMap<String, ColorRef> {
         let mut map = HashMap::new();
 
-        map.insert(
-            "fire".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.red".to_string(),
-            },
-        );
-        map.insert(
-            "ice".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.cyan".to_string(),
-            },
-        );
+        map.insert("fire".to_string(), ColorRef::Reference { ref_path: "base.red".to_string() });
+        map.insert("ice".to_string(), ColorRef::Reference { ref_path: "base.cyan".to_string() });
         map.insert(
             "lightning".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.yellow".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.yellow".to_string() },
         );
         map.insert(
             "poison".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.green".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.green".to_string() },
         );
         map.insert(
             "magicarcane".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.magenta".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.magenta".to_string() },
         );
-        map.insert(
-            "blood".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.red".to_string(),
-            },
-        );
+        map.insert("blood".to_string(), ColorRef::Reference { ref_path: "base.red".to_string() });
 
         map
     }
@@ -676,18 +575,19 @@ mod tests {
         let mut theme = create_minimal_valid_theme();
         theme.entity.insert(
             "player".to_string(),
-            ColorRef::Reference {
-                ref_path: "base.nonexistent".to_string(),
-            },
+            ColorRef::Reference { ref_path: "base.nonexistent".to_string() },
         );
 
         let result = theme.validate_strict();
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors
-            .iter()
-            .any(|e| e.to_string().contains("unresolved") || e.to_string().contains("nonexistent")));
+        assert!(
+            errors
+                .iter()
+                .any(|e| e.to_string().contains("unresolved")
+                    || e.to_string().contains("nonexistent"))
+        );
     }
 
     #[test]
@@ -696,21 +596,15 @@ mod tests {
         // Create a circular reference: semantic.danger -> entity.player -> semantic.danger
         theme.entity.insert(
             "player".to_string(),
-            ColorRef::Reference {
-                ref_path: "semantic.danger".to_string(),
-            },
+            ColorRef::Reference { ref_path: "semantic.danger".to_string() },
         );
-        theme.semantic.danger = ColorRef::Reference {
-            ref_path: "entity.player".to_string(),
-        };
+        theme.semantic.danger = ColorRef::Reference { ref_path: "entity.player".to_string() };
 
         let result = theme.validate_strict();
         assert!(result.is_err());
 
         let errors = result.unwrap_err();
-        assert!(errors
-            .iter()
-            .any(|e| e.to_string().to_lowercase().contains("circular")));
+        assert!(errors.iter().any(|e| e.to_string().to_lowercase().contains("circular")));
     }
 
     #[test]
@@ -773,17 +667,11 @@ mod tests {
             theme.entity.remove(entity_key);
 
             let result = theme.validate_strict();
-            assert!(
-                result.is_err(),
-                "Removing {} should fail validation",
-                entity_key
-            );
+            assert!(result.is_err(), "Removing {} should fail validation", entity_key);
 
             let errors = result.unwrap_err();
             assert!(
-                errors
-                    .iter()
-                    .any(|e| e.to_string().contains(&format!("entity.{}", entity_key))),
+                errors.iter().any(|e| e.to_string().contains(&format!("entity.{}", entity_key))),
                 "Error should mention {}",
                 entity_key
             );
@@ -814,9 +702,7 @@ mod tests {
 
             let errors = result.unwrap_err();
             assert!(
-                errors
-                    .iter()
-                    .any(|e| e.to_string().contains(&format!("ui.{}", ui_key))),
+                errors.iter().any(|e| e.to_string().contains(&format!("ui.{}", ui_key))),
                 "Error should mention {}",
                 ui_key
             );
@@ -832,17 +718,11 @@ mod tests {
             theme.effect.remove(effect_key);
 
             let result = theme.validate_strict();
-            assert!(
-                result.is_err(),
-                "Removing {} should fail validation",
-                effect_key
-            );
+            assert!(result.is_err(), "Removing {} should fail validation", effect_key);
 
             let errors = result.unwrap_err();
             assert!(
-                errors
-                    .iter()
-                    .any(|e| e.to_string().contains(&format!("effect.{}", effect_key))),
+                errors.iter().any(|e| e.to_string().contains(&format!("effect.{}", effect_key))),
                 "Error should mention {}",
                 effect_key
             );

@@ -3,11 +3,11 @@
 //! Monitors the user theme directory for changes and notifies the application
 //! when themes are created, modified, or deleted.
 
-use std::path::PathBuf;
-use std::sync::mpsc::{channel, Receiver};
-use std::time::Duration;
-use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher, Event};
 use crate::color::loader::ThemeLoader;
+use notify::{Config, Event, RecommendedWatcher, RecursiveMode, Watcher};
+use std::path::PathBuf;
+use std::sync::mpsc::{Receiver, channel};
+use std::time::Duration;
 
 /// Notifies the application of theme file system events.
 pub enum ThemeEvent {
@@ -27,13 +27,13 @@ impl ThemeWatcher {
     /// Creates a new watcher for the user theme directory.
     pub fn new() -> notify::Result<Self> {
         let (tx, rx) = channel();
-        
-        let watcher = RecommendedWatcher::new(tx, Config::default().with_poll_interval(Duration::from_millis(500)))?;
-        
-        Ok(Self {
-            watcher,
-            receiver: rx,
-        })
+
+        let watcher = RecommendedWatcher::new(
+            tx,
+            Config::default().with_poll_interval(Duration::from_millis(500)),
+        )?;
+
+        Ok(Self { watcher, receiver: rx })
     }
 
     /// Starts watching the user theme directory.
@@ -52,15 +52,17 @@ impl ThemeWatcher {
             match event.kind {
                 notify::EventKind::Modify(_) | notify::EventKind::Create(_) => {
                     if let Some(path) = event.paths.first()
-                        && path.extension().is_some_and(|ext| ext == "toml") {
-                            return Some(ThemeEvent::Updated(path.clone()));
-                        }
+                        && path.extension().is_some_and(|ext| ext == "toml")
+                    {
+                        return Some(ThemeEvent::Updated(path.clone()));
+                    }
                 }
                 notify::EventKind::Remove(_) => {
                     if let Some(path) = event.paths.first()
-                        && path.extension().is_some_and(|ext| ext == "toml") {
-                            return Some(ThemeEvent::Deleted(path.clone()));
-                        }
+                        && path.extension().is_some_and(|ext| ext == "toml")
+                    {
+                        return Some(ThemeEvent::Deleted(path.clone()));
+                    }
                 }
                 _ => {}
             }
